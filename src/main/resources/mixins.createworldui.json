@@ -1,0 +1,13 @@
+{
+  "package": "decok.dfcdvadstf.createworldui.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "mixins.createworldui.refmap.json",
+  "mixins": [
+    "MixinGuiCreateWorld"
+  ],
+  "client": [
+    "MixinGuiCreateWorld"
+  ],
+  "required": true,
+  "minVersion": "0.8.5"
+}
