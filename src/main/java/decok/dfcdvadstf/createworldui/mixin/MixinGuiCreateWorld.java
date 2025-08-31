@@ -3,7 +3,6 @@ package decok.dfcdvadstf.createworldui.mixin;
 import decok.dfcdvadstf.createworldui.api.CreateWorldAPI;
 import decok.dfcdvadstf.createworldui.api.CreateWorldAPI.IWorldTab;
 import decok.dfcdvadstf.createworldui.api.CreateWorldAPI.ITabCustomizer;
-
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
@@ -25,8 +24,7 @@ public abstract class MixinGuiCreateWorld extends GuiScreen {
 
     private List<IWorldTab> activeTabs = new ArrayList<>();
 
-    @SuppressWarnings("unchecked") // 添加抑制警告注解
-
+    @SuppressWarnings("unchecked")
     @Inject(method = "initGui", at = @At("TAIL"))
     private void onInitGui(CallbackInfo ci) {
         // 加载注册的标签

@@ -548,7 +548,7 @@ public class GuiCreateWorldModern extends GuiScreen {
         }
 
         @Override
-        public void initGui(GuiScreen parent) {
+        public void initGui(GuiScreen parent, WorldSettings settings) {
             int yPos = 80;
             int buttonWidth = 180;
 

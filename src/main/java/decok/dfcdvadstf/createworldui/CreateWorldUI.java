@@ -5,15 +5,12 @@ import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import decok.dfcdvadstf.createworldui.api.CreateWorldAPI;
-import decok.dfcdvadstf.createworldui.tabbyui.GuiCreateWorldModern;
 import decok.dfcdvadstf.createworldui.api.hook.WorldCreationCheck;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.world.WorldEvent;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.mixin.MixinEnvironment;
@@ -54,42 +51,27 @@ public class CreateWorldUI {
         // CreateWorldAPI.registerTab(new ExampleTab());
     }
 
-    @EventHandler
-    public void onWorldLoad(WorldEvent.Load event) {
-        if (!event.world.isRemote && nextWorldGameRules != null) {
-            // 应用游戏规则
-            event.world.getGameRules().setOrCreateGameRule("doDaylightCycle", nextWorldGameRules.daylightCycle ? "true" : "false");
-            event.world.getGameRules().setOrCreateGameRule("doWeatherCycle", nextWorldGameRules.weatherCycle ? "true" : "false");
-            event.world.getGameRules().setOrCreateGameRule("doMobSpawning", nextWorldGameRules.spawnAnimals ? "true" : "false");
-        }
-    }
-
+    // 添加这个方法来确保事件监听器被正确注册
     @SubscribeEvent
     public void onGuiOpen(GuiOpenEvent event) {
-        // 检测到创建世界界面打开
         if (event.gui instanceof GuiCreateWorld) {
-            // 检查是否是首次创建世界
-            if (WorldCreationCheck.shouldUseModernUI()) {
-                logger.info("Using modern world creation UI for new player");
+            logger.info("Detected GuiCreateWorld opening");
 
-                // 获取父屏幕的可靠方法
+            if (WorldCreationCheck.shouldUseModernUI()) {
+                logger.info("Using modern world creation UI");
+
+                // 获取父屏幕
                 GuiScreen parentScreen = getParentScreen((GuiCreateWorld) event.gui);
 
-                // 创建自定义UI实例
-                event.gui = new GuiCreateWorldModern(parentScreen);
+                // 替换为现代UI
+                event.gui = WorldCreationCheck.createModernWorldCreationScreen(parentScreen);
             } else {
-                logger.debug("Using vanilla world creation UI");
+                logger.info("Using vanilla world creation UI");
             }
         }
     }
 
-    /**
-     * 安全获取GuiCreateWorld的父屏幕
-     *
-     * 在1.7.10中，GuiCreateWorld的父屏幕字段是protected，
-     * 我们需要使用反射来访问它
-     */
-
+    // 确保这个方法能够正确获取父屏幕
     private GuiScreen getParentScreen(GuiCreateWorld gui) {
         try {
             // 使用反射获取父屏幕字段
@@ -99,7 +81,7 @@ public class CreateWorldUI {
         } catch (Exception e) {
             logger.error("Failed to get parent screen from GuiCreateWorld", e);
 
-            // 备选方案：使用当前屏幕作为父屏幕
+            // 备选方案：使用主菜单作为父屏幕
             return Minecraft.getMinecraft().currentScreen;
         }
     }
