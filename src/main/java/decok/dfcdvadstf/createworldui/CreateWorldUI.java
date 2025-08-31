@@ -4,19 +4,17 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import decok.dfcdvadstf.createworldui.api.hook.WorldCreationCheck;
+import decok.dfcdvadstf.createworldui.tabbyui.GuiCreateWorldModern;
+import decok.dfcdvadstf.createworldui.api.WorldCreationCheck;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.Logger;
-import org.spongepowered.asm.launch.MixinBootstrap;
-import org.spongepowered.asm.mixin.MixinEnvironment;
-import org.spongepowered.asm.mixin.Mixins;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 
 @Mod(modid = Tags.MODID, name = Tags.NAME, version = Tags.VERSION)
@@ -29,34 +27,22 @@ public class CreateWorldUI {
         logger = event.getModLog();
         logger.info("Initializing CreateWorldUI Mod");
 
-        // 初始化Mixin
-        try {
-            // 正确的Forge Mixin初始化方式
-            MixinBootstrap.init();
-            Mixins.addConfiguration("mixins.createworldui.json");
-            MixinEnvironment.getDefaultEnvironment().setSide(MixinEnvironment.Side.CLIENT);
-        } catch (Exception e) {
-            logger.error("Mixin initialization failed", e);
-        }
-
-        // 注册事件处理器
+        // 注册事件处理器 - 使用高优先级确保我们先处理
         MinecraftForge.EVENT_BUS.register(this);
     }
 
     @EventHandler
     public void init(FMLInitializationEvent event) {
         logger.info("CreateWorldUI Mod loaded successfully");
-
-        // 注册示例标签页（可选）
-        // CreateWorldAPI.registerTab(new ExampleTab());
     }
 
-    // 添加这个方法来确保事件监听器被正确注册
-    @SubscribeEvent
+    // 使用高优先级确保我们先处理GUI打开事件
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onGuiOpen(GuiOpenEvent event) {
         if (event.gui instanceof GuiCreateWorld) {
             logger.info("Detected GuiCreateWorld opening");
 
+            // 强制使用现代UI（调试模式）
             if (WorldCreationCheck.shouldUseModernUI()) {
                 logger.info("Using modern world creation UI");
 
@@ -64,14 +50,16 @@ public class CreateWorldUI {
                 GuiScreen parentScreen = getParentScreen((GuiCreateWorld) event.gui);
 
                 // 替换为现代UI
-                event.gui = WorldCreationCheck.createModernWorldCreationScreen(parentScreen);
+                event.gui = new GuiCreateWorldModern(parentScreen);
             } else {
                 logger.info("Using vanilla world creation UI");
             }
         }
     }
 
-    // 确保这个方法能够正确获取父屏幕
+    /**
+     * 安全获取GuiCreateWorld的父屏幕
+     */
     private GuiScreen getParentScreen(GuiCreateWorld gui) {
         try {
             // 使用反射获取父屏幕字段
@@ -81,7 +69,7 @@ public class CreateWorldUI {
         } catch (Exception e) {
             logger.error("Failed to get parent screen from GuiCreateWorld", e);
 
-            // 备选方案：使用主菜单作为父屏幕
+            // 备选方案：使用当前屏幕作为父屏幕
             return Minecraft.getMinecraft().currentScreen;
         }
     }

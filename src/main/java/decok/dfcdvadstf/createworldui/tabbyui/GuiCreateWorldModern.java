@@ -87,7 +87,7 @@ public class GuiCreateWorldModern extends GuiScreen {
     }
 
     private void addButtonSafely(GuiButton button) {
-        this.buttonList.add(button);
+        this.buttonList.add(button); // 在1.7.10中，buttonList是原始类型List，可以直接添加GuiButton
     }
 
     @Override
@@ -110,7 +110,7 @@ public class GuiCreateWorldModern extends GuiScreen {
         worldNameField.setText(I18n.format("selectWorld.newWorld"));
 
         // 添加创建按钮
-        this.buttonList.add(new GuiButton(0, this.width / 2 - 155, this.height - 28, 150, 20, I18n.format("gui.create")));
+        this.buttonList.add(new GuiButton(0, this.width / 2 - 155, this.height - 28, 150, 20, I18n.format("worldcreateui.button.create")));
         this.buttonList.add(new GuiButton(1, this.width / 2 + 5, this.height - 28, 150, 20, I18n.format("gui.cancel")));
     }
 
@@ -157,6 +157,8 @@ public class GuiCreateWorldModern extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        // 完全覆盖整个屏幕，不调用super.drawScreen
+        this.drawDefaultBackground();
 
         // 绘制浅色背景
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_LIGHT);
@@ -178,8 +180,18 @@ public class GuiCreateWorldModern extends GuiScreen {
             currentTab.drawScreen(mouseX, mouseY, partialTicks);
         }
 
-        // 绘制按钮和文本
-        super.drawScreen(mouseX, mouseY, partialTicks);
+        // 手动绘制按钮 - 修复类型兼容性问题
+        for (Object obj : this.buttonList) {
+            if (obj instanceof GuiButton) {
+                GuiButton button = (GuiButton) obj;
+                button.drawButton(this.mc, mouseX, mouseY);
+            }
+        }
+
+        // 手动绘制标签页按钮
+        for (GuiButton tabButton : this.tabButtons) {
+            tabButton.drawButton(this.mc, mouseX, mouseY);
+        }
     }
 
     @Override
@@ -244,30 +256,6 @@ public class GuiCreateWorldModern extends GuiScreen {
     }
 
     private void createWorld() {
-        /**
-         * String worldName = worldNameField.getText().trim();
-         *         if (worldName.isEmpty()) {
-         *             worldName = I18n.format("selectWorld.newWorld");
-         *         }
-         *
-         *         // 创建世界设置
-         *         WorldSettings settings = new WorldSettings(
-         *                 parseSeed(seedText),
-         *                 worldSettings.getGameType(),
-         *                 mapFeaturesEnabled,
-         *                 bonusChestEnabled,
-         *                 worldSettings.getTerrainType()
-         *         );
-         *
-         *         // 应用当前标签页的设置
-         *         if (currentTab != null) {
-         *             settings = currentTab.applySettings(settings);
-         *         }
-         *
-         *         // 创建世界
-         *         this.mc.launchIntegratedServer(worldName, worldName, settings);
-         *         this.mc.displayGuiScreen(null);
-         */
 
         String worldName = worldNameField.getText().trim();
         if (worldName.isEmpty()) {
@@ -436,7 +424,7 @@ public class GuiCreateWorldModern extends GuiScreen {
 
         @Override
         public String getTabName() {
-              return I18n.format("worldcreateui.tab.world");
+            return I18n.format("worldcreateui.tab.world");
         }
 
         @Override
@@ -615,11 +603,11 @@ public class GuiCreateWorldModern extends GuiScreen {
 
         @Override
         public void keyTyped(char typedChar, int keyCode) {
-            
+
         }
         @Override
         public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-            
+
         }
         @Override
         public WorldSettings applySettings(WorldSettings settings) { return settings; }
