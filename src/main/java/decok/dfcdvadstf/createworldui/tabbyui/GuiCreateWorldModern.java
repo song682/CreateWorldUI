@@ -160,8 +160,10 @@ public class GuiCreateWorldModern extends GuiScreen {
 
                         TabState state = TabState.getState(isSelected, isHovered);
 
+                        // 绘制标签页背景 - 只绘制纹理，不添加额外边框
                         drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, width, height);
 
+                        // 绘制标签页文本
                         drawCenteredString(mc.fontRenderer, this.displayString,
                                 this.xPosition + this.width / 2,
                                 this.yPosition + (this.height - 8) / 2, state.textColor);
@@ -180,11 +182,11 @@ public class GuiCreateWorldModern extends GuiScreen {
         // 绘制默认背景
         this.drawDefaultBackground();
 
-        // 绘制浅色背景 - 覆盖整个屏幕
+        // 绘制浅色背景 - 使用正确的纹理尺寸（16x16）
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_LIGHT);
-        drawModalRectWithCustomSizedTexture(0, 0, 0, 0, this.width, this.height, this.width, this.height);
+        drawModalRectWithCustomSizedTexture(0, 0, 0, 0, this.width, this.height, 16, 16);
 
-        // 绘制深色内容区域 - 调整位置和大小
+        // 绘制深色内容区域 - 使用正确的纹理尺寸（16x16）
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
         int contentX = 10;
         int contentY = 30;
@@ -192,12 +194,24 @@ public class GuiCreateWorldModern extends GuiScreen {
         int contentHeight = this.height - 40;
         drawModalRectWithCustomSizedTexture(contentX, contentY, 0, 0, contentWidth, contentHeight, 16, 16);
 
-        // 绘制标题
-        this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
+        // 只在Game标签页显示世界名称
+        if (currentTab instanceof GameTab) {
+            // 绘制标题
+            this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
 
-        // 绘制世界名称标签和输入框
-        this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterName"), this.width / 2 - 100, 27, 0xA0A0A0);
-        worldNameField.drawTextBox();
+            // 绘制世界名称标签和输入框
+            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterName"), this.width / 2 - 100, 27, 0xA0A0A0);
+            worldNameField.drawTextBox();
+        } else {
+            // 在其他标签页显示不同的标题
+            String title = "";
+            if (currentTab instanceof WorldTab) {
+                title = I18n.format("createworldui.title.world");
+            } else if (currentTab instanceof MoreTab) {
+                title = I18n.format("createworldui.gamerules.title");
+            }
+            this.drawCenteredString(this.fontRendererObj, title, this.width / 2, 15, 0xFFFFFF);
+        }
 
         // 绘制标签页按钮
         for (GuiButton tabButton : this.tabButtons) {
@@ -454,7 +468,7 @@ public class GuiCreateWorldModern extends GuiScreen {
         return allTabs;
     }
 
-    // ================= 默认标签页实现 =================
+    // ================= Default Tabs =================
 
     /**
      * Game Tab - Including Game modes, difficulty and cheating options
@@ -466,7 +480,7 @@ public class GuiCreateWorldModern extends GuiScreen {
 
         @Override
         public String getTabName() {
-            return I18n.format("worldcreateui.tab.game");
+            return I18n.format("createworldui.tab.game");
         }
 
         @Override
@@ -497,15 +511,15 @@ public class GuiCreateWorldModern extends GuiScreen {
         public void drawScreen(int mouseX, int mouseY, float partialTicks) {
             // 绘制标签页背景
             mc.getTextureManager().bindTexture(TextureManager.OPTIONS_BG_DARK);
-            drawModalRectWithCustomSizedTexture(width / 2 - 110, 70, 0, 0, 220, 150, 16, 16);
+            drawModalRectWithCustomSizedTexture(width / 2 - 110, 70, 0, 0, 220, 100, 16, 16);
 
             // 绘制标签页标题
-            drawCenteredString(fontRendererObj, I18n.format("worldcreateui.title.game"), width / 2, 60, 0xFFFFFF);
+            drawCenteredString(fontRendererObj, I18n.format("createworldui.title.game"), width / 2, 60, 0xFFFFFF);
 
             // 绘制游戏模式描述
             String description = getGameModeDescription();
             List<String> lines = fontRendererObj.listFormattedStringToWidth(description, 180);
-            int yPos = 170;
+            int yPos = 180;
             for (String line : lines) {
                 drawCenteredString(fontRendererObj, line, width / 2, yPos, 0xCCCCCC);
                 yPos += 10;
@@ -519,7 +533,7 @@ public class GuiCreateWorldModern extends GuiScreen {
                 button.displayString = I18n.format("selectWorld.gameMode") + ": " + selectedGameType.getName();
             } else if (button == difficultyButton) {
                 difficulty = (difficulty + 1) % 4;
-                button.displayString = I18n.format("worldcreateui.button.selectWorld.difficulty")+ getDifficultyText();
+                button.displayString = I18n.format("createworldui.button.selectWorld.difficulty")+ getDifficultyText();
             } else if (button == cheatsButton) {
                 allowCommands = !allowCommands;
                 button.displayString = I18n.format("selectWorld.allowCommands") +
@@ -535,10 +549,10 @@ public class GuiCreateWorldModern extends GuiScreen {
 
         private String getDifficultyText() {
             switch (difficulty) {
-                case 0: return I18n.format("worldcreateui.button.selectWorld.difficulty.peaceful");
-                case 1: return I18n.format("worldcreateui.button.selectWorld.difficulty.easy");
-                case 2: return I18n.format("worldcreateui.button.selectWorld.difficulty.normal");
-                case 3: return I18n.format("worldcreateui.button.selectWorld.difficulty.hard");
+                case 0: return I18n.format("createworldui.button.selectWorld.difficulty.peaceful");
+                case 1: return I18n.format("createworldui.button.selectWorld.difficulty.easy");
+                case 2: return I18n.format("createworldui.button.selectWorld.difficulty.normal");
+                case 3: return I18n.format("createworldui.button.selectWorld.difficulty.hard");
                 default: return "";
             }
         }
@@ -569,7 +583,7 @@ public class GuiCreateWorldModern extends GuiScreen {
     }
 
     /**
-     * World 标签页 - 包含世界类型、种子、生成建筑和奖励箱
+     * World Tab - Including World Type, Seed, Generate Structures
      */
     private class WorldTab implements IWorldTab {
         private GuiButton worldTypeButton;
@@ -578,7 +592,7 @@ public class GuiCreateWorldModern extends GuiScreen {
 
         @Override
         public String getTabName() {
-            return I18n.format("worldcreateui.tab.world");
+            return I18n.format("createworldui.tab.world");
         }
 
         @Override
@@ -593,7 +607,7 @@ public class GuiCreateWorldModern extends GuiScreen {
             // 种子输入框
             seedField = new GuiTextField(fontRendererObj, width / 2 - 100, yPos, 200, 20);
             seedField.setText("");
-            yPos += 25;
+            yPos += 30;
 
             // 生成建筑按钮
             mapFeaturesButton = new GuiButton(301, width / 2 - 100, yPos, 200, 20,
@@ -615,10 +629,10 @@ public class GuiCreateWorldModern extends GuiScreen {
         public void drawScreen(int mouseX, int mouseY, float partialTicks) {
             // 绘制标签页背景
             mc.getTextureManager().bindTexture(TextureManager.OPTIONS_BG_DARK);
-            drawModalRectWithCustomSizedTexture(width / 2 - 110, 70, 0, 0, 220, 190, 16, 16);
+            drawModalRectWithCustomSizedTexture(width / 2 - 110, 70, 0, 0, 220, 150, 16, 16);
 
             // 绘制标签页标题
-            drawCenteredString(fontRendererObj, I18n.format("worldcreateui.title.world"), width / 2, 60, 0xFFFFFF);
+            drawCenteredString(fontRendererObj, I18n.format("createworldui.title.world"), width / 2, 60, 0xFFFFFF);
 
             // 绘制种子标签
             drawString(fontRendererObj, I18n.format("selectWorld.enterSeed"), width / 2 - 100, 127, 0xA0A0A0);
@@ -686,7 +700,7 @@ public class GuiCreateWorldModern extends GuiScreen {
 
         @Override
         public String getTabName() {
-            return I18n.format("worldcreateui.tab.more");
+            return I18n.format("createworldui.tab.more");
         }
 
         @Override
@@ -724,14 +738,19 @@ public class GuiCreateWorldModern extends GuiScreen {
         public void drawScreen(int mouseX, int mouseY, float partialTicks) {
             // 绘制标签页背景
             mc.getTextureManager().bindTexture(TextureManager.OPTIONS_BG_DARK);
-            drawModalRectWithCustomSizedTexture(width / 2 - 110, 70, 0, 0, 220, 190, 16, 16);
+            drawModalRectWithCustomSizedTexture(width / 2 - 110, 70, 0, 0, 220, 120, 16, 16);
 
             // 绘制标签页标题
             drawCenteredString(fontRendererObj, I18n.format("createworldui.gamerules.title"), width / 2, 60, 0xFFFFFF);
 
             // 绘制实验性警告
-            drawCenteredString(fontRendererObj, I18n.format("createworldui.experimental.warning"),
-                    width / 2, 170, 0xFF5555);
+            List<String> warningLines = fontRendererObj.listFormattedStringToWidth(
+                    I18n.format("createworldui.experimental.warning"), 180);
+            int yPos = 200;
+            for (String line : warningLines) {
+                drawCenteredString(fontRendererObj, line, width / 2, yPos, 0xFF5555);
+                yPos += 10;
+            }
         }
 
         @Override
