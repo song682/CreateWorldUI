@@ -4,10 +4,9 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.eventhandler.EventPriority;
 import decok.dfcdvadstf.createworldui.tabbyui.GuiCreateWorldModern;
-import decok.dfcdvadstf.createworldui.api.WorldCreationCheck;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
@@ -15,12 +14,16 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
 import java.lang.reflect.Field;
 
 @Mod(modid = Tags.MODID, name = Tags.NAME, version = Tags.VERSION)
 public class CreateWorldUI {
 
     private static Logger logger;
+
+    // 强制使用现代UI（调试模式）
+    private static final boolean FORCE_MODERN_UI = true;
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
@@ -42,8 +45,8 @@ public class CreateWorldUI {
         if (event.gui instanceof GuiCreateWorld) {
             logger.info("Detected GuiCreateWorld opening");
 
-            // 强制使用现代UI（调试模式）
-            if (WorldCreationCheck.shouldUseModernUI()) {
+            // 检查是否应该使用现代UI
+            if (shouldUseModernUI()) {
                 logger.info("Using modern world creation UI");
 
                 // 获取父屏幕
@@ -54,6 +57,30 @@ public class CreateWorldUI {
             } else {
                 logger.info("Using vanilla world creation UI");
             }
+        }
+    }
+
+    /**
+     * 检查是否应该使用现代UI
+     */
+    private boolean shouldUseModernUI() {
+        // 调试模式下总是返回true
+        if (FORCE_MODERN_UI) {
+            logger.info("DEBUG MODE: Forcing modern UI");
+            return true;
+        }
+
+        try {
+            File savesDir = new File(Minecraft.getMinecraft().mcDataDir, "saves");
+            boolean exists = savesDir.exists();
+            boolean isEmpty = !exists || (savesDir.list() != null && savesDir.list().length == 0);
+
+            logger.info("Saves directory check: exists=" + exists + ", empty=" + isEmpty);
+
+            return isEmpty;
+        } catch (Exception e) {
+            logger.error("Error checking saves directory", e);
+            return true;
         }
     }
 
