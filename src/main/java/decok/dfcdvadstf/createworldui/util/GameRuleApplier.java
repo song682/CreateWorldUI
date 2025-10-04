@@ -1,4 +1,4 @@
-package decokalt.dfcdvadstf.createworldui.util;
+package decok.dfcdvadstf.createworldui.util;
 
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
