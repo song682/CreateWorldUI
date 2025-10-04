@@ -1,7 +1,7 @@
-package decokalt.dfcdvadstf.createworldui.editor;
+package decok.dfcdvadstf.createworldui.editor;
 
-import decokalt.dfcdvadstf.createworldui.util.GameRuleMonitorNSetter;
-import decokalt.dfcdvadstf.createworldui.util.GameRuleMonitorNSetter.GameruleValue;
+import decok.dfcdvadstf.createworldui.util.GameRuleMonitorNSetter;
+import decok.dfcdvadstf.createworldui.util.GameRuleMonitorNSetter.GameruleValue;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;

@@ -1,6 +1,6 @@
-package decokalt.dfcdvadstf.createworldui.mixin;
+package decok.dfcdvadstf.createworldui.mixin;
 
-import decokalt.dfcdvadstf.createworldui.api.TabState;
+import decok.dfcdvadstf.createworldui.api.TabState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -22,7 +22,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import static decokalt.dfcdvadstf.createworldui.api.util.TextureHelper.drawModalRectWithCustomSizedTexture;
+import static decok.dfcdvadstf.createworldui.api.util.TextureHelper.drawModalRectWithCustomSizedTexture;
 
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)

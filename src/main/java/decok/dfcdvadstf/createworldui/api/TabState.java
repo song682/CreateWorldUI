@@ -1,4 +1,4 @@
-package decokalt.dfcdvadstf.createworldui.api;
+package decok.dfcdvadstf.createworldui.api;
 
 public enum TabState {
     NORMAL(0, 0, 0xE0E0E0),
