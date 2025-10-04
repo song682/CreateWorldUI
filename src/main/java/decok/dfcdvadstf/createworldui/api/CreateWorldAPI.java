@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.api;
+package decokalt.dfcdvadstf.createworldui.api;
 
 import java.io.IOException;
 import java.util.*;
