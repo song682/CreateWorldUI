@@ -27,11 +27,6 @@ public class CreateWorldAPI {
     }
 
     public static interface IWorldTab {
-        /**
-         * A {@code getTabName()} is a method that can be used to get a tab's name, can be returned with a string; support Localization.
-         * <p>
-         * A {@code initGui(GuiScreen parent, WorldSettings settings)}
-         */
         String getTabName();
         void initGui(GuiScreen parent, WorldSettings settings);
         void drawScreen(int mouseX, int mouseY, float partialTicks);

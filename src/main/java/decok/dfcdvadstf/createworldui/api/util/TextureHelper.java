@@ -18,8 +18,6 @@ public class TextureHelper {
      * @param textureWidth 纹理实际宽度（像素）
      * @param textureHeight 纹理实际高度（像素）
      * @param tileScale 平铺缩放比例（1.0为原始尺寸）
-     *
-     * @author dfdvdsf
      */
 
     public static void drawCustomTexturedRect(

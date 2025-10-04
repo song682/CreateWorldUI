@@ -5,7 +5,6 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.util.ResourceLocation;
 
 public class TexturedButton extends GuiButton {
-
     private final ResourceLocation texture;
     private final int texU;
     private final int texV;
