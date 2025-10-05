@@ -5,7 +5,12 @@
 This mod is focused on the backporting of modern creating world GUI for creating your world as modern players do.
 
 ## Status 
+
 Alpha stage. Don't try to use it, or build it before it come into alpha era. Nothing that is caused by you building & using it will be guranteed.   
+
+## Credits
+
+[This website](https://mappings.dev/1.8.8/index.html) helped me to solve the issue of obfuscated name.
 
 ## Licence
 
