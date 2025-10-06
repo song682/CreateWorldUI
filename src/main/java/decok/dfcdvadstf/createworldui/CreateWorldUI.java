@@ -16,26 +16,10 @@ public class CreateWorldUI {
 
     private static Logger logger;
 
-    @Instance(Tags.MODID)
-    public static Tags INSTANCE;
-
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         logger = event.getModLog();
         logger.info("Initializing CreateWorldUI Mod");
-
-        // 初始化Mixin
-        try {
-            // 正确的Forge Mixin初始化方式
-            MixinBootstrap.init();
-            Mixins.addConfiguration("mixins.moderncreateworldui.json");
-            MixinEnvironment.getDefaultEnvironment().setSide(MixinEnvironment.Side.CLIENT);
-        } catch (Exception e) {
-            logger.error("Mixin initialization failed", e);
-        }
-
-        // 注册事件处理器
-        MinecraftForge.EVENT_BUS.register(this);
     }
 
     @EventHandler

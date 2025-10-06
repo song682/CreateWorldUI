@@ -1,9 +1,9 @@
-package decok.dfcdvadstf.createworldui.util;
+package decok.dfcdvadstf.createworldui.gamerule;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.Map;
 

@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.createworldui.api.TabState;
+import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -18,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
 
-import static decok.dfcdvadstf.createworldui.api.util.TextureHelper.drawModalRectWithCustomSizedTexture;
+import static decok.dfcdvadstf.createworldui.api.TextureHelper.drawModalRectWithCustomSizedTexture;
 
 
 @SuppressWarnings("unchecked")
@@ -28,8 +29,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
     /***
      * 
      */
-    @Unique
-    private static Logger modernWorldCreatingUI$logger;
+
     @Shadow
     private GuiScreen field_146332_f; //parentScreen
     @Shadow
@@ -157,6 +157,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
         this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 100, 215, 200, 20, ""));
         this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 100, 240, 200, 20, ""));
         this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 - 100, 265, 200, 20, I18n.format("selectWorld.customizeType")));
+        this.buttonList.add(new GuiButton(200, this.width / 2 - 100, 140, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
 
         // 更新按钮文本
         modernWorldCreatingUI$updateButtonText();
@@ -169,19 +170,19 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 I18n.format("selectWorld.gameMode." + this.field_146342_r);
 
         // 更新生成建筑按钮文本
-        this.field_146325_B.displayString = I18n.format("selectWorld.mapFeatures") + " " +
+        this.field_146325_B.displayString = I18n.format("selectWorld.mapFeatures") +
                 (this.field_146341_s ? I18n.format("options.on") : I18n.format("options.off"));
 
         // 更新奖励箱按钮文本
-        this.field_146326_C.displayString = I18n.format("selectWorld.bonusItems") + " " +
+        this.field_146326_C.displayString = I18n.format("selectWorld.bonusItems") +
                 (this.field_146338_v && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
 
         // 更新世界类型按钮文本
-        this.field_146320_D.displayString = I18n.format("selectWorld.mapType") + " " +
+        this.field_146320_D.displayString = I18n.format("selectWorld.mapType") +
                 I18n.format(WorldType.worldTypes[this.field_146331_K].getTranslateName());
 
         // 更新允许作弊按钮文本
-        this.field_146321_E.displayString = I18n.format("selectWorld.allowCommands") + " " +
+        this.field_146321_E.displayString = I18n.format("selectWorld.allowCommands") +
                 (this.field_146340_t && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
     }
 
@@ -196,6 +197,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 this.field_146326_C.visible = false;
                 this.field_146320_D.visible = false;
                 this.field_146322_F.visible = false;
+                getButtonById(200).visible = false;
                 break;
             case 101: // 世界 Tab
                 this.field_146343_z.visible = false;
@@ -204,6 +206,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 this.field_146326_C.visible = true;
                 this.field_146320_D.visible = true;
                 this.field_146322_F.visible = WorldType.worldTypes[this.field_146331_K].isCustomizable();
+                getButtonById(200).visible = false;
                 break;
             case 102: // 更多 Tab
                 this.field_146343_z.visible = false;
@@ -212,6 +215,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 this.field_146326_C.visible = false;
                 this.field_146320_D.visible = false;
                 this.field_146322_F.visible = false;
+                getButtonById(200).visible = true;
                 break;
         }
 
@@ -221,8 +225,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
 
     @Overwrite
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        this.mc.getTextureManager().bindTexture(OPTIONS_BG_LIGHT);
-        drawModalRectWithCustomSizedTexture(0, 0, 0, 0, this.width, this.height, 16, 16);
+        drawModalRectWithCustomSizedTexture(OPTIONS_BG_LIGHT, 0, 0, 16, 16,this.width, this.height, 16, 16);
 
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
 
@@ -270,22 +273,35 @@ public abstract class ModernCreateWorld extends GuiScreen {
             return;
         }
 
+        // 处理游戏规则编辑器按钮
+        if (button.id == 200) {
+            // 打开游戏规则编辑器
+            // 注意：这里传入null作为world参数，因为创建世界界面还没有world对象
+            // 你可能需要修改GameRuleEditor来支持创建新世界时的游戏规则设置
+            this.mc.displayGuiScreen(new GameRuleEditor(null));
+            ci.cancel();
+            return;
+        }
+
         // 对于原版按钮，更新文本显示
         if (button.id == 2 || button.id == 4 || button.id == 5 || button.id == 6 || button.id == 7) {
-            // 这些按钮的动作会在原版逻辑中处理，我们只需要更新显示
-            // 使用延迟更新，确保原版逻辑先执行
-            new java.util.Timer().schedule(
-                    new java.util.TimerTask() {
-                        @Override
-                        public void run() {
-                            Minecraft.getMinecraft().func_152344_a(() -> {
-                                modernWorldCreatingUI$updateButtonText();
-                            });
-                        }
-                    },
-                    10
-            );
+            // 创建一个延迟更新任务
+            modernWorldCreatingUI$scheduleButtonTextUpdate();
         }
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$scheduleButtonTextUpdate() {
+        // 创建一个简单的 Runnable 来更新按钮文本
+        Runnable updateTask = new Runnable() {
+            @Override
+            public void run() {
+                modernWorldCreatingUI$updateButtonText();
+            }
+        };
+
+        // 使用 Minecraft 的任务调度系统
+        Minecraft.getMinecraft().func_152344_a(updateTask);
     }
 
     @Override
@@ -320,6 +336,19 @@ public abstract class ModernCreateWorld extends GuiScreen {
         } else {
             field_146335_h.mouseClicked(mouseX, mouseY, mouseButton);
         }
+    }
+
+    @Unique
+    private GuiButton getButtonById(int id) {
+        for (Object obj : this.buttonList) {
+            if (obj instanceof GuiButton) {
+                GuiButton button = (GuiButton) obj;
+                if (button.id == id) {
+                    return button;
+                }
+            }
+        }
+        return null;
     }
 
     // 保留原版的世界名称处理方法

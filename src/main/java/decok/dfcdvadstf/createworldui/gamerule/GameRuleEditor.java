@@ -1,11 +1,12 @@
-package decok.dfcdvadstf.createworldui.editor;
+package decok.dfcdvadstf.createworldui.gamerule;
 
-import decok.dfcdvadstf.createworldui.util.GameRuleMonitorNSetter;
-import decok.dfcdvadstf.createworldui.util.GameRuleMonitorNSetter.GameruleValue;
+import decok.dfcdvadstf.createworldui.api.TextureHelper;
+import decok.dfcdvadstf.createworldui.gamerule.GameRuleMonitorNSetter.GameruleValue;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,6 +21,10 @@ import java.util.Map;
 public class GameRuleEditor extends GuiScreen {
 
     private static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
+
+    // 背景纹理
+    private static final ResourceLocation BACKGROUND_TEXTURE = new ResourceLocation("textures/gui/demo_background.png");
+    private static final ResourceLocation PANEL_TEXTURE = new ResourceLocation("textures/gui/options_background.png");
 
     private World world;
     private Map<String, GameruleValue> originalRules;
@@ -65,7 +70,7 @@ public class GameRuleEditor extends GuiScreen {
 
     private void createRuleComponents() {
         ruleComponents.clear();
-        int yPos = 40;
+        int yPos = 60; // 调整Y位置以适应新的标题栏
         int index = 0;
 
         for (Map.Entry<String, GameruleValue> entry : originalRules.entrySet()) {
@@ -193,7 +198,7 @@ public class GameRuleEditor extends GuiScreen {
 
         // 检查是否点击了滚动条区域
         int scrollBarX = this.width / 2 - 10;
-        int scrollBarY = 40;
+        int scrollBarY = 60;
         int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
 
         if (mouseX >= scrollBarX && mouseX <= scrollBarX + 10 &&
@@ -220,7 +225,7 @@ public class GameRuleEditor extends GuiScreen {
 
         if (this.isScrolling) {
             // 处理滚动条拖动
-            int scrollBarY = 40;
+            int scrollBarY = 60;
             int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
 
             float relativePosition = (float)(mouseY - scrollBarY) / scrollBarHeight;
@@ -250,8 +255,14 @@ public class GameRuleEditor extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        this.drawDefaultBackground();
-        this.drawCenteredString(this.fontRendererObj, I18n.format("createWorld.customize.custom.gamerules"), this.width / 2, 10, 0xFFFFFF);
+        // 绘制背景
+        drawBackground();
+
+        // 绘制内容面板
+        drawContentPanel();
+
+        // 绘制标题
+        this.drawCenteredString(this.fontRendererObj, I18n.format("createWorld.customize.custom.gamerules"), this.width / 2, 20, 0xFFFFFF);
 
         // 绘制规则列表
         drawRuleList(mouseX, mouseY);
@@ -276,9 +287,47 @@ public class GameRuleEditor extends GuiScreen {
         drawTooltips(mouseX, mouseY);
     }
 
+    private void drawBackground() {
+        // 绘制渐变背景
+        TextureHelper.drawGradientBackground(this.width, this.height);
+
+        // 可选：绘制纹理背景
+        try {
+            TextureHelper.drawCustomTexturedRect(
+                    BACKGROUND_TEXTURE,
+                    0, 0, 0, 0,
+                    this.width, this.height,
+                    16, 16, 4.0f
+            );
+        } catch (Exception e) {
+            // 如果纹理加载失败，使用纯色背景
+            drawDefaultBackground();
+        }
+    }
+
+    private void drawContentPanel() {
+        int panelWidth = this.width - 100;
+        int panelHeight = this.height - 100;
+        int panelX = 50;
+        int panelY = 40;
+
+        // 绘制半透明内容面板
+        drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xAA222222);
+
+        // 绘制面板边框
+        drawRect(panelX - 1, panelY - 1, panelX + panelWidth + 1, panelY, 0xFF555555); // 上边框
+        drawRect(panelX - 1, panelY + panelHeight, panelX + panelWidth + 1, panelY + panelHeight + 1, 0xFF555555); // 下边框
+        drawRect(panelX - 1, panelY, panelX, panelY + panelHeight, 0xFF555555); // 左边框
+        drawRect(panelX + panelWidth, panelY, panelX + panelWidth + 1, panelY + panelHeight, 0xFF555555); // 右边框
+
+        // 绘制标题栏
+        drawRect(panelX, panelY, panelX + panelWidth, panelY + 20, 0xAA444444);
+        drawRect(panelX, panelY + 20, panelX + panelWidth, panelY + 21, 0xFF666666); // 标题栏分隔线
+    }
+
     private void drawRuleList(int mouseX, int mouseY) {
         int index = 0;
-        int yPos = 40;
+        int yPos = 60;
 
         for (Map.Entry<String, GameruleValue> entry : originalRules.entrySet()) {
             if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
@@ -305,25 +354,26 @@ public class GameRuleEditor extends GuiScreen {
     private void drawScrollBar() {
         if (maxScrollOffset > 0) {
             int scrollBarX = this.width / 2 - 10;
-            int scrollBarY = 40;
+            int scrollBarY = 60;
             int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
 
             // 绘制滚动条背景
-            drawRect(scrollBarX, scrollBarY, scrollBarX + 10, scrollBarY + scrollBarHeight, 0xFF000000);
-            drawRect(scrollBarX + 1, scrollBarY + 1, scrollBarX + 9, scrollBarY + scrollBarHeight - 1, 0xFF666666);
+            drawRect(scrollBarX, scrollBarY, scrollBarX + 10, scrollBarY + scrollBarHeight, 0xAA333333);
+            drawRect(scrollBarX + 1, scrollBarY + 1, scrollBarX + 9, scrollBarY + scrollBarHeight - 1, 0xAA555555);
 
             // 绘制滚动条滑块
             float scrollPercentage = (float) scrollOffset / maxScrollOffset;
             int sliderHeight = Math.max(20, scrollBarHeight / (maxScrollOffset + VISIBLE_ROWS) * VISIBLE_ROWS);
             int sliderY = scrollBarY + (int) (scrollPercentage * (scrollBarHeight - sliderHeight));
 
-            drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight, 0xFFCCCCCC);
+            drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight, 0xFF888888);
+            drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight - 1, 0xFFAAAAAA);
         }
     }
 
     private void drawTooltips(int mouseX, int mouseY) {
         int index = 0;
-        int yPos = 40;
+        int yPos = 60;
 
         for (String ruleName : originalRules.keySet()) {
             if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
@@ -361,9 +411,15 @@ public class GameRuleEditor extends GuiScreen {
             defaultDescriptions.put("doMobSpawning", "Natural mob spawning");
             defaultDescriptions.put("doMobLoot", "Mobs drop loot");
             defaultDescriptions.put("doTileDrops", "Blocks drop items when destroyed");
+            defaultDescriptions.put("doEntityDrops", "Entities drop items");
             defaultDescriptions.put("commandBlockOutput", "Command blocks output to chat");
             defaultDescriptions.put("naturalRegeneration", "Natural health regeneration");
             defaultDescriptions.put("doDaylightCycle", "Day/night cycle");
+            defaultDescriptions.put("logAdminCommands", "Log admin commands to server log");
+            defaultDescriptions.put("showDeathMessages", "Show death messages in chat");
+            defaultDescriptions.put("randomTickSpeed", "Random tick speed (plant growth, etc.)");
+            defaultDescriptions.put("sendCommandFeedback", "Show command execution feedback");
+            defaultDescriptions.put("reducedDebugInfo", "Reduce debug screen information");
 
             return defaultDescriptions.get(ruleName);
         }
