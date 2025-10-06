@@ -6,7 +6,7 @@ This mod is focused on the backporting of modern creating world GUI for creating
 
 ## Status 
 
-Alpha stage. Don't try to use it, or build it before it come into alpha era. Nothing that is caused by you building & using it will be guranteed.   
+Alpha stage. Don't try to use it, or build it before it come into beta age. Nothing that is caused by you building & using it will be guranteed.   
 
 ## Credits
 
@@ -15,5 +15,5 @@ Alpha stage. Don't try to use it, or build it before it come into alpha era. Not
 ## Licence
 
 Code - [MIT Licence](LICENSE)    
-Textures (PreAlpha) - Copyright © 2025 dfdvdsf. All Rights Reserved.
+Textures (PreAlpha, Alpha) - Copyright © 2025 dfdvdsf. All Rights Reserved.
 
