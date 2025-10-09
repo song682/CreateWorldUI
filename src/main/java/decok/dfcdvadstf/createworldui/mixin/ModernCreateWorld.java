@@ -10,8 +10,6 @@ import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
-import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -29,7 +27,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
     /***
      * 
      */
-
     @Shadow
     private GuiScreen field_146332_f; //parentScreen
     @Shadow
@@ -59,7 +56,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Shadow
     private GuiButton field_146320_D; // 世界类型选择按钮
     @Shadow
-    private GuiButton field_146325_B; // 生成建筑
+    private GuiButton field_146325_B; // 生成建筑按钮
     @Shadow
     private GuiButton field_146322_F; // 自定义（预设）
     @Shadow
@@ -69,6 +66,8 @@ public abstract class ModernCreateWorld extends GuiScreen {
     private int modernWorldCreatingUI$currentTab = 100; // 100: Game, 101: World, 102: More
     @Unique
     private final List<GuiButton> modernWorldCreatingUI$tabButtons = new ArrayList<>();
+    @Unique
+    private boolean modernWorldCreatingUI$isReorganizing = false;
     @Unique
     private final Map<Integer, GuiButton> modernWorldCreatingUI$tabControls = new HashMap<>();
     @Unique
@@ -82,34 +81,145 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Unique
     private static final int TAB_HEIGHT = 24;
 
-    @Inject(method = "initGui", at = @At("HEAD"), cancellable = true)
-    private void initModernGui(CallbackInfo ci) {
-        ci.cancel();
-        Keyboard.enableRepeatEvents(true);
+    @Inject(method = "initGui", at = @At("HEAD"))
+    private void onInitGuiHead(CallbackInfo ci) {
+        // 在头部保存一些关键状态或执行预处理
+        // 这里可以保存原版的某些状态，或者准备自定义初始化
+        modernWorldCreatingUI$preInit();
+    }
+
+    @Inject(method = "initGui", at = @At("TAIL"))
+    private void onInitGuiTail(CallbackInfo ci) {
+        // 在原版初始化完成后，重新组织界面为 Tab 布局
+        modernWorldCreatingUI$reorganizeToTabLayout();
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$preInit() {
+
+        // 2. 确保关键字段不为null
+        modernWorldCreatingUI$ensureFieldsNotNull();
+
+        // 3. 设置初始化标志
+        modernWorldCreatingUI$isReorganizing = true;
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$ensureFieldsNotNull() {
+        // 确保关键字段不为null，防止后续出现NPE
+        if (this.field_146330_J == null) {
+            this.field_146330_J = "New World";
+        }
+        if (this.field_146329_I == null) {
+            this.field_146329_I = "";
+        }
+        if (this.field_146342_r == null) {
+            this.field_146342_r = "survival";
+        }
+        if (WorldType.worldTypes == null || this.field_146331_K >= WorldType.worldTypes.length ||
+                WorldType.worldTypes[this.field_146331_K] == null) {
+            this.field_146331_K = 0;
+        }
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$reorganizeToTabLayout() {
+        // 保存必要的按钮
+        List<GuiButton> essentialButtons = modernWorldCreatingUI$collectEssentialButtons();
+
+        // 清空并重新构建界面
         this.buttonList.clear();
         this.modernWorldCreatingUI$tabButtons.clear();
+        this.buttonList.addAll(essentialButtons);
 
-        // 初始化输入框
-        field_146333_g = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, 40, 200, 20);
-        field_146333_g.setFocused(true);
-        field_146333_g.setText(this.field_146330_J);
-
-        field_146335_h = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, 100, 200, 20);
-        field_146335_h.setText(this.field_146329_I);
-
-        // 创建 Tab 按钮
+        // 创建Tab界面
         modernWorldCreatingUI$createTabButtons();
-
-        // 添加原版的功能按钮（但根据当前 Tab 设置可见性）
-        modernWorldCreatingUI$addOriginalButtons();
-
-        // 更新按钮可见性
+        modernWorldCreatingUI$recreateFunctionalButtons();
+        modernWorldCreatingUI$setupTextFields();
         modernWorldCreatingUI$updateButtonVisibility();
+        modernWorldCreatingUI$repositionActionButtons();
+
+        modernWorldCreatingUI$isReorganizing = false;
+    }
+
+    @Unique
+    private List<GuiButton> modernWorldCreatingUI$collectEssentialButtons() {
+        List<GuiButton> essentialButtons = new ArrayList<>();
+        for (GuiButton button : (List<GuiButton>) this.buttonList) {
+            if (button.id == 0 || button.id == 1) { // 创建和取消按钮
+                essentialButtons.add(button);
+            }
+        }
+        return essentialButtons;
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$recreateFunctionalButtons() {
+        // 重新创建所有功能按钮，使用新的位置
+        this.buttonList.add(this.field_146343_z = new GuiButton(2, this.width / 2 - 100, 140, 200, 20, ""));
+        this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 - 100, 165, 200, 20, ""));
+        this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 - 100, 190, 200, 20, ""));
+        this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 100, 215, 200, 20, ""));
+        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 100, 240, 200, 20, ""));
+        this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 - 100, 265, 200, 20, I18n.format("selectWorld.customizeType")));
+        this.buttonList.add(new GuiButton(200, this.width / 2 - 100, 140, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
+
+        // 更新按钮文本
+        modernWorldCreatingUI$updateButtonText();
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$setupTextFields() {
+        // 确保输入框使用正确的位置
+        if (field_146333_g != null) {
+            field_146333_g.xPosition = this.width / 2 - 100;
+            field_146333_g.yPosition = 40;
+        } else {
+            field_146333_g = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, 40, 200, 20);
+            field_146333_g.setText(this.field_146330_J);
+        }
+
+        if (field_146335_h != null) {
+            field_146335_h.xPosition = this.width / 2 - 100;
+            field_146335_h.yPosition = 100;
+        } else {
+            field_146335_h = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, 100, 200, 20);
+            field_146335_h.setText(this.field_146329_I);
+        }
+
+        field_146333_g.setFocused(true);
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$repositionActionButtons() {
+        // 确保创建和取消按钮在底部正确位置
+        GuiButton createButton = modernWorldCreatingUI$getButtonById(0);
+        GuiButton cancelButton = modernWorldCreatingUI$getButtonById(1);
+
+        if (createButton != null) {
+            createButton.xPosition = this.width / 2 - 155;
+            createButton.yPosition = this.height - 28;
+            createButton.width = 150;
+            createButton.height = 20;
+        }
+
+        if (cancelButton != null) {
+            cancelButton.xPosition = this.width / 2 + 5;
+            cancelButton.yPosition = this.height - 28;
+            cancelButton.width = 150;
+            cancelButton.height = 20;
+        }
     }
 
     @Unique
     private void modernWorldCreatingUI$createTabButtons() {
-        int xPos = this.width / 2 - 125;
+        // 清空现有的 Tab 按钮
+        this.modernWorldCreatingUI$tabButtons.clear();
+
+        // 计算总宽度：3个tab + 2个间隔
+        int totalWidth = TAB_WIDTH * 3 + 5 * 2;
+        // 计算起始位置，让整个tab组居中
+        int startX = this.width / 2 - totalWidth / 2;
         int yPos = 5;
         String[] tabNames = {
                 I18n.format("createworldui.tab.game"),
@@ -118,6 +228,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
         };
 
         for (int i = 0; i < 3; i++) {
+            int xPos = startX + i * (TAB_WIDTH + 5);
             GuiButton tabButton = new GuiButton(100 + i, xPos, yPos, TAB_WIDTH, TAB_HEIGHT, tabNames[i]) {
                 @Override
                 public void drawButton(Minecraft mc, int mouseX, int mouseY) {
@@ -140,31 +251,19 @@ public abstract class ModernCreateWorld extends GuiScreen {
             };
             modernWorldCreatingUI$tabButtons.add(tabButton);
             this.buttonList.add(tabButton);
-            xPos += TAB_WIDTH + 5;
         }
     }
 
     @Unique
-    private void modernWorldCreatingUI$addOriginalButtons() {
-        // 创建和取消按钮（始终显示在底部）
-        this.buttonList.add(new GuiButton(0, this.width / 2 - 155, this.height - 28, 150, 20, I18n.format("selectWorld.create")));
-        this.buttonList.add(new GuiButton(1, this.width / 2 + 5, this.height - 28, 150, 20, I18n.format("gui.cancel")));
-
-        // 原版的功能按钮（位置调整到合适的位置）
-        this.buttonList.add(this.field_146343_z = new GuiButton(2, this.width / 2 - 100, 140, 200, 20, ""));
-        this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 - 100, 165, 200, 20, ""));
-        this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 - 100, 190, 200, 20, ""));
-        this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 100, 215, 200, 20, ""));
-        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 100, 240, 200, 20, ""));
-        this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 - 100, 265, 200, 20, I18n.format("selectWorld.customizeType")));
-        this.buttonList.add(new GuiButton(200, this.width / 2 - 100, 140, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
-
-        // 更新按钮文本
-        modernWorldCreatingUI$updateButtonText();
-    }
-
-    @Unique
     private void modernWorldCreatingUI$updateButtonText() {
+        // 确保字段不为空
+        if (this.field_146342_r == null) {
+            this.field_146342_r = "survival";
+        }
+        if (WorldType.worldTypes == null || this.field_146331_K >= WorldType.worldTypes.length || WorldType.worldTypes[this.field_146331_K] == null) {
+            this.field_146331_K = 0; // 重置为默认世界类型
+        }
+
         // 更新游戏模式按钮文本
         this.field_146343_z.displayString = I18n.format("selectWorld.gameMode") + " " +
                 I18n.format("selectWorld.gameMode." + this.field_146342_r);
@@ -186,18 +285,31 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 (this.field_146340_t && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
     }
 
+    /**
+     * <p>
+     *    根据当前 Tab 显示/隐藏相应的按钮（标签页由ID判断。）<br>
+     *    100 -> 游戏<br>
+     *    101 -> 世界<br>
+     *    102 -> 更多
+     * </p>
+     * <p>
+     *     Show or hide the correlate buttons based on the current tabs. (Tabs judging by ID)<br>
+     *     100 -> Game<br>
+     *     101 -> World<br>
+     *     102 -> More
+     * </p>
+     */
     @Unique
     private void modernWorldCreatingUI$updateButtonVisibility() {
-        // 根据当前 Tab 显示/隐藏相应的按钮
         switch (modernWorldCreatingUI$currentTab) {
-            case 100: // 游戏 Tab
+            case 100:
                 this.field_146343_z.visible = true;
                 this.field_146321_E.visible = true;
                 this.field_146325_B.visible = false;
                 this.field_146326_C.visible = false;
                 this.field_146320_D.visible = false;
                 this.field_146322_F.visible = false;
-                getButtonById(200).visible = false;
+                modernWorldCreatingUI$getButtonById(200).visible = false;
                 break;
             case 101: // 世界 Tab
                 this.field_146343_z.visible = false;
@@ -206,7 +318,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 this.field_146326_C.visible = true;
                 this.field_146320_D.visible = true;
                 this.field_146322_F.visible = WorldType.worldTypes[this.field_146331_K].isCustomizable();
-                getButtonById(200).visible = false;
+                modernWorldCreatingUI$getButtonById(200).visible = false;
                 break;
             case 102: // 更多 Tab
                 this.field_146343_z.visible = false;
@@ -215,7 +327,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 this.field_146326_C.visible = false;
                 this.field_146320_D.visible = false;
                 this.field_146322_F.visible = false;
-                getButtonById(200).visible = true;
+                modernWorldCreatingUI$getButtonById(200).visible = true;
                 break;
         }
 
@@ -223,11 +335,27 @@ public abstract class ModernCreateWorld extends GuiScreen {
         modernWorldCreatingUI$updateButtonText();
     }
 
+    /**
+     * @param mouseX As vanilla done.
+     * @param mouseY Same to mouseX
+     * @param partialTicks Same to mouseX
+     * @author
+     * @reason
+     */
     @Overwrite
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        drawModalRectWithCustomSizedTexture(OPTIONS_BG_LIGHT, 0, 0, 16, 16,this.width, this.height, 16, 16);
+        // 绘制主背景
+        drawModalRectWithCustomSizedTexture(OPTIONS_BG_LIGHT, 0, 0, 16, 16, this.width, this.height, 16, 16);
 
+        // 在顶部绘制暗黑色背景，从(0,0)到(width, tabs底部)
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
+
+        // 计算Tab背景区域：从左上角(0,0)开始，宽度为整个窗口宽度，高度到Tabs底部
+        int tabBackgroundBottom = 5 + TAB_HEIGHT; // Tabs的y位置 + Tabs高度
+
+        // 绘制暗黑色背景区域
+        drawModalRectWithCustomSizedTexture(OPTIONS_BG_DARK,0, 0, 16, 16,
+                this.width, 5 + TAB_HEIGHT, 16, 16);
 
         this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
 
@@ -275,19 +403,36 @@ public abstract class ModernCreateWorld extends GuiScreen {
 
         // 处理游戏规则编辑器按钮
         if (button.id == 200) {
-            // 打开游戏规则编辑器
-            // 注意：这里传入null作为world参数，因为创建世界界面还没有world对象
-            // 你可能需要修改GameRuleEditor来支持创建新世界时的游戏规则设置
             this.mc.displayGuiScreen(new GameRuleEditor(null));
             ci.cancel();
             return;
         }
 
-        // 对于原版按钮，更新文本显示
+        // 处理世界类型选择按钮
+        if (button.id == 5) {
+            modernWorldCreatingUI$handleWorldTypeSelection();
+            ci.cancel();
+            return;
+        }
+
+        // 对于其他原版按钮，更新文本显示
         if (button.id == 2 || button.id == 4 || button.id == 5 || button.id == 6 || button.id == 7) {
-            // 创建一个延迟更新任务
             modernWorldCreatingUI$scheduleButtonTextUpdate();
         }
+    }
+
+    @Unique
+    private void modernWorldCreatingUI$handleWorldTypeSelection() {
+        // 循环选择世界类型
+
+        // 跳过空的世界类型
+        do {
+            this.field_146331_K = (this.field_146331_K + 1) % WorldType.worldTypes.length;
+        } while (WorldType.worldTypes[this.field_146331_K] == null);
+
+        // 更新按钮文本和可见性
+        modernWorldCreatingUI$updateButtonText();
+        modernWorldCreatingUI$updateButtonVisibility();
     }
 
     @Unique
@@ -304,6 +449,12 @@ public abstract class ModernCreateWorld extends GuiScreen {
         Minecraft.getMinecraft().func_152344_a(updateTask);
     }
 
+    /**
+     * @author
+     * @reason
+     * @param typedChar
+     * @param keyCode
+     */
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
         // 根据当前 Tab 处理不同的输入框
@@ -326,6 +477,13 @@ public abstract class ModernCreateWorld extends GuiScreen {
         this.func_146314_g();
     }
 
+    /**
+     * @author
+     * @reason
+     * @param mouseX
+     * @param mouseY
+     * @param mouseButton
+     */
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
@@ -339,7 +497,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
     }
 
     @Unique
-    private GuiButton getButtonById(int id) {
+    private GuiButton modernWorldCreatingUI$getButtonById(int id) {
         for (Object obj : this.buttonList) {
             if (obj instanceof GuiButton) {
                 GuiButton button = (GuiButton) obj;
