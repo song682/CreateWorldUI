@@ -216,7 +216,10 @@ public abstract class ModernCreateWorld extends GuiScreen {
         // 清空现有的 Tab 按钮
         this.modernWorldCreatingUI$tabButtons.clear();
 
-        int xPos = this.width / 2 - 125;
+        // 计算总宽度：3个tab + 2个间隔
+        int totalWidth = TAB_WIDTH * 3 + 5 * 2;
+        // 计算起始位置，让整个tab组居中
+        int startX = this.width / 2 - totalWidth / 2;
         int yPos = 5;
         String[] tabNames = {
                 I18n.format("createworldui.tab.game"),
@@ -225,6 +228,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
         };
 
         for (int i = 0; i < 3; i++) {
+            int xPos = startX + i * (TAB_WIDTH + 5);
             GuiButton tabButton = new GuiButton(100 + i, xPos, yPos, TAB_WIDTH, TAB_HEIGHT, tabNames[i]) {
                 @Override
                 public void drawButton(Minecraft mc, int mouseX, int mouseY) {
@@ -247,7 +251,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
             };
             modernWorldCreatingUI$tabButtons.add(tabButton);
             this.buttonList.add(tabButton);
-            xPos += TAB_WIDTH + 5;
         }
     }
 
@@ -341,9 +344,18 @@ public abstract class ModernCreateWorld extends GuiScreen {
      */
     @Overwrite
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        drawModalRectWithCustomSizedTexture(OPTIONS_BG_LIGHT, 0, 0, 16, 16,this.width, this.height, 16, 16);
+        // 绘制主背景
+        drawModalRectWithCustomSizedTexture(OPTIONS_BG_LIGHT, 0, 0, 16, 16, this.width, this.height, 16, 16);
 
+        // 在顶部绘制暗黑色背景，从(0,0)到(width, tabs底部)
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
+
+        // 计算Tab背景区域：从左上角(0,0)开始，宽度为整个窗口宽度，高度到Tabs底部
+        int tabBackgroundBottom = 5 + TAB_HEIGHT; // Tabs的y位置 + Tabs高度
+
+        // 绘制暗黑色背景区域
+        drawModalRectWithCustomSizedTexture(OPTIONS_BG_DARK,0, 0, 16, 16,
+                this.width, 5 + TAB_HEIGHT, 16, 16);
 
         this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
 
