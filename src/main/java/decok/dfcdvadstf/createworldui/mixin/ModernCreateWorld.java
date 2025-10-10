@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
+import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
@@ -16,9 +17,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
-
-import static decok.dfcdvadstf.createworldui.api.TextureHelper.drawModalRectWithCustomSizedTexture;
-
 
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)
@@ -68,8 +66,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
     private final List<GuiButton> modernWorldCreatingUI$tabButtons = new ArrayList<>();
     @Unique
     private boolean modernWorldCreatingUI$isReorganizing = false;
-    @Unique
-    private static final ResourceLocation OPTIONS_BG_LIGHT = new ResourceLocation("createworldui:textures/gui/options_background.png");
     @Unique
     private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui:textures/gui/options_background_dark.png");
     @Unique
@@ -337,7 +333,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Overwrite
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         // 绘制主背景
-        drawModalRectWithCustomSizedTexture(OPTIONS_BG_LIGHT, 0, 0, 16, 16, this.width, this.height, 16, 16);
+        this.drawBackground(0);
 
         // 在顶部绘制暗黑色背景，从(0,0)到(width, tabs底部)
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
@@ -345,12 +341,12 @@ public abstract class ModernCreateWorld extends GuiScreen {
         // 计算Tab背景区域：从左上角(0,0)开始，宽度为整个窗口宽度，高度到Tabs底部
         // Tabs的y位置 + Tabs高度
         // 绘制暗黑色背景区域
-        drawModalRectWithCustomSizedTexture(OPTIONS_BG_DARK,0, 0, 0, 0, this.width, 5 + TAB_HEIGHT, 16, 16);
+        this.drawTiledTexture(0, 0, this.width, 5 + TAB_HEIGHT, 16, 16);
 
         // 绘制两条横线
         this.mc.getTextureManager().bindTexture(LINES_TEXTURE);
-        drawModalRectWithCustomSizedTexture(LINES_TEXTURE, 0, 3 + TAB_HEIGHT, 0, 0, this.width, 2, 16, 16);
-        drawModalRectWithCustomSizedTexture(LINES_TEXTURE, 0,  this.height - 35, 0, 3, this.width, 2, 16, 16);
+        this.drawTiledTexture(0, 3 + TAB_HEIGHT, this.width, 2, 16, 16);
+        this.drawTiledTexture(0, this.height - 35, this.width, 2, 16, 16);
 
         this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
 
@@ -427,8 +423,8 @@ public abstract class ModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * @author
-     * @reason
+     * @author dfdvdsf
+     * @reason Enhance the vanillia
      * @param typedChar
      * @param keyCode
      */
@@ -484,6 +480,31 @@ public abstract class ModernCreateWorld extends GuiScreen {
             }
         }
         return null;
+    }
+
+    @Unique
+    private void drawTiledTexture(int x, int y, int width, int height, int textureWidth, int textureHeight) {
+        Tessellator tessellator = Tessellator.instance;
+        tessellator.startDrawingQuads();
+
+        for (int tileX = 0; tileX < width; tileX += textureWidth) {
+            for (int tileY = 0; tileY < height; tileY += textureHeight) {
+                int tileW = Math.min(textureWidth, width - tileX);
+                int tileH = Math.min(textureHeight, height - tileY);
+
+                double u1 = 0.0;
+                double u2 = (double)tileW / (double)textureWidth;
+                double v1 = 0.0;
+                double v2 = (double)tileH / (double)textureHeight;
+
+                tessellator.addVertexWithUV(x + tileX, y + tileY + tileH, 0.0D, u1, v2);
+                tessellator.addVertexWithUV(x + tileX + tileW, y + tileY + tileH, 0.0D, u2, v2);
+                tessellator.addVertexWithUV(x + tileX + tileW, y + tileY, 0.0D, u2, v1);
+                tessellator.addVertexWithUV(x + tileX, y + tileY, 0.0D, u1, v1);
+            }
+        }
+
+        tessellator.draw();
     }
 
     // 保留原版的世界名称处理方法
