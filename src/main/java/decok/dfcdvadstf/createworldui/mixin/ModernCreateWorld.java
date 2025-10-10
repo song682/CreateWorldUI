@@ -24,27 +24,27 @@ import static decok.dfcdvadstf.createworldui.api.TextureHelper.drawModalRectWith
 @Mixin(GuiCreateWorld.class)
 public abstract class ModernCreateWorld extends GuiScreen {
 
-    /***
-     * 
+    /**
+     * Manage all the button and string.
      */
     @Shadow
-    private GuiScreen field_146332_f; //parentScreen
+    private GuiScreen field_146332_f; // parentScreen
     @Shadow
-    private boolean field_146337_w; // 硬核模式
+    private boolean field_146337_w; // hardcore
     @Shadow
-    private String field_146330_J; // 世界显示名称
+    private String field_146330_J; // World displayed name
     @Shadow
-    private String field_146342_r; // 游戏模式的文本标识
+    private String field_146342_r; // Gamemode description Text
     @Shadow
-    private String field_146329_I; // 种子
+    private String field_146329_I; // Seed
     @Shadow
-    private boolean field_146341_s; // 生成建筑
+    private boolean field_146341_s; // Generate Structures
     @Shadow
-    private boolean field_146338_v; // 奖励箱
+    private boolean field_146338_v; // Bonus Chest
     @Shadow
-    private boolean field_146340_t; // 允许作弊
+    private boolean field_146340_t; // Allow Cheats
     @Shadow
-    private GuiTextField field_146335_h; // 种子输入框
+    private GuiTextField field_146335_h; // Seed text box
     @Shadow
     private GuiTextField field_146333_g; // 世界名称输入框
     @Shadow
@@ -69,13 +69,13 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Unique
     private boolean modernWorldCreatingUI$isReorganizing = false;
     @Unique
-    private final Map<Integer, GuiButton> modernWorldCreatingUI$tabControls = new HashMap<>();
-    @Unique
     private static final ResourceLocation OPTIONS_BG_LIGHT = new ResourceLocation("createworldui:textures/gui/options_background.png");
     @Unique
     private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui:textures/gui/options_background_dark.png");
     @Unique
     private static final ResourceLocation TABS_TEXTURE = new ResourceLocation("createworldui:textures/gui/tabs.png");
+    @Unique
+    private static final ResourceLocation LINES_TEXTURE = new ResourceLocation("createworldui:textures/gui/lines.png");
     @Unique
     private static final int TAB_WIDTH = 130;
     @Unique
@@ -85,24 +85,36 @@ public abstract class ModernCreateWorld extends GuiScreen {
     private void onInitGuiHead(CallbackInfo ci) {
         // 在头部保存一些关键状态或执行预处理
         // 这里可以保存原版的某些状态，或者准备自定义初始化
-        modernWorldCreatingUI$preInit();
+        // 这么做的原因就是防止点生成世界时，有NPE出现
+        // 1. 确保关键字段不为null
+        modernWorldCreatingUI$ensureFieldsNotNull();
+
+        // 2. 设置初始化标志
+        modernWorldCreatingUI$isReorganizing = true;
     }
 
     @Inject(method = "initGui", at = @At("TAIL"))
     private void onInitGuiTail(CallbackInfo ci) {
         // 在原版初始化完成后，重新组织界面为 Tab 布局
-        modernWorldCreatingUI$reorganizeToTabLayout();
+
+        // 保存必要的按钮
+        List<GuiButton> essentialButtons = modernWorldCreatingUI$collectEssentialButtons();
+
+        // 清空并重新构建界面
+        this.buttonList.clear();
+        this.modernWorldCreatingUI$tabButtons.clear();
+        this.buttonList.addAll(essentialButtons);
+
+        // 创建Tab界面
+        modernWorldCreatingUI$createTabButtons();
+        modernWorldCreatingUI$recreateFunctionalButtons();
+        modernWorldCreatingUI$setupTextFields();
+        modernWorldCreatingUI$updateButtonVisibility();
+        modernWorldCreatingUI$repositionActionButtons();
+
+        modernWorldCreatingUI$isReorganizing = false;
     }
 
-    @Unique
-    private void modernWorldCreatingUI$preInit() {
-
-        // 2. 确保关键字段不为null
-        modernWorldCreatingUI$ensureFieldsNotNull();
-
-        // 3. 设置初始化标志
-        modernWorldCreatingUI$isReorganizing = true;
-    }
 
     @Unique
     private void modernWorldCreatingUI$ensureFieldsNotNull() {
@@ -120,26 +132,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 WorldType.worldTypes[this.field_146331_K] == null) {
             this.field_146331_K = 0;
         }
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$reorganizeToTabLayout() {
-        // 保存必要的按钮
-        List<GuiButton> essentialButtons = modernWorldCreatingUI$collectEssentialButtons();
-
-        // 清空并重新构建界面
-        this.buttonList.clear();
-        this.modernWorldCreatingUI$tabButtons.clear();
-        this.buttonList.addAll(essentialButtons);
-
-        // 创建Tab界面
-        modernWorldCreatingUI$createTabButtons();
-        modernWorldCreatingUI$recreateFunctionalButtons();
-        modernWorldCreatingUI$setupTextFields();
-        modernWorldCreatingUI$updateButtonVisibility();
-        modernWorldCreatingUI$repositionActionButtons();
-
-        modernWorldCreatingUI$isReorganizing = false;
     }
 
     @Unique
@@ -269,19 +261,19 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 I18n.format("selectWorld.gameMode." + this.field_146342_r);
 
         // 更新生成建筑按钮文本
-        this.field_146325_B.displayString = I18n.format("selectWorld.mapFeatures") +
+        this.field_146325_B.displayString = I18n.format("selectWorld.mapFeatures") + " " +
                 (this.field_146341_s ? I18n.format("options.on") : I18n.format("options.off"));
 
         // 更新奖励箱按钮文本
-        this.field_146326_C.displayString = I18n.format("selectWorld.bonusItems") +
+        this.field_146326_C.displayString = I18n.format("selectWorld.bonusItems") + " " +
                 (this.field_146338_v && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
 
         // 更新世界类型按钮文本
-        this.field_146320_D.displayString = I18n.format("selectWorld.mapType") +
+        this.field_146320_D.displayString = I18n.format("selectWorld.mapType") + " " +
                 I18n.format(WorldType.worldTypes[this.field_146331_K].getTranslateName());
 
         // 更新允许作弊按钮文本
-        this.field_146321_E.displayString = I18n.format("selectWorld.allowCommands") +
+        this.field_146321_E.displayString = I18n.format("selectWorld.allowCommands") + " " +
                 (this.field_146340_t && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
     }
 
@@ -293,7 +285,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
      *    102 -> 更多
      * </p>
      * <p>
-     *     Show or hide the correlate buttons based on the current tabs. (Tabs judging by ID)<br>
+     *     Show or hide the correlate buttons based on the current tabs. (Tab‘s judging by ID)<br>
      *     100 -> Game<br>
      *     101 -> World<br>
      *     102 -> More
@@ -351,11 +343,14 @@ public abstract class ModernCreateWorld extends GuiScreen {
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
 
         // 计算Tab背景区域：从左上角(0,0)开始，宽度为整个窗口宽度，高度到Tabs底部
-        int tabBackgroundBottom = 5 + TAB_HEIGHT; // Tabs的y位置 + Tabs高度
-
+        // Tabs的y位置 + Tabs高度
         // 绘制暗黑色背景区域
-        drawModalRectWithCustomSizedTexture(OPTIONS_BG_DARK,0, 0, 16, 16,
-                this.width, 5 + TAB_HEIGHT, 16, 16);
+        drawModalRectWithCustomSizedTexture(OPTIONS_BG_DARK,0, 0, 0, 0, this.width, 5 + TAB_HEIGHT, 16, 16);
+
+        // 绘制两条横线
+        this.mc.getTextureManager().bindTexture(LINES_TEXTURE);
+        drawModalRectWithCustomSizedTexture(LINES_TEXTURE, 0, 3 + TAB_HEIGHT, 0, 0, this.width, 2, 16, 16);
+        drawModalRectWithCustomSizedTexture(LINES_TEXTURE, 0,  this.height - 35, 0, 3, this.width, 2, 16, 16);
 
         this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
 
@@ -364,29 +359,13 @@ public abstract class ModernCreateWorld extends GuiScreen {
             // 游戏 Tab 显示世界名称
             this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterName"), this.width / 2 - 100, 27, 0xA0A0A0);
             field_146333_g.drawTextBox();
-        } else {
-            // 世界和更多 Tab 显示种子
+        }
+
+        if (modernWorldCreatingUI$currentTab == 101) {
+            // 世界 Tab 显示种子
             this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterSeed"), this.width / 2 - 100, 87, 0xA0A0A0);
             field_146335_h.drawTextBox();
         }
-
-        // 显示当前 Tab 的标题
-        String tabTitle;
-        switch (modernWorldCreatingUI$currentTab) {
-            case 100:
-                tabTitle = I18n.format("createworldui.tab.game");
-                break;
-            case 101:
-                tabTitle = I18n.format("createworldui.tab.world");
-                break;
-            case 102:
-                tabTitle = I18n.format("createworldui.tab.more");
-                break;
-            default:
-                tabTitle = "";
-                break;
-        }
-        this.drawCenteredString(this.fontRendererObj, tabTitle, this.width / 2, 120, 0xFFFFFF);
 
         super.drawScreen(mouseX, mouseY, partialTicks);
     }
@@ -423,8 +402,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
 
     @Unique
     private void modernWorldCreatingUI$handleWorldTypeSelection() {
-        // 循环选择世界类型
-
         // 跳过空的世界类型
         do {
             this.field_146331_K = (this.field_146331_K + 1) % WorldType.worldTypes.length;
