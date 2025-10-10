@@ -76,6 +76,8 @@ public abstract class ModernCreateWorld extends GuiScreen {
     private static final int TAB_WIDTH = 130;
     @Unique
     private static final int TAB_HEIGHT = 24;
+    @Unique
+    private static final int yPos = 6;
 
     @Inject(method = "initGui", at = @At("HEAD"))
     private void onInitGuiHead(CallbackInfo ci) {
@@ -208,7 +210,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
         int totalWidth = TAB_WIDTH * 3 + 5 * 2;
         // 计算起始位置，让整个tab组居中
         int startX = this.width / 2 - totalWidth / 2;
-        int yPos = 5;
         String[] tabNames = {
                 I18n.format("createworldui.tab.game"),
                 I18n.format("createworldui.tab.world"),
@@ -327,8 +328,8 @@ public abstract class ModernCreateWorld extends GuiScreen {
      * @param mouseX As vanilla done.
      * @param mouseY Same to mouseX
      * @param partialTicks Same to mouseX
-     * @author
-     * @reason
+     * @author dfdvdsf
+     * @reason Enhance the vanillia
      */
     @Overwrite
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
@@ -341,12 +342,13 @@ public abstract class ModernCreateWorld extends GuiScreen {
         // 计算Tab背景区域：从左上角(0,0)开始，宽度为整个窗口宽度，高度到Tabs底部
         // Tabs的y位置 + Tabs高度
         // 绘制暗黑色背景区域
-        this.drawTiledTexture(0, 0, this.width, 5 + TAB_HEIGHT, 16, 16);
+        int DARK_ERA_HEIGHT = yPos + TAB_HEIGHT;
+        this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, DARK_ERA_HEIGHT, 16, 16);
 
         // 绘制两条横线
         this.mc.getTextureManager().bindTexture(LINES_TEXTURE);
-        this.drawTiledTexture(0, 3 + TAB_HEIGHT, this.width, 2, 16, 16);
-        this.drawTiledTexture(0, this.height - 35, this.width, 2, 16, 16);
+        this.modernWorldCreatingUI$drawTiledTexture(0, DARK_ERA_HEIGHT - 3, this.width, 2, 16, 16);
+        this.modernWorldCreatingUI$drawTiledTexture(0, this.height - 35, this.width, 2, 16, 16);
 
         this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
 
@@ -424,7 +426,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
 
     /**
      * @author dfdvdsf
-     * @reason Enhance the vanillia
      * @param typedChar
      * @param keyCode
      */
@@ -451,8 +452,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * @author
-     * @reason
      * @param mouseX
      * @param mouseY
      * @param mouseButton
@@ -482,8 +481,19 @@ public abstract class ModernCreateWorld extends GuiScreen {
         return null;
     }
 
+    /**
+     * 绘制平铺纹理
+     * 使用原版的drawTexturedModalRect方法将纹理平铺到指定区域
+     *
+     * @param x 绘制区域的起始X坐标
+     * @param y 绘制区域的起始Y坐标
+     * @param width 绘制区域的总宽度
+     * @param height 绘制区域的总高度
+     * @param textureWidth 单个纹理块的宽度
+     * @param textureHeight 单个纹理块的高度
+     */
     @Unique
-    private void drawTiledTexture(int x, int y, int width, int height, int textureWidth, int textureHeight) {
+    private void modernWorldCreatingUI$drawTiledTexture(int x, int y, int width, int height, int textureWidth, int textureHeight) {
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
 
