@@ -1,0 +1,47 @@
+options.on=ON
+options.off=OFF
+options.yes=Yes
+options.no=No
+
+createworldui.tab.game=Game
+createworldui.tab.world=World
+createworldui.tab.more=More
+
+createworldui.button.create=Create
+createworldui.button.cancel=Cancel
+createworldui.button.selectWorld.difficulty=Difficulty:
+createworldui.button.selectWorld.difficulty.peaceful=Peaceful
+createworldui.button.selectWorld.difficulty.peaceful.tooltip=
+createworldui.button.selectWorld.difficulty.easy=Easy
+createworldui.button.selectWorld.difficulty.easy.tooltip=
+createworldui.button.selectWorld.difficulty.normal=Normal
+createworldui.button.selectWorld.difficulty.normal.tooltip=
+createworldui.button.selectWorld.difficulty.hard=Hard
+createworldui.button.selectWorld.difficulty.hard.tooltip=
+createworldui.worldTypeSettings=World Type Settings
+createworldui.button.gameRuleEditor=GameRules
+
+createworldui.title.game=Game
+createworldui.title.world=World
+
+createworldui.desc.gamemode.survival=Survival mode is the standard gameplay experience. Players must gather resources, build structures, battle mobs, manage hunger, and explore the world to thrive and survive.
+createworldui.desc.gamemode.creative=Creative mode gives players unlimited resources, the ability to fly, and instant destruction of blocks. Perfect for building large projects without limitations.
+createworldui.desc.gamemode.adventure=Adventure mode is designed for custom maps. Players can only interact with the world in ways the map creator allows, using specific tools and items.
+createworldui.desc.gamemode.spectator=Spectator mode allows players to fly through blocks and observe the world without interacting. Players can view the perspective of other entities.
+createworldui.desc.gamemode.not_set=Not Set game mode. Coming soon...
+
+
+createworldui.gamerules.title=Game Rules
+gamerules.doFireTick.description=Controls whether fire spreads and naturally extinguishes
+gamerules.mobGriefing.description=Controls whether mobs can destroy blocks
+gamerules.keepInventory.description=Keep inventory after death
+gamerules.doMobSpawning.description=Natural mob spawning
+gamerules.doMobLoot.description=Mobs drop loot
+gamerules.commandBlockOutput.description=Command blocks output to chat
+gamerules.naturalRegeneration.description=Natural health regeneration
+gamerules.doDaylightCycle.description=Day/night cycle
+
+createworldui.experimental.warning=Experimental settings may affect stability
+
+
+
