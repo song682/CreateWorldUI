@@ -2,6 +2,8 @@ options.on=ON
 options.off=OFF
 options.yes=Yes
 options.no=No
+options.save=Save
+options.reset=Reset
 
 createworldui.tab.game=Game
 createworldui.tab.world=World
@@ -21,15 +23,17 @@ createworldui.button.selectWorld.difficulty.hard.tooltip=
 createworldui.worldTypeSettings=World Type Settings
 createworldui.button.gameRuleEditor=GameRules
 
-createworldui.title.game=Game
-createworldui.title.world=World
-
-createworldui.desc.gamemode.survival=Survival mode is the standard gameplay experience. Players must gather resources, build structures, battle mobs, manage hunger, and explore the world to thrive and survive.
-createworldui.desc.gamemode.creative=Creative mode gives players unlimited resources, the ability to fly, and instant destruction of blocks. Perfect for building large projects without limitations.
-createworldui.desc.gamemode.adventure=Adventure mode is designed for custom maps. Players can only interact with the world in ways the map creator allows, using specific tools and items.
-createworldui.desc.gamemode.spectator=Spectator mode allows players to fly through blocks and observe the world without interacting. Players can view the perspective of other entities.
-createworldui.desc.gamemode.not_set=Not Set game mode. Coming soon...
-
+createworldui.hover.gameMode=Game Mode
+createworldui.hover.gameMode.survival=Survival Mode: Explore the world, gather resources, craft tools, and fight monsters.
+createworldui.hover.gameMode.creative=Creative Mode: Unlimited resources, ability to fly, and break and build anything.
+createworldui.hover.gameMode.adventure=Adventure Mode: Same as survival mode, but blocks can't be added or removed.
+createworldui.hover.gameMode.hardcore=Hardcore Mode: Same as survival but locked to hard difficulty and only one life.
+createworldui.hover.generateStructures=Generate Structures: Villages, dungeons etc.
+createworldui.hover.worldType=Select the world generating type.
+createworldui.hover.allowCheats=Use commands like /gamemode, /xp
+createworldui.hover.bonusChest=Generate a chest containing basic survival items.
+createworldui.hover.customize=Custom the world details.
+createworldui.hover.gameRuleEditor=Edit your game rules.
 
 createworldui.gamerules.title=Game Rules
 gamerules.doFireTick.description=Controls whether fire spreads and naturally extinguishes
@@ -42,6 +46,3 @@ gamerules.naturalRegeneration.description=Natural health regeneration
 gamerules.doDaylightCycle.description=Day/night cycle
 
 createworldui.experimental.warning=Experimental settings may affect stability
-
-
-
