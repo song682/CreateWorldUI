@@ -1,526 +1,466 @@
-package decok.dfcdvadstf.createworldui.mixin;
+package decok.dfcdvadstf.createworldui.gamerule;
 
-import decok.dfcdvadstf.createworldui.api.TabState;
-import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
-import net.minecraft.client.Minecraft;
+import decok.dfcdvadstf.createworldui.gamerule.GameRuleMonitorNSetter.GameruleValue;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.WorldType;
-import org.spongepowered.asm.mixin.*;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.minecraft.world.World;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-@SuppressWarnings("unchecked")
-@Mixin(GuiCreateWorld.class)
-public abstract class ModernCreateWorld extends GuiScreen {
+public class GameRuleEditor extends GuiScreen {
 
-    /**
-     * Manage all the button and string.
-     */
-    @Shadow
-    private GuiScreen field_146332_f; // parentScreen
-    @Shadow
-    private boolean field_146337_w; // hardcore
-    @Shadow
-    private String field_146330_J; // World displayed name
-    @Shadow
-    private String field_146342_r; // Gamemode description Text
-    @Shadow
-    private String field_146329_I; // Seed
-    @Shadow
-    private boolean field_146341_s; // Generate Structures
-    @Shadow
-    private boolean field_146338_v; // Bonus Chest
-    @Shadow
-    private boolean field_146340_t; // Allow Cheats
-    @Shadow
-    private GuiTextField field_146335_h; // Seed text box
-    @Shadow
-    private GuiTextField field_146333_g; // 世界名称输入框
-    @Shadow
-    private GuiButton field_146321_E; // 允许作弊按钮
-    @Shadow
-    private GuiButton field_146343_z; // 游戏模式按钮
-    @Shadow
-    private GuiButton field_146326_C; // 奖励箱按钮
-    @Shadow
-    private GuiButton field_146320_D; // 世界类型选择按钮
-    @Shadow
-    private GuiButton field_146325_B; // 生成建筑按钮
-    @Shadow
-    private GuiButton field_146322_F; // 自定义（预设）
-    @Shadow
-    private int field_146331_K; // 世界类型的索引
+    private static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
 
-    @Unique
-    private int modernWorldCreatingUI$currentTab = 100; // 100: Game, 101: World, 102: More
-    @Unique
-    private final List<GuiButton> modernWorldCreatingUI$tabButtons = new ArrayList<>();
-    @Unique
-    private boolean modernWorldCreatingUI$isReorganizing = false;
-    @Unique
-    private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui:textures/gui/options_background_dark.png");
-    @Unique
-    private static final ResourceLocation TABS_TEXTURE = new ResourceLocation("createworldui:textures/gui/tabs.png");
-    @Unique
-    private static final ResourceLocation LINES_TEXTURE = new ResourceLocation("createworldui:textures/gui/lines.png");
-    @Unique
-    private static final int TAB_WIDTH = 130;
-    @Unique
-    private static final int TAB_HEIGHT = 24;
-    @Unique
-    private static final int yPos = 6;
+    // 背景纹理
+    private static final ResourceLocation BACKGROUND_TEXTURE = new ResourceLocation("textures/gui/options_background.png");
 
-    @Inject(method = "initGui", at = @At("HEAD"))
-    private void onInitGuiHead(CallbackInfo ci) {
-        // 在头部保存一些关键状态或执行预处理
-        // 这里可以保存原版的某些状态，或者准备自定义初始化
-        // 这么做的原因就是防止点生成世界时，有NPE出现
-        // 1. 确保关键字段不为null
-        modernWorldCreatingUI$ensureFieldsNotNull();
+    private World world;
+    private Map<String, GameruleValue> originalRules;
+    private final Map<String, Object> modifiedRules = new HashMap<String, Object>();
+    private final Map<String, GuiComponentWrapper> ruleComponents = new HashMap<String, GuiComponentWrapper>();
 
-        // 2. 设置初始化标志
-        modernWorldCreatingUI$isReorganizing = true;
+    private GuiButton saveButton;
+    private GuiButton cancelButton;
+    private GuiButton resetButton;
+    private int scrollOffset = 0;
+    private int maxScrollOffset = 0;
+    private static final int ROW_HEIGHT = 25;
+    private static final int VISIBLE_ROWS = 8;
+    private boolean isScrolling = false;
+
+    public GameRuleEditor(World world) {
+        this.world = world;
+        this.originalRules = GameRuleMonitorNSetter.getAllGamerules(world);
+        this.maxScrollOffset = Math.max(0, originalRules.size() - VISIBLE_ROWS);
     }
 
-    @Inject(method = "initGui", at = @At("TAIL"))
-    private void onInitGuiTail(CallbackInfo ci) {
-        // 在原版初始化完成后，重新组织界面为 Tab 布局
+    @Override
+    public void initGui() {
+        Keyboard.enableRepeatEvents(true);
 
-        // 保存必要的按钮
-        List<GuiButton> essentialButtons = modernWorldCreatingUI$collectEssentialButtons();
+        // 创建按钮
+        this.saveButton = new GuiButton(0, this.width / 2 - 154, this.height - 30, 100, 20, I18n.format("options.save"));
+        this.cancelButton = new GuiButton(1, this.width / 2 - 50, this.height - 30, 100, 20, I18n.format("gui.cancel"));
+        this.resetButton = new GuiButton(2, this.width / 2 + 54, this.height - 30, 100, 20, I18n.format("options.reset"));
 
-        // 清空并重新构建界面
-        this.buttonList.clear();
-        this.modernWorldCreatingUI$tabButtons.clear();
-        this.buttonList.addAll(essentialButtons);
+        this.buttonList.add(this.saveButton);
+        this.buttonList.add(this.cancelButton);
+        this.buttonList.add(this.resetButton);
 
-        // 创建Tab界面
-        modernWorldCreatingUI$createTabButtons();
-        modernWorldCreatingUI$recreateFunctionalButtons();
-        modernWorldCreatingUI$setupTextFields();
-        modernWorldCreatingUI$updateButtonVisibility();
-        modernWorldCreatingUI$repositionActionButtons();
-
-        modernWorldCreatingUI$isReorganizing = false;
+        // 创建游戏规则组件
+        createRuleComponents();
     }
 
-
-    @Unique
-    private void modernWorldCreatingUI$ensureFieldsNotNull() {
-        // 确保关键字段不为null，防止后续出现NPE
-        if (this.field_146330_J == null) {
-            this.field_146330_J = "New World";
-        }
-        if (this.field_146329_I == null) {
-            this.field_146329_I = "";
-        }
-        if (this.field_146342_r == null) {
-            this.field_146342_r = "survival";
-        }
-        if (WorldType.worldTypes == null || this.field_146331_K >= WorldType.worldTypes.length ||
-                WorldType.worldTypes[this.field_146331_K] == null) {
-            this.field_146331_K = 0;
-        }
+    @Override
+    public void onGuiClosed() {
+        Keyboard.enableRepeatEvents(false);
     }
 
-    @Unique
-    private List<GuiButton> modernWorldCreatingUI$collectEssentialButtons() {
-        List<GuiButton> essentialButtons = new ArrayList<>();
-        for (GuiButton button : (List<GuiButton>) this.buttonList) {
-            if (button.id == 0 || button.id == 1) { // 创建和取消按钮
-                essentialButtons.add(button);
-            }
-        }
-        return essentialButtons;
-    }
+    private void createRuleComponents() {
+        ruleComponents.clear();
+        int yPos = 60; // 调整Y位置以适应新的标题栏
+        int index = 0;
 
-    @Unique
-    private void modernWorldCreatingUI$recreateFunctionalButtons() {
-        // 重新创建所有功能按钮，使用新的位置
-        this.buttonList.add(this.field_146343_z = new GuiButton(2, this.width / 2 - 100, 140, 200, 20, ""));
-        this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 - 100, 165, 200, 20, ""));
-        this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 - 100, 190, 200, 20, ""));
-        this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 100, 215, 200, 20, ""));
-        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 100, 240, 200, 20, ""));
-        this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 - 100, 265, 200, 20, I18n.format("selectWorld.customizeType")));
-        this.buttonList.add(new GuiButton(200, this.width / 2 - 100, 140, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
+        for (Map.Entry<String, GameruleValue> entry : originalRules.entrySet()) {
+            if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
+                String ruleName = entry.getKey();
+                GameruleValue value = entry.getValue();
+                Object optimalValue = value.getOptimalValue();
 
-        // 更新按钮文本
-        modernWorldCreatingUI$updateButtonText();
-    }
+                int componentY = yPos + (index - scrollOffset) * ROW_HEIGHT;
+                GuiComponentWrapper component = createComponentForRule(ruleName, optimalValue, componentY);
+                if (component != null) {
+                    ruleComponents.put(ruleName, component);
 
-    @Unique
-    private void modernWorldCreatingUI$setupTextFields() {
-        // 确保输入框使用正确的位置
-        if (field_146333_g != null) {
-            field_146333_g.xPosition = this.width / 2 - 100;
-            field_146333_g.yPosition = 40;
-        } else {
-            field_146333_g = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, 40, 200, 20);
-            field_146333_g.setText(this.field_146330_J);
-        }
-
-        if (field_146335_h != null) {
-            field_146335_h.xPosition = this.width / 2 - 100;
-            field_146335_h.yPosition = 100;
-        } else {
-            field_146335_h = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, 100, 200, 20);
-            field_146335_h.setText(this.field_146329_I);
-        }
-
-        field_146333_g.setFocused(true);
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$repositionActionButtons() {
-        // 确保创建和取消按钮在底部正确位置
-        GuiButton createButton = modernWorldCreatingUI$getButtonById(0);
-        GuiButton cancelButton = modernWorldCreatingUI$getButtonById(1);
-
-        if (createButton != null) {
-            createButton.xPosition = this.width / 2 - 155;
-            createButton.yPosition = this.height - 28;
-            createButton.width = 150;
-            createButton.height = 20;
-        }
-
-        if (cancelButton != null) {
-            cancelButton.xPosition = this.width / 2 + 5;
-            cancelButton.yPosition = this.height - 28;
-            cancelButton.width = 150;
-            cancelButton.height = 20;
-        }
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$createTabButtons() {
-        // 清空现有的 Tab 按钮
-        this.modernWorldCreatingUI$tabButtons.clear();
-
-        // 计算总宽度：3个tab + 2个间隔
-        int totalWidth = TAB_WIDTH * 3 + 5 * 2;
-        // 计算起始位置，让整个tab组居中
-        int startX = this.width / 2 - totalWidth / 2;
-        String[] tabNames = {
-                I18n.format("createworldui.tab.game"),
-                I18n.format("createworldui.tab.world"),
-                I18n.format("createworldui.tab.more")
-        };
-
-        for (int i = 0; i < 3; i++) {
-            int xPos = startX + i * (TAB_WIDTH + 5);
-            GuiButton tabButton = new GuiButton(100 + i, xPos, yPos, TAB_WIDTH, TAB_HEIGHT, tabNames[i]) {
-                @Override
-                public void drawButton(Minecraft mc, int mouseX, int mouseY) {
-                    if (this.visible) {
-                        mc.getTextureManager().bindTexture(TABS_TEXTURE);
-                        boolean isHovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
-                                mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
-                        boolean isSelected = modernWorldCreatingUI$currentTab == this.id;
-
-                        TabState state = isSelected ?
-                                (isHovered ? TabState.SELECTED_HOVER : TabState.SELECTED) :
-                                (isHovered ? TabState.HOVER : TabState.NORMAL);
-
-                        drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, TAB_WIDTH, TAB_HEIGHT);
-                        drawCenteredString(mc.fontRenderer, this.displayString,
-                                this.xPosition + this.width / 2,
-                                this.yPosition + (this.height - 8) / 2, state.textColor);
+                    // 为按钮添加ID
+                    if (component.type == ComponentType.BOOLEAN_BUTTON) {
+                        ((GuiButton) component.component).id = 100 + index;
                     }
                 }
-            };
-            modernWorldCreatingUI$tabButtons.add(tabButton);
-            this.buttonList.add(tabButton);
-        }
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$updateButtonText() {
-        // 确保字段不为空
-        if (this.field_146342_r == null) {
-            this.field_146342_r = "survival";
-        }
-        if (WorldType.worldTypes == null || this.field_146331_K >= WorldType.worldTypes.length || WorldType.worldTypes[this.field_146331_K] == null) {
-            this.field_146331_K = 0; // 重置为默认世界类型
-        }
-
-        // 更新游戏模式按钮文本
-        this.field_146343_z.displayString = I18n.format("selectWorld.gameMode") + " " +
-                I18n.format("selectWorld.gameMode." + this.field_146342_r);
-
-        // 更新生成建筑按钮文本
-        this.field_146325_B.displayString = I18n.format("selectWorld.mapFeatures") + " " +
-                (this.field_146341_s ? I18n.format("options.on") : I18n.format("options.off"));
-
-        // 更新奖励箱按钮文本
-        this.field_146326_C.displayString = I18n.format("selectWorld.bonusItems") + " " +
-                (this.field_146338_v && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
-
-        // 更新世界类型按钮文本
-        this.field_146320_D.displayString = I18n.format("selectWorld.mapType") + " " +
-                I18n.format(WorldType.worldTypes[this.field_146331_K].getTranslateName());
-
-        // 更新允许作弊按钮文本
-        this.field_146321_E.displayString = I18n.format("selectWorld.allowCommands") + " " +
-                (this.field_146340_t && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
-    }
-
-    /**
-     * <p>
-     *    根据当前 Tab 显示/隐藏相应的按钮（标签页由ID判断。）<br>
-     *    100 -> 游戏<br>
-     *    101 -> 世界<br>
-     *    102 -> 更多
-     * </p>
-     * <p>
-     *     Show or hide the correlate buttons based on the current tabs. (Tab‘s judging by ID)<br>
-     *     100 -> Game<br>
-     *     101 -> World<br>
-     *     102 -> More
-     * </p>
-     */
-    @Unique
-    private void modernWorldCreatingUI$updateButtonVisibility() {
-        switch (modernWorldCreatingUI$currentTab) {
-            case 100:
-                this.field_146343_z.visible = true;
-                this.field_146321_E.visible = true;
-                this.field_146325_B.visible = false;
-                this.field_146326_C.visible = false;
-                this.field_146320_D.visible = false;
-                this.field_146322_F.visible = false;
-                modernWorldCreatingUI$getButtonById(200).visible = false;
-                break;
-            case 101: // 世界 Tab
-                this.field_146343_z.visible = false;
-                this.field_146321_E.visible = false;
-                this.field_146325_B.visible = true;
-                this.field_146326_C.visible = true;
-                this.field_146320_D.visible = true;
-                this.field_146322_F.visible = WorldType.worldTypes[this.field_146331_K].isCustomizable();
-                modernWorldCreatingUI$getButtonById(200).visible = false;
-                break;
-            case 102: // 更多 Tab
-                this.field_146343_z.visible = false;
-                this.field_146321_E.visible = false;
-                this.field_146325_B.visible = false;
-                this.field_146326_C.visible = false;
-                this.field_146320_D.visible = false;
-                this.field_146322_F.visible = false;
-                modernWorldCreatingUI$getButtonById(200).visible = true;
-                break;
-        }
-
-        // 更新按钮文本
-        modernWorldCreatingUI$updateButtonText();
-    }
-
-    /**
-     * @param mouseX As vanilla done.
-     * @param mouseY Same to mouseX
-     * @param partialTicks Same to mouseX
-     * @author dfdvdsf
-     * @reason Enhance the vanillia
-     */
-    @Overwrite
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        // 绘制主背景
-        this.drawBackground(0);
-
-        // 在顶部绘制暗黑色背景，从(0,0)到(width, tabs底部)
-        this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
-
-        // 计算Tab背景区域：从左上角(0,0)开始，宽度为整个窗口宽度，高度到Tabs底部
-        // Tabs的y位置 + Tabs高度
-        // 绘制暗黑色背景区域
-        int DARK_ERA_HEIGHT = yPos + TAB_HEIGHT;
-        this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, DARK_ERA_HEIGHT, 16, 16);
-
-        // 绘制两条横线
-        this.mc.getTextureManager().bindTexture(LINES_TEXTURE);
-        this.modernWorldCreatingUI$drawTiledTexture(0, DARK_ERA_HEIGHT - 3, this.width, 2, 16, 16);
-        this.modernWorldCreatingUI$drawTiledTexture(0, this.height - 35, this.width, 2, 16, 16);
-
-        this.drawCenteredString(this.fontRendererObj, I18n.format("selectWorld.create"), this.width / 2, 15, 0xFFFFFF);
-
-        // 根据当前 Tab 显示不同的输入框
-        if (modernWorldCreatingUI$currentTab == 100) {
-            // 游戏 Tab 显示世界名称
-            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterName"), this.width / 2 - 100, 27, 0xA0A0A0);
-            field_146333_g.drawTextBox();
-        }
-
-        if (modernWorldCreatingUI$currentTab == 101) {
-            // 世界 Tab 显示种子
-            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterSeed"), this.width / 2 - 100, 87, 0xA0A0A0);
-            field_146335_h.drawTextBox();
-        }
-
-        super.drawScreen(mouseX, mouseY, partialTicks);
-    }
-
-    @Inject(method = "actionPerformed", at = @At("HEAD"), cancellable = true)
-    private void onActionPerformed(GuiButton button, CallbackInfo ci) {
-        // 处理 Tab 切换
-        if (button.id >= 100 && button.id <= 102) {
-            modernWorldCreatingUI$currentTab = button.id;
-            modernWorldCreatingUI$updateButtonVisibility();
-            ci.cancel();
-            return;
-        }
-
-        // 处理游戏规则编辑器按钮
-        if (button.id == 200) {
-            this.mc.displayGuiScreen(new GameRuleEditor(null));
-            ci.cancel();
-            return;
-        }
-
-        // 处理世界类型选择按钮
-        if (button.id == 5) {
-            modernWorldCreatingUI$handleWorldTypeSelection();
-            ci.cancel();
-            return;
-        }
-
-        // 对于其他原版按钮，更新文本显示
-        if (button.id == 2 || button.id == 4 || button.id == 5 || button.id == 6 || button.id == 7) {
-            modernWorldCreatingUI$scheduleButtonTextUpdate();
-        }
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$handleWorldTypeSelection() {
-        // 跳过空的世界类型
-        do {
-            this.field_146331_K = (this.field_146331_K + 1) % WorldType.worldTypes.length;
-        } while (WorldType.worldTypes[this.field_146331_K] == null);
-
-        // 更新按钮文本和可见性
-        modernWorldCreatingUI$updateButtonText();
-        modernWorldCreatingUI$updateButtonVisibility();
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$scheduleButtonTextUpdate() {
-        // 创建一个简单的 Runnable 来更新按钮文本
-        Runnable updateTask = new Runnable() {
-            @Override
-            public void run() {
-                modernWorldCreatingUI$updateButtonText();
             }
-        };
-
-        // 使用 Minecraft 的任务调度系统
-        Minecraft.getMinecraft().func_152344_a(updateTask);
+            index++;
+        }
     }
 
-    /**
-     * @author dfdvdsf
-     * @param typedChar
-     * @param keyCode
-     */
-    @Override
-    protected void keyTyped(char typedChar, int keyCode) {
-        // 根据当前 Tab 处理不同的输入框
-        if (modernWorldCreatingUI$currentTab == 100) {
-            field_146333_g.textboxKeyTyped(typedChar, keyCode);
-            this.field_146330_J = this.field_146333_g.getText();
+    private GuiComponentWrapper createComponentForRule(String ruleName, Object value, int yPos) {
+        int componentWidth = 150;
+        int componentX = this.width / 2 + 20;
+
+        if (value instanceof Boolean) {
+            // 布尔值使用按钮
+            boolean boolValue = (Boolean) value;
+            String buttonText = boolValue ?
+                    I18n.format("options.on") :
+                    I18n.format("options.off");
+            GuiButton button = new GuiButton(0, componentX, yPos, componentWidth, 20, buttonText);
+            return new GuiComponentWrapper(button, ComponentType.BOOLEAN_BUTTON);
         } else {
-            field_146335_h.textboxKeyTyped(typedChar, keyCode);
-            this.field_146329_I = this.field_146335_h.getText();
+            // 数字和字符串使用文本框
+            GuiTextField textField = new GuiTextField(this.fontRendererObj, componentX, yPos, componentWidth, 20);
+            textField.setText(String.valueOf(value));
+            textField.setMaxStringLength(50);
+            return new GuiComponentWrapper(textField, ComponentType.TEXT_FIELD);
         }
-
-        if (keyCode == 1) {
-            this.mc.displayGuiScreen(field_146332_f);
-        }
-
-        // 更新创建按钮状态
-        ((GuiButton)this.buttonList.get(2)).enabled = this.field_146333_g.getText().length() > 0;
-
-        // 处理世界名称
-        this.func_146314_g();
     }
 
-    /**
-     * @param mouseX
-     * @param mouseY
-     * @param mouseButton
-     */
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-
-        // 根据当前 Tab 处理不同的输入框点击
-        if (modernWorldCreatingUI$currentTab == 100) {
-            field_146333_g.mouseClicked(mouseX, mouseY, mouseButton);
-        } else {
-            field_146335_h.mouseClicked(mouseX, mouseY, mouseButton);
-        }
-    }
-
-    @Unique
-    private GuiButton modernWorldCreatingUI$getButtonById(int id) {
-        for (Object obj : this.buttonList) {
-            if (obj instanceof GuiButton) {
-                GuiButton button = (GuiButton) obj;
-                if (button.id == id) {
-                    return button;
-                }
+    protected void actionPerformed(GuiButton button) {
+        if (button == this.saveButton) {
+            saveChanges();
+            this.mc.displayGuiScreen(null);
+        } else if (button == this.cancelButton) {
+            this.mc.displayGuiScreen(null);
+        } else if (button == this.resetButton) {
+            resetToDefaults();
+        } else if (button.id >= 100) {
+            // 处理规则按钮点击（布尔值切换）
+            int ruleIndex = button.id - 100;
+            String ruleName = getRuleNameByIndex(ruleIndex);
+            if (ruleName != null) {
+                toggleBooleanRule(ruleName, button);
             }
+        }
+    }
+
+    private String getRuleNameByIndex(int index) {
+        if (index < 0 || index >= originalRules.size()) {
+            return null;
+        }
+
+        int i = 0;
+        for (String ruleName : originalRules.keySet()) {
+            if (i == index) {
+                return ruleName;
+            }
+            i++;
         }
         return null;
     }
 
-    /**
-     * 绘制平铺纹理
-     * 使用原版的drawTexturedModalRect方法将纹理平铺到指定区域
-     *
-     * @param x 绘制区域的起始X坐标
-     * @param y 绘制区域的起始Y坐标
-     * @param width 绘制区域的总宽度
-     * @param height 绘制区域的总高度
-     * @param textureWidth 单个纹理块的宽度
-     * @param textureHeight 单个纹理块的高度
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawTiledTexture(int x, int y, int width, int height, int textureWidth, int textureHeight) {
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawingQuads();
+    private void toggleBooleanRule(String ruleName, GuiButton button) {
+        Object currentValue = modifiedRules.get(ruleName);
+        if (currentValue == null) {
+            currentValue = originalRules.get(ruleName).getOptimalValue();
+        }
 
-        for (int tileX = 0; tileX < width; tileX += textureWidth) {
-            for (int tileY = 0; tileY < height; tileY += textureHeight) {
-                int tileW = Math.min(textureWidth, width - tileX);
-                int tileH = Math.min(textureHeight, height - tileY);
+        boolean newValue = !(Boolean) currentValue;
+        modifiedRules.put(ruleName, newValue);
+        button.displayString = newValue ?
+                I18n.format("options.on") :
+                I18n.format("options.off");
+    }
 
-                double u1 = 0.0;
-                double u2 = (double)tileW / (double)textureWidth;
-                double v1 = 0.0;
-                double v2 = (double)tileH / (double)textureHeight;
+    @Override
+    protected void keyTyped(char typedChar, int keyCode) {
+        super.keyTyped(typedChar, keyCode);
 
-                tessellator.addVertexWithUV(x + tileX, y + tileY + tileH, 0.0D, u1, v2);
-                tessellator.addVertexWithUV(x + tileX + tileW, y + tileY + tileH, 0.0D, u2, v2);
-                tessellator.addVertexWithUV(x + tileX + tileW, y + tileY, 0.0D, u2, v1);
-                tessellator.addVertexWithUV(x + tileX, y + tileY, 0.0D, u1, v1);
+        // 处理文本框输入
+        for (Map.Entry<String, GuiComponentWrapper> entry : ruleComponents.entrySet()) {
+            GuiComponentWrapper wrapper = entry.getValue();
+            if (wrapper.type == ComponentType.TEXT_FIELD) {
+                GuiTextField textField = (GuiTextField) wrapper.component;
+                textField.textboxKeyTyped(typedChar, keyCode);
+
+                if (keyCode == Keyboard.KEY_RETURN) {
+                    // 回车键保存文本框内容
+                    String newValue = textField.getText();
+                    String ruleName = entry.getKey();
+                    Object parsedValue = parseValue(newValue, originalRules.get(ruleName).getOptimalValue());
+                    modifiedRules.put(ruleName, parsedValue);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+
+        // 处理文本框点击
+        for (GuiComponentWrapper wrapper : ruleComponents.values()) {
+            if (wrapper.type == ComponentType.TEXT_FIELD) {
+                GuiTextField textField = (GuiTextField) wrapper.component;
+                textField.mouseClicked(mouseX, mouseY, mouseButton);
             }
         }
 
-        tessellator.draw();
+        // 检查是否点击了滚动条区域
+        int scrollBarX = this.width / 2 - 10;
+        int scrollBarY = 60;
+        int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
+
+        if (mouseX >= scrollBarX && mouseX <= scrollBarX + 10 &&
+                mouseY >= scrollBarY && mouseY <= scrollBarY + scrollBarHeight) {
+            this.isScrolling = true;
+        }
     }
 
-    // 保留原版的世界名称处理方法
-    @Shadow
-    private void func_146314_g() {}
+    @Override
+    protected void mouseMovedOrUp(int mouseX, int mouseY, int state) {
+        super.mouseMovedOrUp(mouseX, mouseY, state);
 
-    @Shadow
-    private void func_146319_h() {}
+        if (state == 0 || state == 1) {
+            this.isScrolling = false;
+        }
+    }
+
+    @Override
+    public void handleMouseInput() {
+        super.handleMouseInput();
+
+        int mouseX = Mouse.getEventX() * this.width / this.mc.displayWidth;
+        int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
+
+        if (this.isScrolling) {
+            // 处理滚动条拖动
+            int scrollBarY = 60;
+            int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
+
+            float relativePosition = (float)(mouseY - scrollBarY) / scrollBarHeight;
+            this.scrollOffset = (int)(relativePosition * this.maxScrollOffset);
+            this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScrollOffset));
+
+            createRuleComponents();
+        } else if (Mouse.getEventDWheel() != 0) {
+            // 处理鼠标滚轮
+            int scrollAmount = Mouse.getEventDWheel() > 0 ? -1 : 1;
+            this.scrollOffset += scrollAmount;
+            this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScrollOffset));
+
+            createRuleComponents();
+        }
+    }
+
+    @Override
+    public void updateScreen() {
+        for (GuiComponentWrapper wrapper : ruleComponents.values()) {
+            if (wrapper.type == ComponentType.TEXT_FIELD) {
+                GuiTextField textField = (GuiTextField) wrapper.component;
+                textField.updateCursorCounter();
+            }
+        }
+    }
+
+    @Override
+    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        // 绘制背景
+        drawBackground(0);
+
+        // 绘制内容面板
+        drawContentPanel();
+
+        // 绘制标题
+        this.drawCenteredString(this.fontRendererObj, I18n.format("createWorld.customize.custom.gamerules"), this.width / 2, 20, 0xFFFFFF);
+
+        // 绘制规则列表
+        drawRuleList(mouseX, mouseY);
+
+        // 绘制组件
+        for (GuiComponentWrapper wrapper : ruleComponents.values()) {
+            if (wrapper.type == ComponentType.TEXT_FIELD) {
+                GuiTextField textField = (GuiTextField) wrapper.component;
+                textField.drawTextBox();
+            } else if (wrapper.type == ComponentType.BOOLEAN_BUTTON) {
+                GuiButton button = (GuiButton) wrapper.component;
+                button.drawButton(this.mc, mouseX, mouseY);
+            }
+        }
+
+        // 绘制滚动条
+        drawScrollBar();
+
+        super.drawScreen(mouseX, mouseY, partialTicks);
+
+        // 绘制悬停提示
+        drawTooltips(mouseX, mouseY);
+    }
+
+    private void drawContentPanel() {
+        int panelWidth = this.width - 100;
+        int panelHeight = this.height - 100;
+        int panelX = 50;
+        int panelY = 40;
+
+        // 绘制半透明内容面板
+        drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xAA222222);
+
+        // 绘制面板边框
+        drawRect(panelX - 1, panelY - 1, panelX + panelWidth + 1, panelY, 0xFF555555); // 上边框
+        drawRect(panelX - 1, panelY + panelHeight, panelX + panelWidth + 1, panelY + panelHeight + 1, 0xFF555555); // 下边框
+        drawRect(panelX - 1, panelY, panelX, panelY + panelHeight, 0xFF555555); // 左边框
+        drawRect(panelX + panelWidth, panelY, panelX + panelWidth + 1, panelY + panelHeight, 0xFF555555); // 右边框
+
+        // 绘制标题栏
+        drawRect(panelX, panelY, panelX + panelWidth, panelY + 20, 0xAA444444);
+        drawRect(panelX, panelY + 20, panelX + panelWidth, panelY + 21, 0xFF666666); // 标题栏分隔线
+    }
+
+    private void drawRuleList(int mouseX, int mouseY) {
+        int index = 0;
+        int yPos = 60;
+
+        for (Map.Entry<String, GameruleValue> entry : originalRules.entrySet()) {
+            if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
+                String ruleName = entry.getKey();
+                GameruleValue originalValue = entry.getValue();
+                Object currentValue = modifiedRules.get(ruleName);
+                if (currentValue == null) {
+                    currentValue = originalValue.getOptimalValue();
+                }
+
+                int rowY = yPos + (index - scrollOffset) * ROW_HEIGHT;
+
+                // 绘制规则名称
+                this.drawString(this.fontRendererObj, ruleName, this.width / 2 - 150, rowY + 6, 0xFFFFFF);
+
+                // 绘制默认值提示
+                String defaultValueText = I18n.format("createWorld.customize.custom.default") + ": " + originalValue.getOptimalValue();
+                this.drawString(this.fontRendererObj, defaultValueText, this.width / 2 - 150, rowY + 16, 0x888888);
+            }
+            index++;
+        }
+    }
+
+    private void drawScrollBar() {
+        if (maxScrollOffset > 0) {
+            int scrollBarX = this.width / 2 - 10;
+            int scrollBarY = 60;
+            int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
+
+            // 绘制滚动条背景
+            drawRect(scrollBarX, scrollBarY, scrollBarX + 10, scrollBarY + scrollBarHeight, 0xAA333333);
+            drawRect(scrollBarX + 1, scrollBarY + 1, scrollBarX + 9, scrollBarY + scrollBarHeight - 1, 0xAA555555);
+
+            // 绘制滚动条滑块
+            float scrollPercentage = (float) scrollOffset / maxScrollOffset;
+            int sliderHeight = Math.max(20, scrollBarHeight / (maxScrollOffset + VISIBLE_ROWS) * VISIBLE_ROWS);
+            int sliderY = scrollBarY + (int) (scrollPercentage * (scrollBarHeight - sliderHeight));
+
+            drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight, 0xFF888888);
+            drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight - 1, 0xFFAAAAAA);
+        }
+    }
+
+    private void drawTooltips(int mouseX, int mouseY) {
+        int index = 0;
+        int yPos = 60;
+
+        for (String ruleName : originalRules.keySet()) {
+            if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
+                int rowY = yPos + (index - scrollOffset) * ROW_HEIGHT;
+
+                if (isMouseOverRuleName(mouseX, mouseY, rowY)) {
+                    String tooltip = getRuleTooltip(ruleName);
+                    if (tooltip != null) {
+                        List<String> tooltipList = Arrays.asList(tooltip);
+                        this.func_146283_a(tooltipList, mouseX, mouseY);
+                    }
+                }
+            }
+            index++;
+        }
+    }
+
+    private boolean isMouseOverRuleName(int mouseX, int mouseY, int rowY) {
+        return mouseX >= this.width / 2 - 150 && mouseX <= this.width / 2 - 20 &&
+                mouseY >= rowY && mouseY <= rowY + ROW_HEIGHT;
+    }
+
+    private String getRuleTooltip(String ruleName) {
+        // 使用本地化键名获取规则描述
+        String translationKey = "gamerule." + ruleName + ".description";
+        String translated = I18n.format(translationKey);
+
+        // 如果没有找到翻译，返回默认描述
+        if (translated.equals(translationKey)) {
+            // 默认描述映射
+            Map<String, String> defaultDescriptions = new HashMap<String, String>();
+            defaultDescriptions.put("doFireTick", "Controls whether fire spreads and naturally extinguishes");
+            defaultDescriptions.put("mobGriefing", "Controls whether mobs can destroy blocks");
+            defaultDescriptions.put("keepInventory", "Keep inventory after death");
+            defaultDescriptions.put("doMobSpawning", "Natural mob spawning");
+            defaultDescriptions.put("doMobLoot", "Mobs drop loot");
+            defaultDescriptions.put("doTileDrops", "Blocks drop items when destroyed");
+            defaultDescriptions.put("doEntityDrops", "Entities drop items");
+            defaultDescriptions.put("commandBlockOutput", "Command blocks output to chat");
+            defaultDescriptions.put("naturalRegeneration", "Natural health regeneration");
+            defaultDescriptions.put("doDaylightCycle", "Day/night cycle");
+            defaultDescriptions.put("logAdminCommands", "Log admin commands to server log");
+            defaultDescriptions.put("showDeathMessages", "Show death messages in chat");
+            defaultDescriptions.put("randomTickSpeed", "Random tick speed (plant growth, etc.)");
+            defaultDescriptions.put("sendCommandFeedback", "Show command execution feedback");
+            defaultDescriptions.put("reducedDebugInfo", "Reduce debug screen information");
+
+            return defaultDescriptions.get(ruleName);
+        }
+
+        return translated;
+    }
+
+    private Object parseValue(String textValue, Object originalValue) {
+        // 根据原始值的类型来解析新值
+        if (originalValue instanceof Boolean) {
+            return Boolean.parseBoolean(textValue);
+        } else if (originalValue instanceof Integer) {
+            try {
+                return Integer.parseInt(textValue);
+            } catch (NumberFormatException e) {
+                return originalValue; // 解析失败，返回原值
+            }
+        } else if (originalValue instanceof Double) {
+            try {
+                return Double.parseDouble(textValue);
+            } catch (NumberFormatException e) {
+                return originalValue; // 解析失败，返回原值
+            }
+        } else {
+            return textValue; // 字符串类型直接返回
+        }
+    }
+
+    private void saveChanges() {
+        for (Map.Entry<String, Object> entry : modifiedRules.entrySet()) {
+            String ruleName = entry.getKey();
+            Object value = entry.getValue();
+
+            boolean success = GameRuleMonitorNSetter.setGamerule(world, ruleName, value);
+            if (success) {
+                LOGGER.info("Successfully set game rule {} to {}", ruleName, value);
+            } else {
+                LOGGER.warn("Failed to set game rule {}", ruleName);
+            }
+        }
+    }
+
+    private void resetToDefaults() {
+        modifiedRules.clear();
+        createRuleComponents(); // 重新创建组件以恢复默认值
+    }
+
+    // 组件包装类
+    private static class GuiComponentWrapper {
+        public final Object component;
+        public final ComponentType type;
+
+        public GuiComponentWrapper(Object component, ComponentType type) {
+            this.component = component;
+            this.type = type;
+        }
+    }
+
+    // 组件类型枚举
+    private enum ComponentType {
+        BOOLEAN_BUTTON,
+        TEXT_FIELD
+    }
 }
