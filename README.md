@@ -16,4 +16,5 @@ Beta stage. Every one can give a go. And give their thoughts.
 
 Code - [MIT Licence](LICENSE)    
 Textures (PreAlpha, Alpha) - Copyright © 2025 dfdvdsf. All Rights Reserved.
+Textures & Inspirations - Copyright © 2025 Mojang AB. All Rights Reserved. Microsoft and Minecraft are trademarks of the Microsoft group of companies.
 
