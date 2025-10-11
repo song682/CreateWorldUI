@@ -1,0 +1,48 @@
+options.on=ON
+options.off=OFF
+options.yes=Yes
+options.no=No
+options.save=Save
+options.reset=Reset
+
+createworldui.tab.game=Game
+createworldui.tab.world=World
+createworldui.tab.more=More
+
+createworldui.button.create=Create
+createworldui.button.cancel=Cancel
+createworldui.button.selectWorld.difficulty=Difficulty:
+createworldui.button.selectWorld.difficulty.peaceful=Peaceful
+createworldui.button.selectWorld.difficulty.peaceful.tooltip=
+createworldui.button.selectWorld.difficulty.easy=Easy
+createworldui.button.selectWorld.difficulty.easy.tooltip=
+createworldui.button.selectWorld.difficulty.normal=Normal
+createworldui.button.selectWorld.difficulty.normal.tooltip=
+createworldui.button.selectWorld.difficulty.hard=Hard
+createworldui.button.selectWorld.difficulty.hard.tooltip=
+createworldui.worldTypeSettings=World Type Settings
+createworldui.button.gameRuleEditor=GameRules
+
+createworldui.hover.gameMode=Game Mode
+createworldui.hover.gameMode.survival=Survival Mode: Explore the world, gather resources, craft tools, and fight monsters.
+createworldui.hover.gameMode.creative=Creative Mode: Unlimited resources, ability to fly, and break and build anything.
+createworldui.hover.gameMode.adventure=Adventure Mode: Same as survival mode, but blocks can't be added or removed.
+createworldui.hover.gameMode.hardcore=Hardcore Mode: Same as survival but locked to hard difficulty and only one life.
+createworldui.hover.generateStructures=Generate Structures: Villages, dungeons etc.
+createworldui.hover.worldType=Select the world generating type.
+createworldui.hover.allowCheats=Use commands like /gamemode, /xp
+createworldui.hover.bonusChest=Generate a chest containing basic survival items.
+createworldui.hover.customize=Custom the world details.
+createworldui.hover.gameRuleEditor=Edit your game rules.
+
+createworldui.gamerules.title=Game Rules
+gamerules.doFireTick.description=Controls whether fire spreads and naturally extinguishes
+gamerules.mobGriefing.description=Controls whether mobs can destroy blocks
+gamerules.keepInventory.description=Keep inventory after death
+gamerules.doMobSpawning.description=Natural mob spawning
+gamerules.doMobLoot.description=Mobs drop loot
+gamerules.commandBlockOutput.description=Command blocks output to chat
+gamerules.naturalRegeneration.description=Natural health regeneration
+gamerules.doDaylightCycle.description=Day/night cycle
+
+createworldui.experimental.warning=Experimental settings may affect stability
