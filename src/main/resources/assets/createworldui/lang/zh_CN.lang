@@ -23,6 +23,9 @@ createworldui.button.selectWorld.difficulty.hard.tooltip=
 createworldui.worldTypeSettings=世界类型设置
 createworldui.button.gameRuleEditor=游戏规则
 
+createworldui.selectWorld.bonusItems=奖励箱
+createworldui.selectWorld.mapFeatures=生成建筑
+
 createworldui.hover.gameMode=游戏模式
 createworldui.hover.gameMode.survival=生存模式：探索世界，收集资源，制作工具，并与怪物战斗。
 createworldui.hover.gameMode.creative=创造模式：无限资源，可以飞行、破坏和建造任何东西。
