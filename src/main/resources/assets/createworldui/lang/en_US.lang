@@ -23,6 +23,9 @@ createworldui.button.selectWorld.difficulty.hard.tooltip=
 createworldui.worldTypeSettings=World Type Settings
 createworldui.button.gameRuleEditor=GameRules
 
+createworldui.selectWorld.bonusItems=Bonus Chest
+createworldui.selectWorld.mapFeatures=Generate Structures
+
 createworldui.hover.gameMode=Game Mode
 createworldui.hover.gameMode.survival=Survival Mode: Explore the world, gather resources, craft tools, and fight monsters.
 createworldui.hover.gameMode.creative=Creative Mode: Unlimited resources, ability to fly, and break and build anything.

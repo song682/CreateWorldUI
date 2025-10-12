@@ -1,6 +1,5 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
-import decok.dfcdvadstf.createworldui.api.TextureHelper;
 import decok.dfcdvadstf.createworldui.gamerule.GameRuleMonitorNSetter.GameruleValue;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -23,8 +22,7 @@ public class GameRuleEditor extends GuiScreen {
     private static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
 
     // 背景纹理
-    private static final ResourceLocation BACKGROUND_TEXTURE = new ResourceLocation("textures/gui/demo_background.png");
-    private static final ResourceLocation PANEL_TEXTURE = new ResourceLocation("textures/gui/options_background.png");
+    private static final ResourceLocation BACKGROUND_TEXTURE = new ResourceLocation("textures/gui/options_background.png");
 
     private World world;
     private Map<String, GameruleValue> originalRules;
@@ -51,9 +49,9 @@ public class GameRuleEditor extends GuiScreen {
         Keyboard.enableRepeatEvents(true);
 
         // 创建按钮
-        this.saveButton = new GuiButton(0, this.width / 2 - 154, this.height - 30, 100, 20, I18n.format("gui.save"));
+        this.saveButton = new GuiButton(0, this.width / 2 - 154, this.height - 30, 100, 20, I18n.format("options.save"));
         this.cancelButton = new GuiButton(1, this.width / 2 - 50, this.height - 30, 100, 20, I18n.format("gui.cancel"));
-        this.resetButton = new GuiButton(2, this.width / 2 + 54, this.height - 30, 100, 20, I18n.format("createWorld.customize.custom.reset"));
+        this.resetButton = new GuiButton(2, this.width / 2 + 54, this.height - 30, 100, 20, I18n.format("options.reset"));
 
         this.buttonList.add(this.saveButton);
         this.buttonList.add(this.cancelButton);
@@ -256,7 +254,7 @@ public class GameRuleEditor extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         // 绘制背景
-        drawBackground();
+        drawBackground(0);
 
         // 绘制内容面板
         drawContentPanel();
@@ -285,24 +283,6 @@ public class GameRuleEditor extends GuiScreen {
 
         // 绘制悬停提示
         drawTooltips(mouseX, mouseY);
-    }
-
-    private void drawBackground() {
-        // 绘制渐变背景
-        TextureHelper.drawGradientBackground(this.width, this.height);
-
-        // 可选：绘制纹理背景
-        try {
-            TextureHelper.drawCustomTexturedRect(
-                    BACKGROUND_TEXTURE,
-                    0, 0, 0, 0,
-                    this.width, this.height,
-                    16, 16, 4.0f
-            );
-        } catch (Exception e) {
-            // 如果纹理加载失败，使用纯色背景
-            drawDefaultBackground();
-        }
     }
 
     private void drawContentPanel() {
