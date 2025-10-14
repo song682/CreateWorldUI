@@ -161,15 +161,16 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Unique
     private void modernWorldCreatingUI$recreateFunctionalButtons() {
         // 重新创建所有功能按钮，使用新的位置
-        this.buttonList.add(this.field_146343_z = new GuiButton(2, this.width / 2 - 100, this.height / 2, 200, 20, ""));
-        this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 + 30, this.height / 2 + 15, 98, 20, ""));
-        this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 + 30, this.height / 2 - 15 , 44, 20, ""));
-        this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 100, this.height / 8 + 10, 98, 20, ""));
-        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 100, this.height / 2 + 25, 200, 20, ""));
-        this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 , this.height / 8 + 10, 98, 20, I18n.format("selectWorld.customizeType")));
+        this.buttonList.add(this.field_146343_z = new GuiButton(2, this.width / 2 - 104, this.height / 2, 208, 20, ""));
+        this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 + 154 - 44, this.height / 2 + 15, 44, 20, ""));
+        this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 + 154 - 44, this.height / 2 - 15 , 44, 20, ""));
+        this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 154, this.height / 8 + 10, 150, 20, ""));
+        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 104, this.height / 2 + 25, 208, 20, ""));
+        this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 + 4 , this.height / 8 + 10, 150, 20, I18n.format("selectWorld.customizeType")));
         this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 2, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
 
         // 更新按钮文本
+
         modernWorldCreatingUI$updateButtonText();
     }
 
@@ -177,18 +178,20 @@ public abstract class ModernCreateWorld extends GuiScreen {
     private void modernWorldCreatingUI$setupTextFields() {
         // 确保输入框使用正确的位置
         if (field_146333_g != null) {
-            field_146333_g.xPosition = this.width / 2 - 100;
+            field_146333_g.xPosition = this.width / 2 - 104;
             field_146333_g.yPosition = this.height / 5;
+            field_146333_g.width = 208;
         } else {
-            field_146333_g = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, TAB_HEIGHT + 10, 200, 20);
+            field_146333_g = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, TAB_HEIGHT + 10, this.width / 2, 20);
             field_146333_g.setText(this.field_146330_J);
         }
 
         if (field_146335_h != null) {
-            field_146335_h.xPosition = this.width / 2 - 100;
+            field_146335_h.xPosition = this.width / 2 - 154;
             field_146335_h.yPosition = this.height / 3 - 1;
+            field_146335_h.width = 308;
         } else {
-            field_146335_h = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, TAB_HEIGHT + 20, 200, 20);
+            field_146335_h = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, TAB_HEIGHT + 20, this.width / 2, 20);
             field_146335_h.setText(this.field_146329_I);
         }
 
@@ -290,7 +293,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$updateButtonText() {
-        // 确保字段不为空
+       // 确保字段不为空
         if (this.field_146342_r == null) {
             this.field_146342_r = "survival";
         }
@@ -303,12 +306,10 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 I18n.format("selectWorld.gameMode." + this.field_146342_r);
 
         // 更新生成建筑按钮文本
-        this.field_146325_B.displayString =
-                (this.field_146341_s ? I18n.format("options.on") : I18n.format("options.off"));
+        this.field_146325_B.displayString = this.field_146341_s ? I18n.format("options.on") : I18n.format("options.off");
 
         // 更新奖励箱按钮文本
-        this.field_146326_C.displayString =
-                (this.field_146338_v && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
+        this.field_146326_C.displayString = this.field_146338_v && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off");
 
         // 更新世界类型按钮文本
         this.field_146320_D.displayString = I18n.format("selectWorld.mapType") + " " +
@@ -391,20 +392,28 @@ public abstract class ModernCreateWorld extends GuiScreen {
         // 根据当前 Tab 显示不同的输入框
         if (modernWorldCreatingUI$currentTab == 100) {
             // 游戏 Tab 显示世界名称
-            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterName"), this.width / 2 - 100, this.height / 5 - 13, 0xA0A0A0);
+            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterName"), this.width / 2 - 104, this.height / 5 - 13, 0xA0A0A0);
             field_146333_g.drawTextBox();
         }
 
         if (modernWorldCreatingUI$currentTab == 101) {
             // 世界 Tab 显示种子
-            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterSeed"), this.width / 2 - 100, this.height / 3 - 2 - 13, 0xA0A0A0);
+            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterSeed"), this.width / 2 - 154, this.height / 3 - 2 - 13, 0xA0A0A0);
             field_146335_h.drawTextBox();
+
+            // 添加提示文字：如果种子输入框为空且没有焦点，则绘制提示文字
+            if (field_146335_h.getText().isEmpty() && !field_146335_h.isFocused()) {
+                String placeholder = I18n.format("selectWorld.seedInfo");
+                int x = field_146335_h.xPosition + 4;
+                int y = field_146335_h.yPosition + (field_146335_h.height - 8) / 2;
+                this.fontRendererObj.drawStringWithShadow(placeholder, x, y, 0x808080);
+            }
 
             // 修改：在按钮左侧绘制标签文本
             // 生成建筑标签
-            this.drawString(this.fontRendererObj, I18n.format("createworldui.selectWorld.bonusItems"), this.width / 2 - 90, this.height / 2 + 15 + 6, 0xFFFFFF);
+            this.drawString(this.fontRendererObj, I18n.format("createworldui.selectWorld.mapFeatures"), this.width / 2 - 154, this.height / 2 + 15 + 6, 0xFFFFFF);
             // 奖励箱标签
-            this.drawString(this.fontRendererObj, I18n.format("createworldui.selectWorld.bonusItems"), this.width / 2 - 90, this.height / 2 - 15 + 6, 0xFFFFFF);
+            this.drawString(this.fontRendererObj, I18n.format("createworldui.selectWorld.bonusItems"), this.width / 2 - 154, this.height / 2 - 15 + 6, 0xFFFFFF);
         }
 
         super.drawScreen(mouseX, mouseY, partialTicks);
@@ -486,6 +495,40 @@ public abstract class ModernCreateWorld extends GuiScreen {
         // 处理世界类型选择按钮
         if (button.id == 5) {
             modernWorldCreatingUI$handleWorldTypeSelection();
+            ci.cancel();
+            return;
+        }
+
+        // 处理生成建筑按钮
+        if (button.id == 4) {
+            this.field_146341_s = !this.field_146341_s;
+            modernWorldCreatingUI$updateButtonText();
+            ci.cancel();
+            return;
+        }
+
+        // 处理允许作弊按钮
+        if (button.id == 6) {
+            // 硬核模式下不允许作弊
+            if (this.field_146337_w) {
+                this.field_146340_t = false;
+            } else {
+                this.field_146340_t = !this.field_146340_t;
+            }
+            modernWorldCreatingUI$updateButtonText();
+            ci.cancel();
+            return;
+        }
+
+        // 处理奖励箱按钮
+        if (button.id == 7) {
+            // 硬核模式下不允许奖励箱
+            if (this.field_146337_w) {
+                this.field_146338_v = false;
+            } else {
+                this.field_146338_v = !this.field_146338_v;
+            }
+            modernWorldCreatingUI$updateButtonText();
             ci.cancel();
             return;
         }
