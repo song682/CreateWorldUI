@@ -453,6 +453,24 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 }
             }
         }
+
+        // 检查文本框悬停
+        if (modernWorldCreatingUI$currentTab == 100 && field_146333_g != null) {
+            if (mouseX >= field_146333_g.xPosition && mouseY >= field_146333_g.yPosition &&
+                    mouseX < field_146333_g.xPosition + field_146333_g.width && mouseY < field_146333_g.yPosition + field_146333_g.height) {
+
+                String worldName = field_146333_g.getText();
+                String hoverText;
+                if (worldName.isEmpty()) {
+                    hoverText = I18n.format("createworldui.hover.worldName.empty");
+                } else {
+                    hoverText = I18n.format("createworldui.hover.worldName.filled", worldName);
+                }
+
+                this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
+                return;
+            }
+        }
     }
 
     @Unique
