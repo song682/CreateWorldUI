@@ -8,6 +8,16 @@ This mod is focused on the backporting of modern creating world GUI (After 23w05
 
 Beta stage. Every one can give a go. And give their thoughts.
 
+## How to use? 
+
+Use jitpack, add 
+```gradle
+dependencies {
+	implementation 'com.github.song682:CreateWorldUI:Tag'
+}
+```
+to your build.gradle(.kts) to use it. 
+
 ## Credits
 
 [This website](https://mappings.dev/1.8.8/index.html) helped me to solve the issue of obfuscated name.
