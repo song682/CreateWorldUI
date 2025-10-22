@@ -12,9 +12,9 @@ Beta stage. Every one can give a go. And give their thoughts.
 
 Use jitpack, add 
 ```gradle
-  dependencies {
-	        implementation 'com.github.song682:CreateWorldUI:Tag'
-	}
+dependencies {
+	implementation 'com.github.song682:CreateWorldUI:Tag'
+}
 ```
 to your build.gradle(.kts) to use it. 
 
