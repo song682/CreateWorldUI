@@ -13,6 +13,10 @@ buildscript {
             name = "sonatype"
             url = "https://oss.sonatype.org/content/repositories/snapshots/"
         }
+        maven {
+            name = 'Aliyun'
+            url = 'https://maven.aliyun.com/repository/public/'
+        }
     }
 
     dependencies {
@@ -93,6 +97,35 @@ def dependenciesList = []
 if (!project.modDependencies.isEmpty()) dependenciesList.add(project.modDependencies)
 if (project.enableUsingMysteriumLib.toBoolean()) dependenciesList.add("\"required-after:MysteriumLib\"")
 
+// === === === 自动版本管理逻辑 === === ===
+
+def extractVersionFromTags() {
+    def tagsFilePath = project.hasProperty("tags_file_path") ? project.tags_file_path : null
+    if (tagsFilePath == null) {
+        throw new GradleException("tags_file_path not found in gradle.properties ")
+    }
+
+
+    def tagsFile = file(tagsFilePath)
+    if (!tagsFile.exists()) {
+        throw new GradleException("Tags.java not find in ${tagsFile}")
+    }
+
+
+    def versionPattern = ~/VERSION\s*=\s*"([^"]+)"/
+    def match = versionPattern.matcher(tagsFile.text)
+    if (match.find()) {
+        return match.group(1)
+    } else {
+        throw new GradleException("Definition VERSION not find in Tags.java ")
+    }
+}
+
+ext.modVersion = extractVersionFromTags()
+project.version = modVersion
+
+println ">>> Automativally read ${modVersion} from ${project.tags_file_path} "
+
 processResources {
     inputs.property "modversion", project.version
     inputs.property "mcversion", project.minecraft.version
@@ -144,17 +177,6 @@ tasks.withType(Jar).configureEach {
     compileJava.options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xlint:all"
 }
 
-tasks.register('devJar', Jar) {
-    archiveClassifier = "dev"
-	
-    from sourceSets.main.output
-    from sourceSets.main.allSource
-    from sourceSets.main.resources
-}
-
-tasks.named('build') {
-    dependsOn tasks.named('devJar')
-}
 
 allprojects {
     gradle.projectsEvaluated {
@@ -179,4 +201,48 @@ if (project.enableUsingKotlin.toBoolean()) {
             jvmTarget = "1.8"
         }
     }
+}
+
+tasks.register('deobfJar', Jar) {
+    dependsOn reobf
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    classifier 'deobf'
+
+    from sourceSets.main.output
+    manifest.attributes(jar.manifest.getAttributes())
+}
+
+tasks.register('sourcesJar', Jar) {
+    dependsOn classes
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    classifier 'deobf-sources'
+
+    from sourceSets.main.allSource
+    exclude "assets"
+    exclude "methods.bin"
+    exclude "McpToSrg.csv"
+}
+
+tasks.register("updateGradleProperties") {
+    doLast {
+        def propsFile = file("gradle.properties")
+        if (!propsFile.exists()) {
+            throw new GradleException("gradle.properties Not Found")
+        }
+
+
+        def updated = propsFile.text.replaceAll(/modVersion\s*=.*\n/, "modVersion=${modVersion}\n")
+        propsFile.text = updated
+        println ">>> Have upgraded modVersion=${modVersion} from gradle.properties"
+    }
+}
+
+
+tasks.named("build").configure {
+    dependsOn("updateGradleProperties")
+}
+
+artifacts {
+    archives deobfJar
+    archives sourcesJar
 }
