@@ -7,6 +7,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
+import net.minecraft.world.EnumDifficulty;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
@@ -76,6 +77,10 @@ public abstract class ModernCreateWorld extends GuiScreen {
     private static final int TAB_HEIGHT = 24;
     @Unique
     private final Map<Integer, String> modernWorldCreatingUI$hoverTexts = new HashMap<>();
+    @Unique
+    private GuiButton modernWorldCreatingUI$difficultyButton;
+    @Unique
+    private EnumDifficulty modernWorldCreatingUI$difficulty = EnumDifficulty.NORMAL; // 默认普通难度
 
     /**
      * <p>
@@ -95,7 +100,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Inject(method = "initGui", at = @At("TAIL"))
     private void onInitGuiTail(CallbackInfo ci) {
         // 在原版初始化完成后，重新组织界面为 Tab 布局
-
         // 保存必要的按钮
         List<GuiButton> essentialButtons = modernWorldCreatingUI$collectEssentialButtons();
 
@@ -121,6 +125,8 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Unique
     private void modernWorldCreatingUI$initHoverTexts() {
         // 只保留功能按钮的悬停文本
+        modernWorldCreatingUI$hoverTexts.put(2, I18n.format("createworldui.hover.gameMode"));
+        modernWorldCreatingUI$hoverTexts.put(9, I18n.format("createworldui.hover.difficulty"));
         modernWorldCreatingUI$hoverTexts.put(4, I18n.format("createworldui.hover.generateStructures"));
         modernWorldCreatingUI$hoverTexts.put(5, I18n.format("createworldui.hover.worldType"));
         modernWorldCreatingUI$hoverTexts.put(6, I18n.format("createworldui.hover.allowCheats"));
@@ -162,17 +168,18 @@ public abstract class ModernCreateWorld extends GuiScreen {
     private void modernWorldCreatingUI$recreateFunctionalButtons() {
         // 重新创建所有功能按钮，使用新的位置
         this.buttonList.add(this.field_146343_z = new GuiButton(2, this.width / 2 - 104, this.height / 2, 208, 20, ""));
+        this.buttonList.add(this.modernWorldCreatingUI$difficultyButton = new GuiButton(9, this.width / 2 - 104, this.height / 2 + 25, 208, 20, "")); // 新增难度按钮
+        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 104, this.height / 2 + 50, 208, 20, "")); // 允许作弊按钮下移
         this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 + 154 - 44, this.height / 2 + 15, 44, 20, ""));
         this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 + 154 - 44, this.height / 2 - 15 , 44, 20, ""));
         this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 154, this.height / 8 + 10, 150, 20, ""));
-        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 104, this.height / 2 + 25, 208, 20, ""));
         this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 + 4 , this.height / 8 + 10, 150, 20, I18n.format("selectWorld.customizeType")));
         this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 2, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
 
         // 更新按钮文本
-
         modernWorldCreatingUI$updateButtonText();
     }
+
 
     @Unique
     private void modernWorldCreatingUI$setupTextFields() {
@@ -293,7 +300,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$updateButtonText() {
-       // 确保字段不为空
+        // 确保字段不为空
         if (this.field_146342_r == null) {
             this.field_146342_r = "survival";
         }
@@ -304,6 +311,26 @@ public abstract class ModernCreateWorld extends GuiScreen {
         // 更新游戏模式按钮文本
         this.field_146343_z.displayString = I18n.format("selectWorld.gameMode") + " " +
                 I18n.format("selectWorld.gameMode." + this.field_146342_r);
+
+        // 更新难度按钮文本
+        if (this.modernWorldCreatingUI$difficultyButton != null) {
+            String difficultyName = "";
+            switch (modernWorldCreatingUI$difficulty) {
+                case PEACEFUL:
+                    difficultyName = I18n.format("options.difficulty.peaceful");
+                    break;
+                case EASY:
+                    difficultyName = I18n.format("options.difficulty.easy");
+                    break;
+                case NORMAL:
+                    difficultyName = I18n.format("options.difficulty.normal");
+                    break;
+                case HARD:
+                    difficultyName = I18n.format("options.difficulty.hard");
+                    break;
+            }
+            this.modernWorldCreatingUI$difficultyButton.displayString = I18n.format("options.difficulty") + ": " + difficultyName;
+        }
 
         // 更新生成建筑按钮文本
         this.field_146325_B.displayString = this.field_146341_s ? I18n.format("options.on") : I18n.format("options.off");
@@ -328,11 +355,13 @@ public abstract class ModernCreateWorld extends GuiScreen {
      *     Show or hide the correlate buttons based on the current tabs. (Tab's judging by ID)
      * </p>
      */
+    // 在 modernWorldCreatingUI$updateButtonVisibilityNAbility 方法中更新难度按钮的可见性
     @Unique
     private void modernWorldCreatingUI$updateButtonVisibilityNAbility() {
         switch (modernWorldCreatingUI$currentTab) {
             case 100:
                 this.field_146343_z.visible = true;
+                this.modernWorldCreatingUI$difficultyButton.visible = true;
                 this.field_146321_E.visible = true;
                 this.field_146325_B.visible = false;
                 this.field_146326_C.visible = false;
@@ -342,6 +371,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 break;
             case 101: // 世界 Tab
                 this.field_146343_z.visible = false;
+                this.modernWorldCreatingUI$difficultyButton.visible = false;
                 this.field_146321_E.visible = false;
                 this.field_146325_B.visible = true;
                 this.field_146326_C.visible = true;
@@ -352,6 +382,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 break;
             case 102: // 更多 Tab
                 this.field_146343_z.visible = false;
+                this.modernWorldCreatingUI$difficultyButton.visible = false;
                 this.field_146321_E.visible = false;
                 this.field_146325_B.visible = false;
                 this.field_146326_C.visible = false;
@@ -525,6 +556,22 @@ public abstract class ModernCreateWorld extends GuiScreen {
             return;
         }
 
+        // 处理难度选择按钮
+        if (button.id == 9) {
+            // 循环切换难度
+            EnumDifficulty[] difficulties = EnumDifficulty.values();
+            int currentIndex = modernWorldCreatingUI$difficulty.ordinal();
+            int nextIndex = (currentIndex + 1) % difficulties.length;
+            modernWorldCreatingUI$difficulty = difficulties[nextIndex];
+
+            modernWorldCreatingUI$updateButtonText();
+
+            // 立即更新游戏难度设置
+            modernWorldCreatingUI$updateGameDifficulty();
+            ci.cancel();
+            return;
+        }
+
         // 处理允许作弊按钮
         if (button.id == 6) {
             // 硬核模式下不允许作弊
@@ -552,9 +599,35 @@ public abstract class ModernCreateWorld extends GuiScreen {
         }
 
         // 对于其他原版按钮，更新文本显示
-        if (button.id == 2 || button.id == 4 || button.id == 5 || button.id == 6 || button.id == 7) {
+        if (button.id == 2 || button.id == 4 || button.id == 5 || button.id == 6 || button.id == 7 || button.id == 9) {
             modernWorldCreatingUI$scheduleButtonTextUpdate();
         }
+    }
+
+    // 添加一个方法来获取当前选择的难度（用于后续创建世界时应用）
+    @Unique
+    public EnumDifficulty modernWorldCreatingUI$getSelectedDifficulty() {
+        return modernWorldCreatingUI$difficulty;
+    }
+
+    // 更新游戏难度设置
+    @Unique
+    private void modernWorldCreatingUI$updateGameDifficulty() {
+        // 获取 Minecraft 的游戏设置并更新难度
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+        if (mc.gameSettings != null) {
+            mc.gameSettings.difficulty = modernWorldCreatingUI$difficulty;
+            // 保存设置到文件
+            mc.gameSettings.saveOptions();
+        }
+    }
+
+
+    // 新增方法：在创建世界时应用难度设置
+    @Inject(method = "func_146315_i", at = @At("HEAD")) // 这是创建世界的方法
+    private void onWorldCreation(CallbackInfo ci) {
+        // 确保在创建世界时使用我们设置的难度
+        modernWorldCreatingUI$updateGameDifficulty();
     }
 
     @Unique
@@ -604,7 +677,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
         }
 
         // 更新创建按钮状态
-        ((GuiButton)this.buttonList.get(2)).enabled = this.field_146333_g.getText().length() > 0;
+        ((GuiButton)this.buttonList.get(2)).enabled = !this.field_146333_g.getText().isEmpty();
 
         // 处理世界名称
         this.func_146314_g();
