@@ -403,8 +403,8 @@ public abstract class ModernCreateWorld extends GuiScreen {
      * @author dfdvdsf
      * @reason Enhance the vanilla
      */
-    @Overwrite
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+    @Inject(method = "drawScreen", at = @At("HEAD"), cancellable = true)
+    private void onDrawScreen(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         // 绘制主背景
         this.drawBackground(0);
 
@@ -451,6 +451,8 @@ public abstract class ModernCreateWorld extends GuiScreen {
 
         // 绘制悬停提示
         modernWorldCreatingUI$drawHoverText(mouseX, mouseY);
+
+        ci.cancel();
     }
 
     @Unique
