@@ -574,21 +574,40 @@ public abstract class ModernCreateWorld extends GuiScreen {
             return;
         }
 
-        // 处理难度按钮
-        if (button.id == 110) {
+        // 处理两个难度按钮。
+        if (button.id == 9 || button.id == 110) {
             int next = (this.modernWorldCreatingUI$difficulty.getDifficultyId() + 1) % EnumDifficulty.values().length;
             this.modernWorldCreatingUI$difficulty = EnumDifficulty.getDifficultyEnum(next);
-            if (this.modernWorldCreatingUI$difficultyButton != null) {
-                this.modernWorldCreatingUI$difficultyButton.displayString = modernWorldCreatingUI$getDifficultyText();
+
+            String newText = modernWorldCreatingUI$getDifficultyText();
+
+            // 更新被点击按钮
+            button.displayString = newText;
+
+            // 同步所有同 ID 的按钮
+            for (Object obj : this.buttonList) {
+                if (obj instanceof GuiButton) {
+                    GuiButton gb = (GuiButton) obj;
+                    if (gb.id == button.id) {
+                        gb.displayString = newText;
+                    }
+                }
             }
-            ci.cancel();
-            return;
+            
+            // 同步全局 GameSettings 难度
+            this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
+            this.mc.gameSettings.saveOptions();
+
+            System.out.println("MCW: difficulty updated -> " + this.modernWorldCreatingUI$difficulty);
         }
 
         // 对于其他原版按钮，更新文本显示
         if (button.id == 2 || button.id == 4 || button.id == 5 || button.id == 6 || button.id == 7 || button.id == 110) {
             modernWorldCreatingUI$scheduleButtonTextUpdate();
         }
+
+        System.out.println("MCW: clicked button.id=" + button.id + ", btn.display=" + button.displayString);
+        System.out.println("MCW: internal diff = " + this.modernWorldCreatingUI$difficulty);
     }
 
     @Inject(
@@ -605,7 +624,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
             if (integrated == null) {
                 // fallback: theIntegratedServer field (in case getIntegratedServer is not yet assigned)
                 try {
-                    java.lang.reflect.Field fserv = Minecraft.class.getDeclaredField("theIntegratedServer");
+                    Field fserv = Minecraft.class.getDeclaredField("theIntegratedServer");
                     fserv.setAccessible(true);
                     integrated = fserv.get(this.mc);
                 } catch (Throwable ignored) {}
@@ -614,40 +633,41 @@ public abstract class ModernCreateWorld extends GuiScreen {
             if (integrated != null) {
                 Class<?> serverClass = integrated.getClass();
                 try {
-                    java.lang.reflect.Field worldsField = serverClass.getDeclaredField("worldServers");
+                    Field worldsField = serverClass.getDeclaredField("worldServers");
                     worldsField.setAccessible(true);
                     Object[] worlds = (Object[]) worldsField.get(integrated);
-                    if (worlds != null && worlds.length > 0 && worlds[0] != null) {
-                        Object overworld = worlds[0];
-                        try {
-                            java.lang.reflect.Field diffField = overworld.getClass().getDeclaredField("difficultySetting");
-                            diffField.setAccessible(true);
-                            diffField.set(overworld, this.modernWorldCreatingUI$difficulty);
-                            this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
-                            this.mc.gameSettings.saveOptions();
-                        } catch (NoSuchFieldException nsf) {
-                            try {
-                                java.lang.reflect.Field diffField = overworld.getClass().getDeclaredField("field_73013_u");
-                                diffField.setAccessible(true);
-                                diffField.set(overworld, this.modernWorldCreatingUI$difficulty);
-                                this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
-                                this.mc.gameSettings.saveOptions();
-                            } catch (Throwable ignored) {}
+                    if (worlds != null && worlds.length > 0) {
+                        for (Object w : worlds) {
+                            if (w != null) {
+                                try {
+                                    Field diffField = w.getClass().getDeclaredField("difficultySetting");
+                                    diffField.setAccessible(true);
+                                    diffField.set(w, this.modernWorldCreatingUI$difficulty);
+                                } catch (NoSuchFieldException nsf) {
+                                    try {
+                                        Field diffField = w.getClass().getDeclaredField("field_73013_u");
+                                        diffField.setAccessible(true);
+                                        diffField.set(w, this.modernWorldCreatingUI$difficulty);
+                                    } catch (Throwable ignored) {}
+                                }
+                            }
                         }
+                        this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
+                        this.mc.gameSettings.saveOptions();
                     }
                 } catch (Throwable t) {
                     try {
-                        java.lang.reflect.Field tw = Minecraft.class.getDeclaredField("theWorld");
+                        Field tw = Minecraft.class.getDeclaredField("theWorld");
                         tw.setAccessible(true);
                         Object clientWorld = tw.get(this.mc);
                         if (clientWorld != null) {
                             try {
-                                java.lang.reflect.Field diffField = clientWorld.getClass().getDeclaredField("difficultySetting");
+                                Field diffField = clientWorld.getClass().getDeclaredField("difficultySetting");
                                 diffField.setAccessible(true);
                                 diffField.set(clientWorld, this.modernWorldCreatingUI$difficulty);
                             } catch (NoSuchFieldException nsf) {
                                 try {
-                                    java.lang.reflect.Field diffField = clientWorld.getClass().getDeclaredField("field_73013_u");
+                                    Field diffField = clientWorld.getClass().getDeclaredField("field_73013_u");
                                     diffField.setAccessible(true);
                                     diffField.set(clientWorld, this.modernWorldCreatingUI$difficulty);
                                 } catch (Throwable ignored) {}
