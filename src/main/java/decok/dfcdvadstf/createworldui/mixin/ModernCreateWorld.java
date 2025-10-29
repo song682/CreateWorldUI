@@ -309,7 +309,9 @@ public abstract class ModernCreateWorld extends GuiScreen {
             this.field_146331_K = 0; // 重置为默认世界类型
         }
         // 更新游戏模式难度文本
-        this.modernWorldCreatingUI$difficultyButton.displayString = modernWorldCreatingUI$getDifficultyText();
+        if (this.modernWorldCreatingUI$difficultyButton != null) {
+            this.modernWorldCreatingUI$difficultyButton.displayString = modernWorldCreatingUI$getDifficultyText();
+        }
 
 
         // 更新游戏模式按钮文本
@@ -576,8 +578,9 @@ public abstract class ModernCreateWorld extends GuiScreen {
         if (button.id == 110) {
             int next = (this.modernWorldCreatingUI$difficulty.getDifficultyId() + 1) % EnumDifficulty.values().length;
             this.modernWorldCreatingUI$difficulty = EnumDifficulty.getDifficultyEnum(next);
-            button.displayString = modernWorldCreatingUI$getDifficultyText();
-            modernWorldCreatingUI$updateButtonText();
+            if (this.modernWorldCreatingUI$difficultyButton != null) {
+                this.modernWorldCreatingUI$difficultyButton.displayString = modernWorldCreatingUI$getDifficultyText();
+            }
             ci.cancel();
             return;
         }
