@@ -172,11 +172,11 @@ public abstract class ModernCreateWorld extends GuiScreen {
         this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 + 154 - 44, this.height / 2 + 15, 44, 20, ""));
         this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 + 154 - 44, this.height / 2 - 15 , 44, 20, ""));
         this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 154, this.height / 8 + 10, 150, 20, ""));
-        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 104, this.height / 2 + 25, 208, 20, ""));
+        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 104, this.height / 2 + 50, 208, 20, ""));
         this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 + 4 , this.height / 8 + 10, 150, 20, I18n.format("selectWorld.customizeType")));
         this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 2, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
         this.buttonList.add(this.modernWorldCreatingUI$difficultyButton =
-                new GuiButton(110, this.width / 2 - 104, this.height / 2 - 25, 208, 20, modernWorldCreatingUI$getDifficultyText()));
+                new GuiButton(9, this.width / 2 - 104, this.height / 2 + 25, 208, 20, modernWorldCreatingUI$getDifficultyText()));
 
         // 更新按钮文本
         modernWorldCreatingUI$updateButtonText();
@@ -334,7 +334,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Unique
     private String modernWorldCreatingUI$getDifficultyText() {
         return I18n.format("options.difficulty") + ": " +
-                I18n.format("options.difficulty." + modernWorldCreatingUI$difficulty.getDifficultyResourceKey());
+                I18n.format(modernWorldCreatingUI$difficulty.getDifficultyResourceKey());
     }
 
     /**
@@ -392,8 +392,9 @@ public abstract class ModernCreateWorld extends GuiScreen {
      * @author dfdvdsf
      * @reason Enhance the vanilla
      */
-    @Overwrite
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+    @Inject(method = {"drawScreen"}, at = @At("HEAD"), cancellable = true)
+    public void onDrawScreen(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ci.cancel();
         // 绘制主背景
         this.drawBackground(0);
 
@@ -597,10 +598,9 @@ public abstract class ModernCreateWorld extends GuiScreen {
     )
     private void modernWorldCreatingUI$afterLaunchWorld(GuiButton button, CallbackInfo ci) {
         try {
-            // Try to get integrated server via getter
             Object integrated = this.mc.getIntegratedServer();
             if (integrated == null) {
-                // fallback: theIntegratedServer field
+                // fallback: theIntegratedServer field (in case getIntegratedServer is not yet assigned)
                 try {
                     java.lang.reflect.Field fserv = Minecraft.class.getDeclaredField("theIntegratedServer");
                     fserv.setAccessible(true);
@@ -620,17 +620,19 @@ public abstract class ModernCreateWorld extends GuiScreen {
                             java.lang.reflect.Field diffField = overworld.getClass().getDeclaredField("difficultySetting");
                             diffField.setAccessible(true);
                             diffField.set(overworld, this.modernWorldCreatingUI$difficulty);
+                            this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
+                            this.mc.gameSettings.saveOptions();
                         } catch (NoSuchFieldException nsf) {
-                            // fallback to obf name
                             try {
                                 java.lang.reflect.Field diffField = overworld.getClass().getDeclaredField("field_73013_u");
                                 diffField.setAccessible(true);
                                 diffField.set(overworld, this.modernWorldCreatingUI$difficulty);
+                                this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
+                                this.mc.gameSettings.saveOptions();
                             } catch (Throwable ignored) {}
                         }
                     }
                 } catch (Throwable t) {
-                    // fallback: try to set client's current world difficulty
                     try {
                         java.lang.reflect.Field tw = Minecraft.class.getDeclaredField("theWorld");
                         tw.setAccessible(true);
