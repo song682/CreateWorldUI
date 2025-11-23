@@ -1,7 +1,9 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent;
 import java.util.HashMap;
@@ -12,7 +14,8 @@ import java.util.Map;
  */
 public class GameRuleApplier {
 
-    private static Map<String, String> pendingGameRules;
+    private static Map<String, String> pendingGameRules = null;
+    private static boolean registered = false;
 
     /**
      * 设置要在下一个创建的世界中应用的规则
@@ -22,9 +25,40 @@ public class GameRuleApplier {
             pendingGameRules = null;
             return;
         }
-        // 确保是可变的 map（防止不可变 map 抛异常）
-        pendingGameRules = new HashMap<String, String>(gameRules);
-        MinecraftForge.EVENT_BUS.register(new GameRuleApplier());
+
+        pendingGameRules = new HashMap<>(gameRules);
+
+        // 只注册一次
+        if (!registered) {
+            MinecraftForge.EVENT_BUS.register(new GameRuleApplier());
+            registered = true;
+        }
+    }
+
+    /**
+     * 世界加载完成后应用规则
+     */
+    @SubscribeEvent
+    public void onWorldLoad(WorldEvent.Load event) {
+        if (!(event.world instanceof WorldServer)) return;
+
+        if (pendingGameRules != null && !pendingGameRules.isEmpty()) {
+            GameRules rules = event.world.getGameRules();
+
+            for (Map.Entry<String, String> e : pendingGameRules.entrySet()) {
+                rules.setOrCreateGameRule(e.getKey(), e.getValue());
+            }
+
+            // 用完立即清理
+            pendingGameRules.clear();
+            pendingGameRules = null;
+
+            // 注销监听器（避免重复触发）
+            MinecraftForge.EVENT_BUS.unregister(this);
+            registered = false;
+
+            System.out.println("[GameRuleApplier] Applied pending game rules.");
+        }
     }
 
     /**
@@ -34,19 +68,6 @@ public class GameRuleApplier {
         return pendingGameRules;
     }
 
-    @SubscribeEvent
-    public void onWorldLoad(WorldEvent.Load event) {
-        if (pendingGameRules != null && !pendingGameRules.isEmpty() && event.world != null) {
-            // 只在服务器端主世界应用（你原来的逻辑）
-            if (!event.world.isRemote && event.world.provider.dimensionId == 0) {
-                applyGameRules(event.world);
-
-                // 应用后清除并取消注册
-                pendingGameRules = null;
-                MinecraftForge.EVENT_BUS.unregister(this);
-            }
-        }
-    }
 
     private void applyGameRules(World world) {
         for (Map.Entry<String, String> entry : pendingGameRules.entrySet()) {

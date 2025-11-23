@@ -16,15 +16,11 @@ import org.lwjgl.input.Mouse;
 
 import java.util.*;
 
-/**
- * GameRule 编辑器（用于创建世界前编辑 pendingGameRules）
- *
- * 设计：
- * - 显示来源：GameRuleMonitorNSetter.getAllGamerules(currentWorld)
- * - 保存目标：GameRuleApplier.setPendingGameRules(Map<String,String>)
- *
- * 注意：所有保存到 pending 的值都转为 String（与 GameRules 存储一致）
- */
+/// GameRule 编辑器（用于创建世界前编辑 pendingGameRules）
+/// 设计：
+/// - 显示来源：GameRuleMonitorNSetter.getAllGamerules(currentWorld)
+/// - 保存目标：GameRuleApplier.setPendingGameRules(Map<String,String>)
+/// 注意：所有保存到 pending 的值都转为 String（与 GameRules 存储一致）
 public class GameRuleEditor extends GuiScreen {
 
     private static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
@@ -46,20 +42,22 @@ public class GameRuleEditor extends GuiScreen {
     private GuiButton resetButton;
 
     private int scrollOffset = 0;
-    private int maxScrollOffset = 0;
+    private int maxScrollOffset =   0;
     private static final int ROW_HEIGHT = 25;
     private static final int VISIBLE_ROWS = 8;
     private boolean isScrolling = false;
+    private GuiScreen parentScreen;
 
-public GameRuleEditor(Map<String, String> editableRules) {
+    public GameRuleEditor(Map<String, String> editableRules) {
     LOGGER.error("GameRuleEditor CONSTRUCTOR CALLED");
-    this.editableRules = (editableRules != null) ? editableRules : new HashMap<String, String>();
+    this.editableRules = (editableRules != null) ? editableRules : new HashMap<>();
 
-    /*
+    /**
      * 读取默认 rules 的顺序：
      * 1) 先尝试从真实 world（client.theWorld）通过 MonitorNSetter 读取（如果 theWorld != null）
      * 2) 如果没有 world 或 Monitor 返回为空，则回退为 new GameRules()（原版默认值）
      */
+
     Map<String, GameruleValue> defaultsFromMonitor = null;
     try {
         World w = Minecraft.getMinecraft() != null ? Minecraft.getMinecraft().theWorld : null;
@@ -72,7 +70,7 @@ public GameRuleEditor(Map<String, String> editableRules) {
     }
     if (defaultsFromMonitor == null || defaultsFromMonitor.isEmpty()) {
         // 回退：使用临时 GameRules 实例（不依赖 world），以获取原版默认值
-        defaultsFromMonitor = new LinkedHashMap<String, GameruleValue>();
+        defaultsFromMonitor = new LinkedHashMap<>();
         try {
             GameRules temp = new GameRules();
             String[] keys = temp.getRules();
@@ -91,7 +89,7 @@ public GameRuleEditor(Map<String, String> editableRules) {
             LOGGER.error("Failed to build defaults from temporary GameRules: {}", t.getMessage());
         }
     }
-    this.defaultRules = (defaultsFromMonitor != null) ? new LinkedHashMap<>(defaultsFromMonitor) : new LinkedHashMap<String, GameruleValue>();
+    this.defaultRules = (   defaultsFromMonitor != null) ? new LinkedHashMap<>(defaultsFromMonitor) : new LinkedHashMap<String, GameruleValue>();
     // 最终保证展示时使用的是 defaultRules 的 keys 与 editableKeys 的并集（如果 editable 有额外 key）
     for (String k : this.editableRules.keySet()) {
         if (!this.defaultRules.containsKey(k)) {
@@ -144,31 +142,46 @@ public GameRuleEditor(Map<String, String> editableRules) {
      * 创建并布局规则组件（布尔使用按钮，其他类型使用文本框）
      */
     private void createRuleComponents() {
+        LOGGER.error("GameRuleEditor: createRuleComponents() START, total rules = " + defaultRules.size());
+
         ruleComponents.clear();
-        int yPos = 60;
         int index = 0;
 
         for (Map.Entry<String, GameruleValue> entry : defaultRules.entrySet()) {
-            if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
-                String ruleName = entry.getKey();
-                GameruleValue value = entry.getValue();
+            String ruleName = entry.getKey();
+            GameruleValue value = entry.getValue();
 
-                // 计算显示值：modified > editable > default
-                Object displayObj;
-                if (modifiedRules.containsKey(ruleName)) {
-                    displayObj = parseFromString(modifiedRules.get(ruleName), value.getOptimalValue());
-                } else if (editableRules.containsKey(ruleName)) {
-                    displayObj = parseFromString(editableRules.get(ruleName), value.getOptimalValue());
-                } else {
-                    displayObj = value.getOptimalValue();
-                }
-
-                int componentY = yPos + (index - scrollOffset) * ROW_HEIGHT;
-                GuiComponentWrapper component = createComponentForRule(ruleName, displayObj, componentY, index);
-                if (component != null) {
-                    ruleComponents.put(ruleName, component);
-                }
+            // 不在可见行中跳过（用于滚动）
+            if (index < scrollOffset || index >= scrollOffset + VISIBLE_ROWS) {
+                index++;
+                continue;
             }
+
+            // 计算 Y 坐标
+            int yPos = 60 + (index - scrollOffset) * ROW_HEIGHT;
+
+            // ----------------------------
+            // 计算显示值：modified > editable > default
+            // ----------------------------
+            Object displayObj;
+
+            if (modifiedRules.containsKey(ruleName)) {
+                // modifiedRules 里面永远是 String → 需要解析回基本类型用于显示
+                displayObj = parseFromString(modifiedRules.get(ruleName), value.getOptimalValue());
+            } else if (editableRules.containsKey(ruleName)) {
+                displayObj = parseFromString(editableRules.get(ruleName), value.getOptimalValue());
+            } else {
+                displayObj = value.getOptimalValue();
+            }
+
+            // ----------------------------
+            // 创建组件
+            // ----------------------------
+            GuiComponentWrapper wrapper = createComponentForRule(ruleName, displayObj, yPos, index);
+            if (wrapper != null) {
+                ruleComponents.put(ruleName, wrapper);
+            }
+
             index++;
         }
     }
@@ -176,47 +189,106 @@ public GameRuleEditor(Map<String, String> editableRules) {
     private GuiComponentWrapper createComponentForRule(String ruleName, Object value, int yPos, int index) {
         int componentWidth = 150;
         int componentX = this.width / 2 + 20;
-        LOGGER.error("GameRuleEditor: add rule component: " + ruleName);
 
+        LOGGER.error("GameRuleEditor: add rule component: " + ruleName + " value=" + value);
+
+
+        /**
+         * 布尔按钮
+         */
         if (value instanceof Boolean) {
             boolean boolValue = (Boolean) value;
-            String buttonText = boolValue ? I18n.format("options.on") : I18n.format("options.off");
-            GuiButton button = new GuiButton(100 + index, componentX, yPos, componentWidth, 20, buttonText);
+
+            // 根据实际值初始化显示
+            String display = boolValue ? I18n.format("options.on") : I18n.format("options.off");
+
+            GuiButton button = new GuiButton(
+                    100 + index,              // ID
+                    componentX,
+                    yPos,
+                    componentWidth,
+                    20,
+                    display
+            );
+
             return new GuiComponentWrapper(button, ComponentType.BOOLEAN_BUTTON);
-        } else {
-            GuiTextField textField = new GuiTextField(this.fontRendererObj, componentX, yPos, componentWidth, 20);
-            // 文本框优先显示 modified -> editable -> default string
-            String initial = null;
-            if (modifiedRules.containsKey(ruleName)) {
-                initial = modifiedRules.get(ruleName);
-            } else if (editableRules.containsKey(ruleName)) {
-                initial = editableRules.get(ruleName);
-            } else if (value != null) {
-                initial = String.valueOf(value);
-            } else {
-                initial = "";
-            }
-            textField.setText(initial);
-            textField.setMaxStringLength(200);
-            return new GuiComponentWrapper(textField, ComponentType.TEXT_FIELD);
         }
+
+        // -------------------------
+        // 数字/字符串 → 文本输入框
+        // -------------------------
+        GuiTextField textField =
+                new GuiTextField(this.fontRendererObj, componentX, yPos, componentWidth, 20);
+
+        String initial;
+
+        if (modifiedRules.containsKey(ruleName)) {
+            initial = modifiedRules.get(ruleName);
+        } else if (editableRules.containsKey(ruleName)) {
+            initial = editableRules.get(ruleName);
+        } else if (value != null) {
+            initial = String.valueOf(value);
+        } else {
+            initial = "";
+        }
+
+        textField.setText(initial);
+        textField.setMaxStringLength(200);
+
+        return new GuiComponentWrapper(textField, ComponentType.TEXT_FIELD);
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
-        if (button == this.saveButton) {
+        int id = button.id;
+
+        // Save
+        if (id == 0) {
             saveChanges();
-            this.mc.displayGuiScreen(null);
-        } else if (button == this.cancelButton) {
-            this.mc.displayGuiScreen(null);
-        } else if (button == this.resetButton) {
-            resetToDefaults();
-        } else if (button.id >= 100) {
-            // 布尔切换按钮
-            int ruleIndex = button.id - 100;
-            String ruleName = getRuleNameByIndex(ruleIndex);
-            if (ruleName != null) {
-                toggleBooleanRule(ruleName, button);
+            this.mc.displayGuiScreen(this.parentScreen);
+            return;
+        }
+
+        // Cancel
+        if (id == 1) {
+            this.mc.displayGuiScreen(this.parentScreen);
+            return;
+        }
+
+        // Reset
+        if (id == 2) {
+            modifiedRules.clear();
+            createRuleComponents();
+            return;
+        }
+
+        // Boolean buttons
+        if (id >= 100) {
+            int index = id - 100;
+
+            // 按 defaultRules 顺序取 key
+            int i = 0;
+            String ruleName = null;
+            for (String s : defaultRules.keySet()) {
+                if (i == index) {
+                    ruleName = s;
+                    break;
+                }
+                i++;
+            }
+
+            if (ruleName == null) return;
+
+            GuiComponentWrapper wrapper = ruleComponents.get(ruleName);
+
+            if (wrapper != null && wrapper.type == ComponentType.BOOLEAN_BUTTON) {
+                GuiButton boolBtn = (GuiButton) wrapper.component;
+
+                boolean newVal = boolBtn.displayString.equals(I18n.format("options.off"));
+                boolBtn.displayString = newVal ? I18n.format("options.on") : I18n.format("options.off");
+
+                // 更新 modifiedRules string 形式
+                modifiedRules.put(ruleName, Boolean.toString(newVal));
             }
         }
     }
@@ -254,20 +326,23 @@ public GameRuleEditor(Map<String, String> editableRules) {
 
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
-        // 处理文本框输入（将输入直接录入到 textfield；回车提交到 modifiedRules）
         super.keyTyped(typedChar, keyCode);
 
         for (Map.Entry<String, GuiComponentWrapper> entry : ruleComponents.entrySet()) {
-            GuiComponentWrapper wrapper = entry.getValue();
             String ruleName = entry.getKey();
+            GuiComponentWrapper wrapper = entry.getValue();
+
             if (wrapper.type == ComponentType.TEXT_FIELD) {
                 GuiTextField textField = (GuiTextField) wrapper.component;
-                textField.textboxKeyTyped(typedChar, keyCode);
 
-                if (keyCode == Keyboard.KEY_RETURN) {
-                    String newVal = textField.getText();
-                    // 将用户输入解析为对应类型以便显示正确，但存储为 String（Applier 需要 String）
-                    Object parsed = parseFromString(newVal, defaultRules.get(ruleName).getOptimalValue());
+                if (textField.textboxKeyTyped(typedChar, keyCode)) {
+                    // 获取用户输入
+                    String input = textField.getText();
+
+                    // parsed 仅用于内部展示类型推断，不影响最终保存
+                    Object parsed = parseFromString(input, defaultRules.get(ruleName).getOptimalValue());
+
+                    // 真正存储 String → String
                     modifiedRules.put(ruleName, String.valueOf(parsed));
                 }
             }
@@ -515,19 +590,18 @@ public GameRuleEditor(Map<String, String> editableRules) {
      * 把用户修改保存到 GameRuleApplier.pendingGameRules（String->String）
      */
     private void saveChanges() {
+        LOGGER.error("GameRuleEditor: saveChanges() called");
+
+        // 仅写入用户修改过的规则（String → String）
         Map<String, String> result = new HashMap<>();
 
-        // 默认值转入（String）
-        for (Map.Entry<String, GameruleValue> e : defaultRules.entrySet()) {
-            result.put(e.getKey(), String.valueOf(e.getValue().getOptimalValue()));
-        }
-
-        // 覆盖用户修改（modifiedRules 已经是 String）
         for (Map.Entry<String, String> e : modifiedRules.entrySet()) {
-            result.put(e.getKey(), e.getValue());
+            if (e.getKey() != null && e.getValue() != null) {
+                result.put(e.getKey(), e.getValue());
+            }
         }
 
-        // 写入 Applier（会在世界创建时被应用）
+        // 写入到 Applier（静态变量 pendingGameRules）
         try {
             GameRuleApplier.setPendingGameRules(result);
             LOGGER.info("Saved {} modified game rules to pendingGameRules.", result.size());
@@ -545,6 +619,7 @@ public GameRuleEditor(Map<String, String> editableRules) {
     private static class GuiComponentWrapper {
         public final Object component;
         public final ComponentType type;
+        public boolean currentBooleanValue;
 
         public GuiComponentWrapper(Object component, ComponentType type) {
             this.component = component;
