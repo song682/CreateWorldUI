@@ -2,6 +2,8 @@ package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.createworldui.api.TabState;
 import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
+import decok.dfcdvadstf.createworldui.gamerule.GameRuleApplier;
+import decok.dfcdvadstf.createworldui.gamerule.GameRuleMonitorNSetter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -491,7 +493,6 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 }
 
                 this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
-                return;
             }
         }
     }
@@ -528,7 +529,29 @@ public abstract class ModernCreateWorld extends GuiScreen {
 
         // 处理游戏规则编辑器按钮
         if (button.id == 200) {
-            this.mc.displayGuiScreen(new GameRuleEditor(null));
+            Map<String, String> pending = GameRuleApplier.getPendingGameRules();
+            if (pending == null) pending = new HashMap<String, String>();
+
+            // 如果 pending 空，尝试用 Monitor 从当前 client world 获取默认值（作为初始 editable）
+            if (pending.isEmpty()) {
+                try {
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
+                    net.minecraft.world.World clientWorld = mc != null ? mc.theWorld : null;
+                    if (clientWorld != null) {
+                        // Monitor 提供的 optimal types map
+                        Map<String, Object> opt = GameRuleMonitorNSetter.getOptimalGameruleValues(clientWorld);
+                        if (opt != null && !opt.isEmpty()) {
+                            for (Map.Entry<String, Object> e : opt.entrySet()) {
+                                pending.put(e.getKey(), String.valueOf(e.getValue()));
+                            }
+                        }
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+            }
+
+            this.mc.displayGuiScreen(new GameRuleEditor(this, pending));
             ci.cancel();
             return;
         }
