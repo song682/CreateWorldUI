@@ -69,7 +69,7 @@ public class GameRuleApplier {
             registered = false;
 
             // 使用已保存的 appliedCount 避免 NPE
-            logger.info("Applied " + appliedCount + " pending game rules.");
+            logger.info("Applied {} pending game rules.", appliedCount);
         }
     }
 
