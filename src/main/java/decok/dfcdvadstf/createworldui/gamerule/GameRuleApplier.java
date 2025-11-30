@@ -1,11 +1,15 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import decok.dfcdvadstf.createworldui.Tags;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.world.WorldEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +17,7 @@ import java.util.Map;
  * 用于在世界加载时应用保存的游戏规则设置
  */
 public class GameRuleApplier {
+    private static final Logger logger = LogManager.getLogger(Tags.NAME + ":GameRuleApplier");
 
     private static Map<String, String> pendingGameRules = null;
     private static boolean registered = false;
@@ -43,21 +48,28 @@ public class GameRuleApplier {
         if (!(event.world instanceof WorldServer)) return;
 
         if (pendingGameRules != null && !pendingGameRules.isEmpty()) {
+
             GameRules rules = event.world.getGameRules();
 
+            // 先记录数量，避免清理后 NPE
+            int appliedCount = pendingGameRules.size();
+
+            applyGameRules(event.world);   // 保留你当前逻辑，不动
+
+            // 再用 Vanilla API 写一次（你当前逻辑）
             for (Map.Entry<String, String> e : pendingGameRules.entrySet()) {
                 rules.setOrCreateGameRule(e.getKey(), e.getValue());
             }
 
-            // 用完立即清理
-            pendingGameRules.clear();
+            // 这里删除 clear() —— 直接赋 null 即可。
             pendingGameRules = null;
 
-            // 注销监听器（避免重复触发）
+            // 取消注册（你原本逻辑）
             MinecraftForge.EVENT_BUS.unregister(this);
             registered = false;
 
-            System.out.println("[GameRuleApplier] Applied pending game rules.");
+            // 使用已保存的 appliedCount 避免 NPE
+            logger.info("Applied " + appliedCount + " pending game rules.");
         }
     }
 
@@ -73,9 +85,5 @@ public class GameRuleApplier {
         for (Map.Entry<String, String> entry : pendingGameRules.entrySet()) {
             GameRuleMonitorNSetter.setGamerule(world, entry.getKey(), entry.getValue());
         }
-
-        // 记录应用的游戏规则数量
-        org.apache.logging.log4j.LogManager.getLogger("GameRuleApplier")
-                .info("Applied {} game rules while creating the world.", pendingGameRules.size());
     }
 }

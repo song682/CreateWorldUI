@@ -21,6 +21,7 @@ import java.util.*;
 /// - 显示来源：GameRuleMonitorNSetter.getAllGamerules(currentWorld)
 /// - 保存目标：GameRuleApplier.setPendingGameRules(Map<String,String>)
 /// 注意：所有保存到 pending 的值都转为 String（与 GameRules 存储一致）
+@SuppressWarnings("unchecked")
 public class GameRuleEditor extends GuiScreen {
 
     private static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
@@ -89,7 +90,7 @@ public class GameRuleEditor extends GuiScreen {
             LOGGER.error("Failed to build defaults from temporary GameRules: {}", t.getMessage());
         }
     }
-    this.defaultRules = (   defaultsFromMonitor != null) ? new LinkedHashMap<>(defaultsFromMonitor) : new LinkedHashMap<String, GameruleValue>();
+    this.defaultRules = (   defaultsFromMonitor != null) ? new LinkedHashMap<>(defaultsFromMonitor) : new LinkedHashMap<>();
     // 最终保证展示时使用的是 defaultRules 的 keys 与 editableKeys 的并集（如果 editable 有额外 key）
     for (String k : this.editableRules.keySet()) {
         if (!this.defaultRules.containsKey(k)) {
@@ -210,6 +211,8 @@ public class GameRuleEditor extends GuiScreen {
                     20,
                     display
             );
+
+            this.buttonList.add(button);
 
             return new GuiComponentWrapper(button, ComponentType.BOOLEAN_BUTTON);
         }

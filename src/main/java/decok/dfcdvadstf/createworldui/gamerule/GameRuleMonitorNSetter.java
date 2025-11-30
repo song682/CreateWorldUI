@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
+import decok.dfcdvadstf.createworldui.Tags;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
@@ -10,7 +11,7 @@ import java.util.Map;
 
 public class GameRuleMonitorNSetter {
 
-    private static final Logger LOGGER = LogManager.getLogger("GameruleMonitorAndSetter");
+    private static final Logger LOGGER = LogManager.getLogger(Tags.NAME + ":GameruleMonitorAndSetter");
 
     /**
      * Game rule value container class with all possible types
