@@ -551,7 +551,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
                 }
             }
 
-            this.mc.displayGuiScreen(new GameRuleEditor(this, pending));
+            this.mc.displayGuiScreen(new GameRuleEditor((GuiCreateWorld)(Object)this, pending));
             ci.cancel();
             return;
         }

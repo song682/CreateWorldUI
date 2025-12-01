@@ -138,9 +138,6 @@ public class GameRuleEditor extends GuiScreen {
     @Override
     public void onGuiClosed() {
         Keyboard.enableRepeatEvents(false);
-        if (this.parentScreen != null) {
-            this.mc.displayGuiScreen(this.parentScreen);
-        }
     }
 
     /**
@@ -420,9 +417,7 @@ public class GameRuleEditor extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         LOGGER.error("GameRuleEditor drawScreen()");
-        // 背景 + 面板
-        drawBackground(0);
-        drawContentPanel();
+        drawDefaultBackground();
 
         // 标题
         this.drawCenteredString(this.fontRendererObj, I18n.format("createWorld.customize.custom.gamerules"), this.width / 2, 20, 0xFFFFFF);
@@ -449,21 +444,6 @@ public class GameRuleEditor extends GuiScreen {
         // 悬停提示
         drawTooltips(mouseX, mouseY);
         LOGGER.error(" buttonList = {}", this.buttonList.size());
-    }
-
-    private void drawContentPanel() {
-        int panelWidth = this.width - 100;
-        int panelHeight = this.height - 100;
-        int panelX = 50;
-        int panelY = 40;
-
-        drawRect(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xAA222222);
-        drawRect(panelX - 1, panelY - 1, panelX + panelWidth + 1, panelY, 0xFF555555);
-        drawRect(panelX - 1, panelY + panelHeight, panelX + panelWidth + 1, panelY + panelHeight + 1, 0xFF555555);
-        drawRect(panelX - 1, panelY, panelX, panelY + panelHeight, 0xFF555555);
-        drawRect(panelX + panelWidth, panelY, panelX + panelWidth + 1, panelY + panelHeight, 0xFF555555);
-        drawRect(panelX, panelY, panelX + panelWidth, panelY + 20, 0xAA444444);
-        drawRect(panelX, panelY + 20, panelX + panelWidth, panelY + 21, 0xFF666666);
     }
 
     private void drawRuleList(int mouseX, int mouseY) {
