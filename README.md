@@ -4,10 +4,6 @@
 
 This mod is focused on the backporting of modern creating world GUI (After 23w05a) for creating your world as modern players do.
 
-## Status 
-
-Beta stage. Every one can give a go. And give their thoughts.
-
 ## How to use? 
 
 Use jitpack, add 

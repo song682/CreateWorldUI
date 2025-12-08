@@ -1,27 +1,52 @@
-package decok.dfcdvadstf.createworldui.gamerule;
+package decok.dfcdvadstf.createworldui.api.gamerule;
 
+import decok.dfcdvadstf.createworldui.Tags;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
+/**
+ * <p>
+ *     游戏规则监控与设置器<br>
+ *     提供游戏规则的获取、设置、添加等操作，支持多种数据类型
+ * </p>
+ * <p>
+ *     Game rule monitor and setter<br>
+ *     Provides operations such as getting, setting, adding game rules, supporting multiple data types
+ * </p>
+ */
 public class GameRuleMonitorNSetter {
 
-    private static final Logger LOGGER = LogManager.getLogger("GameruleMonitorAndSetter");
+    private static final Logger LOGGER = LogManager.getLogger(Tags.NAME + ":GameruleMonitorAndSetter");
 
     /**
-     * Game rule value container class with all possible types
+     * 游戏规则值容器类，包含所有可能的数据类型<br>
+     * Game rule value container class with all possible data types
      */
 
     public static class GameruleValue {
-        public final String stringValue;
-        public final boolean booleanValue;
-        public final int intValue;
-        public final double doubleValue;
 
+
+        public final String stringValue; // 字符串形式的值 / Value in string form
+        public final boolean booleanValue; // 布尔形式的值 / Value in boolean form
+        public final int intValue; // 整数形式的值 / Value in integer form
+        public final double doubleValue; // 浮点数形式的值 / Value in double form
+
+        /**
+         * 构造游戏规则值容器<br>
+         * Constructor for game rule value container
+         *
+         * @param stringValue 字符串值 / String value
+         * @param booleanValue 布尔值 / Boolean value
+         * @param intValue 整数值 / Integer value
+         * @param doubleValue 浮点值 / Double value
+         */
         public GameruleValue(String stringValue, boolean booleanValue, int intValue, double doubleValue) {
             this.stringValue = stringValue;
             this.booleanValue = booleanValue;
@@ -36,8 +61,15 @@ public class GameRuleMonitorNSetter {
         }
 
         /**
-         * Get the most appropriate value type representation.
-         * @return int, double, boolean, string
+         * <p>
+         *     获取最合适的数据类型表示<br>
+         *     优先级：整数 > 浮点数 > 布尔值 > 字符串
+         * </p>
+         * <p>
+         *     Get the most appropriate data type representation<br>
+         *     Priority: integer > double > boolean > string
+         * </p>
+         * @return 最合适的类型值（int, double, boolean, string）/ Most appropriate type value (int, double, boolean, string)
          */
         public Object getOptimalValue() {
             if (stringValue.matches("-?\\d+")) {
@@ -56,9 +88,10 @@ public class GameRuleMonitorNSetter {
     }
 
     /**
-     * Get all game rules with all types of values
-     * @param world World object
-     * @return Map containing all game rule names and complete values
+     * 获取所有游戏规则及对应所有类型的值<br>
+     * Get all game rules with values of all types
+     * @param world 世界对象 / World object
+     * @return 包含所有游戏规则名称和完整值的映射 / Map containing all game rule names and complete values
      */
     public static Map<String, GameruleValue> getAllGamerules(World world) {
         Map<String, GameruleValue> gamerules = new HashMap<>();
@@ -83,10 +116,11 @@ public class GameRuleMonitorNSetter {
     }
 
     /**
-     * Get complete value of specific game rule
-     * @param world World object
-     * @param ruleName Rule name
-     * @return Complete game rule value, null if rule doesn't exist
+     * 获取特定游戏规则的完整值<br>
+     * Get the complete value of specific game rule
+     * @param world 世界对象 / World object
+     * @param ruleName 规则名称 / Rule name
+     * @return 完整的游戏规则值，若规则不存在则返回null / Complete game rule value, null if rule does not exist
      */
     public static GameruleValue getGamerule(World world, String ruleName) {
         if (world == null) {
@@ -107,15 +141,16 @@ public class GameRuleMonitorNSetter {
         double doubleValue = 0.0;
 
         try {
-            java.lang.reflect.Field field = GameRules.class.getDeclaredField("theGameRules");
+            Field field = GameRules.class.getDeclaredField("theGameRules");
             field.setAccessible(true);
             @SuppressWarnings("unchecked")
-            java.util.TreeMap<String, Object> rulesMap = (java.util.TreeMap<String, Object>) field.get(gameRules);
+            TreeMap<String, Object> rulesMap = (TreeMap<String, Object>) field.get(gameRules);
 
             Object valueObj = rulesMap.get(ruleName);
             if (valueObj != null) {
-                java.lang.reflect.Field intField = valueObj.getClass().getDeclaredField("valueInteger");
-                java.lang.reflect.Field doubleField = valueObj.getClass().getDeclaredField("valueDouble");
+
+                Field intField = valueObj.getClass().getDeclaredField("valueInteger");
+                Field doubleField = valueObj.getClass().getDeclaredField("valueDouble");
 
                 intField.setAccessible(true);
                 doubleField.setAccessible(true);
@@ -141,11 +176,12 @@ public class GameRuleMonitorNSetter {
     }
 
     /**
+     * 设置游戏规则值<br>
      * Set game rule value
-     * @param world World object
-     * @param ruleName Rule name
-     * @param value New value
-     * @return True if successful
+     * @param world 世界对象 / World object
+     * @param ruleName 规则名称 / Rule name
+     * @param value 新值 / New value
+     * @return 若设置成功则返回true / True if setting is successful
      */
     public static boolean setGamerule(World world, String ruleName, Object value) {
         if (world == null) {
@@ -154,6 +190,8 @@ public class GameRuleMonitorNSetter {
         }
 
         try {
+            // 转换值为字符串形式（与GameRules存储一致）
+            // Convert value to the string form (consistent with GameRules storage)
             String stringValue;
             if (value instanceof Boolean) {
                 stringValue = value.toString();
@@ -177,11 +215,12 @@ public class GameRuleMonitorNSetter {
     }
 
     /**
+     * 添加新的游戏规则<br>
      * Add new game rule
-     * @param world World object
-     * @param ruleName Rule name
-     * @param defaultValue Default value
-     * @return True if successful
+     * @param world 世界对象 / World object
+     * @param ruleName 规则名称 / Rule name
+     * @param defaultValue 默认值 / Default value
+     * @return 若添加成功则返回true / True if addition is successful
      */
     public static boolean addGamerule(World world, String ruleName, Object defaultValue) {
         if (world == null) {
@@ -206,10 +245,11 @@ public class GameRuleMonitorNSetter {
     }
 
     /**
+     * 检查游戏规则是否存在<br>
      * Check if game rule exists
-     * @param world World object
-     * @param ruleName Rule name
-     * @return True if exists
+     * @param world 世界对象 / World object
+     * @param ruleName 规则名称 / Rule name
+     * @return 若存在则返回true / True if exists
      */
     public static boolean hasGamerule(World world, String ruleName) {
         boolean exists = world != null && world.getGameRules().hasRule(ruleName);
@@ -218,9 +258,10 @@ public class GameRuleMonitorNSetter {
     }
 
     /**
+     * 获取所有游戏规则的最佳类型表示<br>
      * Get optimal type representation for all game rules
-     * @param world World object
-     * @return Map containing rule names and optimal type values
+     * @param world 世界对象 / World object
+     * @return 包含规则名称和最佳类型值的映射 / Map containing rule names and optimal type values
      */
     public static Map<String, Object> getOptimalGameruleValues(World world) {
         Map<String, Object> result = new HashMap<>();
@@ -235,8 +276,9 @@ public class GameRuleMonitorNSetter {
     }
 
     /**
+     * 打印所有游戏规则（用于调试）<br>
      * Log all game rules (for debugging)
-     * @param world World object
+     * @param world 世界对象 / World object
      */
     public static void logAllGamerules(World world) {
         Map<String, GameruleValue> gamerules = getAllGamerules(world);
