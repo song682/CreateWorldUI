@@ -2,8 +2,8 @@ package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.createworldui.api.TabState;
 import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
-import decok.dfcdvadstf.createworldui.gamerule.GameRuleApplier;
-import decok.dfcdvadstf.createworldui.gamerule.GameRuleMonitorNSetter;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -22,15 +22,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.lang.reflect.Field;
 import java.util.*;
 
+/**
+ * <p>通过Mixin技术改造原版创建世界界面，实现标签页式布局</p>
+ * <p>Transforms the original world creation interface using Mixin technology to implement a tab-based layout</p>
+ */
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)
 public abstract class ModernCreateWorld extends GuiScreen {
 
     /**
-     * Manage all the button and string.
+     * <p>管理所有按钮和字符串（原版字段）</p>
+     * <p>Manages all buttons and strings (original field)</p>
      */
     @Shadow
-    private GuiScreen field_146332_f; // parentScreen
+    private GuiScreen field_146332_f; // 父界面 / parentScreen
     @Shadow
     private boolean field_146337_w; // hardcore
     @Shadow
@@ -447,6 +452,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
         modernWorldCreatingUI$drawHoverText(mouseX, mouseY);
     }
 
+
     @Unique
     private void modernWorldCreatingUI$drawHoverText(int mouseX, int mouseY) {
         // 只检查功能按钮的悬停
@@ -530,7 +536,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
         // 处理游戏规则编辑器按钮
         if (button.id == 200) {
             Map<String, String> pending = GameRuleApplier.getPendingGameRules();
-            if (pending == null) pending = new HashMap<String, String>();
+            if (pending == null) pending = new HashMap<>();
 
             // 如果 pending 空，尝试用 Monitor 从当前 client world 获取默认值（作为初始 editable）
             if (pending.isEmpty()) {
@@ -749,7 +755,7 @@ public abstract class ModernCreateWorld extends GuiScreen {
         }
 
         // 更新创建按钮状态
-        ((GuiButton)this.buttonList.get(2)).enabled = this.field_146333_g.getText().length() > 0;
+        ((GuiButton)this.buttonList.get(2)).enabled = !this.field_146333_g.getText().isEmpty();
 
         // 处理世界名称
         this.func_146314_g();
