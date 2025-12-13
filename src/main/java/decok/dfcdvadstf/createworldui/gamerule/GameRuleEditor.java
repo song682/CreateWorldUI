@@ -64,6 +64,7 @@ public class GameRuleEditor extends GuiScreen {
     private GuiButton saveButton;// 保存按钮 / Save button
     private GuiButton cancelButton; // 取消按钮 / Cancel button
     private GuiButton resetButton; // 重置按钮 / Reset button
+    private static final Map<String, String> hardcodeToolTip = new HashMap<>();// 允许外部模组自己添加自己的描述 / Allow developers to add their own tooltips from external.
 
     private int scrollOffset = 0; // 滚动偏移量 / Scroll offset
     private int maxScrollOffset = 0; // 最大滚动偏移量 / Maximum scroll offset
@@ -152,6 +153,7 @@ public class GameRuleEditor extends GuiScreen {
         }
         this.maxScrollOffset = Math.max(0, defaultRules.size() - VISIBLE_ROWS);
     }
+
 
     /**
      * <p>
@@ -629,12 +631,35 @@ public class GameRuleEditor extends GuiScreen {
                 mouseY >= rowY && mouseY <= rowY + ROW_HEIGHT;
     }
 
+    /**
+     * <p>
+     *     两个硬编码注册tooltip的方式。<br>
+     *     {@code registerTooltip} 适合放一个tooltip。<br>
+     *     {@code registerTooltips} 适合一次放很多个tooltips。
+     * </p>
+     * <p>
+     *     Two ways to register tooltips.<br>
+     *     {@code registerTooltip} is for adding a single tooltip at once
+     *     {@code registerToolTips} is for adding multitooltips
+     * </p>
+     */
+    public static void registerTooltip(String ruleName, String tooltip) {
+        hardcodeToolTip.put(ruleName, tooltip);
+    }
+
+    public static void registerTooltips(Map<String, String> tooltips) {
+        if (tooltips != null) hardcodeToolTip.putAll(tooltips);
+    }
+
     private String getRuleTooltip(String ruleName) {
         String translationKey = "gamerule." + ruleName + ".tooltip.description";
         String translated = I18n.format(translationKey);
         if (translated != null && !translated.equals(translationKey)) {
             return translated;
         }
+
+        // 其次查 mod 自己注册的 tooltip（允许外部覆盖）
+        if (hardcodeToolTip.containsKey(ruleName)) return hardcodeToolTip.get(ruleName);
 
         if (translated.equals(translationKey)) {
             Map<String, String> defaultDescriptions = new HashMap<>();
@@ -658,7 +683,7 @@ public class GameRuleEditor extends GuiScreen {
      *
      * @param text 待解析的字符串 / String to be parsed
      * @param originalValue 参考值（用于确定目标类型） / Reference value (to determine target type)
-     * @return 解析后的对应类型值，解析失败返回参考值 / Parsed value of corresponding type, return reference if parsing fails
+     * @return 解析后的对应类型值，解析失败返回参考值 / Parsed value of a corresponding type, return reference if parsing fails
      */
     private Object parseFromString(String text, Object originalValue) {
         if (originalValue instanceof Boolean) {
