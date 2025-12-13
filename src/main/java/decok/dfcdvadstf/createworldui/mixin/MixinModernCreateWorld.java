@@ -28,7 +28,7 @@ import java.util.*;
  */
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)
-public abstract class ModernCreateWorld extends GuiScreen {
+public abstract class MixinModernCreateWorld extends GuiScreen {
 
     /**
      * <p>管理所有按钮和字符串（原版字段）</p>
@@ -853,3 +853,4 @@ public abstract class ModernCreateWorld extends GuiScreen {
     @Shadow
     private void func_146319_h() {}
 }
+
