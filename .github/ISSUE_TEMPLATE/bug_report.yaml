@@ -37,6 +37,11 @@ body:
       default: 0
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Important**
+        If you choose **Other** as the version, please fill in the version field below.
   - type: input
     id: version_other
     attributes:
