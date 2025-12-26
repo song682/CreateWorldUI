@@ -40,7 +40,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ⚠️ **Important**
+        :warning: **Important**
         If you choose **Other** as the version, please fill in the version field below.
   - type: input
     id: version_other
