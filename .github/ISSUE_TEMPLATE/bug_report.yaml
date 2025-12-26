@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        What bugs did it occured from your game send it freely at here
+        What bugs did it occured from your game? Send it freely at here.
   - type: input
     id: contact
     attributes:
