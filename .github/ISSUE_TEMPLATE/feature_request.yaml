@@ -19,10 +19,12 @@ body:
     id: ideas-or-imaginations
     attributes:
       label: What do you want this mod do?
-      description: Also tell us, what did you want to happen?
+      description: |
+       Describe your idea or expected behavior.
+       Also tell us what you expected to happen.
       placeholder: |
         1. I want to ......
         2. I want to ......
         3. I want to ......
-     validations:
+    validations:
        required: true
