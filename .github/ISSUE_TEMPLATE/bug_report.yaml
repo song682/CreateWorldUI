@@ -4,7 +4,6 @@ title: "[Bug]: "
 labels: ["bug"]
 assignees:
   - song682
-type: bug
 body:
   - type: markdown
     attributes:
