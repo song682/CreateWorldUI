@@ -1,0 +1,29 @@
+name: Feature request
+
+about: Suggest an idea for this project
+title: "[FEATURE REQUEST]: "
+labels: ["enhancement"]
+assignees: 
+  - song682
+body: 
+  - type: markdown
+    attributes:
+      value: |
+        Have a idea that promotes this game?
+  - type: input
+    id: description
+    attributes:
+      label: A concentrated descriptions about you ideas.
+    validations:
+      required: true
+  - type: textarea
+    id: ideas-or-imaginations
+    attributes:
+      label: What do you want this mod do?
+      description: Also tell us, what did you want to happen?
+      placeholder: |
+        1. I want to ......
+        2. I want to ......
+        3. I want to ......
+      validations:
+       required: true
