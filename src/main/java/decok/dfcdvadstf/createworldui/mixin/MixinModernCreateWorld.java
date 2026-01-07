@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
-import decok.dfcdvadstf.createworldui.api.TabState;
+import decok.dfcdvadstf.createworldui.api.tab.TabManager;
+import decok.dfcdvadstf.createworldui.api.tab.TabState;
 import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
@@ -24,57 +25,38 @@ import java.util.*;
 
 /**
  * <p>通过Mixin技术改造原版创建世界界面，实现标签页式布局</p>
- * <p>Transforms the original world creation interface using Mixin technology to implement a tab-based layout</p>
  */
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)
 public abstract class MixinModernCreateWorld extends GuiScreen {
 
-    /**
-     * <p>管理所有按钮和字符串（原版字段）</p>
-     * <p>Manages all buttons and strings (original field)</p>
-     */
+    // 原版字段
     @Shadow
-    private GuiScreen field_146332_f; // 父界面 / parentScreen
+    private GuiScreen field_146332_f;
     @Shadow
-    private boolean field_146337_w; // hardcore
+    private boolean field_146337_w;
     @Shadow
-    private String field_146330_J; // World displayed name
+    private String field_146330_J;
     @Shadow
-    private String field_146342_r; // Gamemode description Text
+    private String field_146342_r;
     @Shadow
-    private String field_146329_I; // Seed
+    private String field_146329_I;
     @Shadow
-    private boolean field_146341_s; // Generate Structures
+    private boolean field_146341_s;
     @Shadow
-    private boolean field_146338_v; // Bonus Chest
+    private boolean field_146338_v;
     @Shadow
-    private boolean field_146340_t; // Allow Cheats
+    private boolean field_146340_t;
     @Shadow
-    private GuiTextField field_146335_h; // Seed text box
+    private GuiTextField field_146335_h;
     @Shadow
-    private GuiTextField field_146333_g; // World Name Input Box
+    private GuiTextField field_146333_g;
     @Shadow
-    private GuiButton field_146321_E; // Allow Cheats
-    @Shadow
-    private GuiButton field_146343_z; // GameMode
-    @Shadow
-    private GuiButton field_146326_C; // Bonus Chest
-    @Shadow
-    private GuiButton field_146320_D; // World Type selections
-    @Shadow
-    private GuiButton field_146325_B; // Generate Structure
-    @Shadow
-    private GuiButton field_146322_F; // 自定义（预设）
-    @Shadow
-    private int field_146331_K; // Index of world type
+    private int field_146331_K;
 
+    // 新添加的字段
     @Unique
-    private int modernWorldCreatingUI$currentTab = 100; // 100: Game, 101: World, 102: More
-    @Unique
-    private final List<GuiButton> modernWorldCreatingUI$tabButtons = new ArrayList<>();
-    @Unique
-    private boolean modernWorldCreatingUI$isReorganizing = false;
+    private TabManager modernWorldCreatingUI$tabManager;
     @Unique
     private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui:textures/gui/options_background_dark.png");
     @Unique
@@ -86,68 +68,130 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private final Map<Integer, String> modernWorldCreatingUI$hoverTexts = new HashMap<>();
     @Unique
-    private GuiButton modernWorldCreatingUI$difficultyButton;
-    @Unique
-    private EnumDifficulty modernWorldCreatingUI$difficulty = EnumDifficulty.NORMAL;
-
+    private boolean modernWorldCreatingUI$isInitialized = false;
 
     /**
-     * <p>
-     *   在头部保存一些关键状态或执行预处理，
-     *   这里可以保存原版的某些状态，或者准备自定义初始化，
-     *   这么做的原因就是防止点生成世界时，有NPE出现<br>
-     *   1. 确保关键字段不为null<br>
-     *   2. 设置初始化标志
-     * </p>
+     * 初始化
      */
     @Inject(method = "initGui", at = @At("HEAD"))
     private void onInitGuiHead(CallbackInfo ci) {
         modernWorldCreatingUI$ensureFieldsNotNull();
-        modernWorldCreatingUI$isReorganizing = true;
+        modernWorldCreatingUI$isInitialized = false;
     }
 
     @Inject(method = "initGui", at = @At("TAIL"))
     private void onInitGuiTail(CallbackInfo ci) {
-        // 在原版初始化完成后，重新组织界面为 Tab 布局
+        System.out.println("MixinModernCreateWorld: Initializing GUI");
 
-        // 保存必要的按钮
-        List<GuiButton> essentialButtons = modernWorldCreatingUI$collectEssentialButtons();
+        // 首先清空按钮列表，但保留创建和取消按钮
+        List<GuiButton> essentialButtons = new ArrayList<>();
+        for (GuiButton button : (List<GuiButton>)this.buttonList) {
+            if (button.id == 0 || button.id == 1) {
+                essentialButtons.add(button);
+            }
+        }
 
-        // 清空并重新构建界面
         this.buttonList.clear();
-        this.modernWorldCreatingUI$tabButtons.clear();
-        this.modernWorldCreatingUI$hoverTexts.clear();
         this.buttonList.addAll(essentialButtons);
 
-        // 创建Tab界面
+        // 确保字段不为空
+        modernWorldCreatingUI$ensureFieldsNotNull();
+
+        // 初始化标签页管理器
+        modernWorldCreatingUI$tabManager = new TabManager(
+                (GuiCreateWorld)(Object)this, this.buttonList, this.width, this.height
+        );
+
+        // 将原版状态传递给TabManager
+        modernWorldCreatingUI$sendStateToTabManager();
+
+        // 创建标签页按钮
         modernWorldCreatingUI$createTabButtons();
-        modernWorldCreatingUI$recreateFunctionalButtons();
-        modernWorldCreatingUI$setupTextFields();
-        modernWorldCreatingUI$updateButtonVisibilityNAbility();
         modernWorldCreatingUI$repositionActionButtons();
 
         // 初始化悬停文本
         modernWorldCreatingUI$initHoverTexts();
 
-        modernWorldCreatingUI$isReorganizing = false;
+        modernWorldCreatingUI$isInitialized = true;
+
+        System.out.println("MixinModernCreateWorld: GUI initialized with " + this.buttonList.size() + " buttons");
+    }
+
+    /**
+     * 同步原版状态到TabManager
+     */
+    @Unique
+    private void modernWorldCreatingUI$sendStateToTabManager() {
+        if (modernWorldCreatingUI$tabManager == null) {
+            return;
+        }
+
+        System.out.println("MixinModernCreateWorld: Passing state to TabManager");
+        System.out.println("  field_146330_J (world name): " + field_146330_J);
+        System.out.println("  field_146342_r (game mode): " + field_146342_r);
+        System.out.println("  field_146329_I (seed): " + field_146329_I);
+
+        // 获取当前游戏设置中的难度
+        EnumDifficulty currentDifficulty = mc.gameSettings.difficulty;
+        if (currentDifficulty == null) {
+            currentDifficulty = EnumDifficulty.NORMAL;
+        }
+
+        modernWorldCreatingUI$tabManager.setInitialState(
+                field_146330_J,      // 世界名称
+                field_146342_r,      // 游戏模式
+                field_146329_I,      // 种子
+                field_146331_K,      // 世界类型索引
+                field_146341_s,      // 生成建筑
+                field_146338_v,      // 奖励箱
+                field_146340_t,      // 允许作弊
+                field_146337_w,      // 硬核模式
+                currentDifficulty    // 难度
+        );
+    }
+
+    /**
+     * 同步TabManager状态到原版字段
+     */
+    @Unique
+    private void modernWorldCreatingUI$getStateFromTabManager() {
+        if (modernWorldCreatingUI$tabManager != null) {
+            field_146330_J = modernWorldCreatingUI$tabManager.getWorldName();
+            field_146342_r = modernWorldCreatingUI$tabManager.getGameMode();
+            field_146329_I = modernWorldCreatingUI$tabManager.getSeed();
+            field_146331_K = modernWorldCreatingUI$tabManager.getWorldTypeIndex();
+            field_146341_s = modernWorldCreatingUI$tabManager.getGenerateStructures();
+            field_146338_v = modernWorldCreatingUI$tabManager.getBonusChest();
+            field_146340_t = modernWorldCreatingUI$tabManager.getAllowCheats();
+            field_146337_w = modernWorldCreatingUI$tabManager.getHardcore();
+            field_146330_J = modernWorldCreatingUI$tabManager.getWorldName();
+
+            System.out.println("MixinModernCreateWorld: State synced - WorldName: " + field_146330_J);
+            System.out.println("MixinModernCreateWorld: State synced - GameMode: " + field_146342_r);
+            System.out.println("MixinModernCreateWorld: State synced - Hardcore: " + field_146337_w);
+        }
     }
 
     @Unique
     private void modernWorldCreatingUI$initHoverTexts() {
-        // 只保留功能按钮的悬停文本
+        modernWorldCreatingUI$hoverTexts.put(2, I18n.format("createworldui.hover.gameMode"));
         modernWorldCreatingUI$hoverTexts.put(4, I18n.format("createworldui.hover.generateStructures"));
         modernWorldCreatingUI$hoverTexts.put(5, I18n.format("createworldui.hover.worldType"));
         modernWorldCreatingUI$hoverTexts.put(6, I18n.format("createworldui.hover.allowCheats"));
         modernWorldCreatingUI$hoverTexts.put(7, I18n.format("createworldui.hover.bonusChest"));
         modernWorldCreatingUI$hoverTexts.put(8, I18n.format("createworldui.hover.customize"));
+        modernWorldCreatingUI$hoverTexts.put(9, I18n.format("createworldui.hover.difficulty"));
         modernWorldCreatingUI$hoverTexts.put(200, I18n.format("createworldui.hover.gameRuleEditor"));
     }
 
+    /**
+     * 确保字段不为null
+     */
     @Unique
     private void modernWorldCreatingUI$ensureFieldsNotNull() {
-        // 确保关键字段不为null，防止后续出现NPE
         if (this.field_146330_J == null) {
-            this.field_146330_J = "New World";
+            this.field_146330_J = I18n.format("selectWorld.newWorld");
+            System.out.println("MixinModernCreateWorld: Set default world name: " + this.field_146330_J);
         }
         if (this.field_146329_I == null) {
             this.field_146329_I = "";
@@ -159,71 +203,13 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 WorldType.worldTypes[this.field_146331_K] == null) {
             this.field_146331_K = 0;
         }
-    }
-
-    @Unique
-    private List<GuiButton> modernWorldCreatingUI$collectEssentialButtons() {
-        List<GuiButton> essentialButtons = new ArrayList<>();
-        for (GuiButton button : (List<GuiButton>) this.buttonList) {
-            if (button.id == 0 || button.id == 1) { // 创建和取消按钮
-                essentialButtons.add(button);
-            }
-        }
-        return essentialButtons;
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$recreateFunctionalButtons() {
-        // 重新创建所有功能按钮，使用新的位置
-        this.buttonList.add(this.field_146343_z = new GuiButton(2, this.width / 2 - 104, this.height / 2, 208, 20, ""));
-        this.buttonList.add(this.field_146325_B = new GuiButton(4, this.width / 2 + 154 - 44, this.height / 2 + 15, 44, 20, ""));
-        this.buttonList.add(this.field_146326_C = new GuiButton(7, this.width / 2 + 154 - 44, this.height / 2 - 15 , 44, 20, ""));
-        this.buttonList.add(this.field_146320_D = new GuiButton(5, this.width / 2 - 154, this.height / 8 + 10, 150, 20, ""));
-        this.buttonList.add(this.field_146321_E = new GuiButton(6, this.width / 2 - 104, this.height / 2 + 50, 208, 20, ""));
-        this.buttonList.add(this.field_146322_F = new GuiButton(8, this.width / 2 + 4 , this.height / 8 + 10, 150, 20, I18n.format("selectWorld.customizeType")));
-        this.buttonList.add(new GuiButton(200, this.width / 2 - 100, this.height / 6 + 2, 200, 20, I18n.format("createworldui.button.gameRuleEditor")));
-        this.buttonList.add(this.modernWorldCreatingUI$difficultyButton =
-                new GuiButton(9, this.width / 2 - 104, this.height / 2 + 25, 208, 20, modernWorldCreatingUI$getDifficultyText()));
-
-        // 更新按钮文本
-        modernWorldCreatingUI$updateButtonText();
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$setupTextFields() {
-        // 确保输入框使用正确的位置
-        if (field_146333_g != null) {
-            field_146333_g.xPosition = this.width / 2 - 104;
-            field_146333_g.yPosition = this.height / 5;
-            field_146333_g.width = 208;
-        } else {
-            field_146333_g = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, TAB_HEIGHT + 10, this.width / 2, 20);
-            field_146333_g.setText(this.field_146330_J);
-        }
-
-        if (field_146335_h != null) {
-            field_146335_h.xPosition = this.width / 2 - 154;
-            field_146335_h.yPosition = this.height / 3 - 1;
-            field_146335_h.width = 308;
-        } else {
-            field_146335_h = new GuiTextField(this.fontRendererObj, this.width / 2 - 100, TAB_HEIGHT + 20, this.width / 2, 20);
-            field_146335_h.setText(this.field_146329_I);
-        }
-
-        field_146333_g.setFocused(true);
-    }
+    }       
 
     /**
-     * <p>
-     *     对“创建世界”和"取消"做特殊处理。
-     * </p>
-     * <p>
-     *     Do some treats towards "Create World" and "Cancel"
-     * </p>
+     * 重新定位操作按钮（创建和取消）
      */
     @Unique
     private void modernWorldCreatingUI$repositionActionButtons() {
-        // 确保创建和取消按钮在底部正确位置
         GuiButton createButton = modernWorldCreatingUI$getButtonById(0);
         GuiButton cancelButton = modernWorldCreatingUI$getButtonById(1);
 
@@ -232,6 +218,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             createButton.yPosition = this.height - 28;
             createButton.width = 150;
             createButton.height = 20;
+            createButton.visible = true;
+            System.out.println("MixinModernCreateWorld: Repositioned create button");
         }
 
         if (cancelButton != null) {
@@ -239,31 +227,17 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             cancelButton.yPosition = this.height - 28;
             cancelButton.width = 150;
             cancelButton.height = 20;
+            cancelButton.visible = true;
+            System.out.println("MixinModernCreateWorld: Repositioned cancel button");
         }
     }
 
     /**
-     * <p>
-     *     创建三个标签页。<br>
-     *     {@code 100} -> 游戏<br>
-     *      {@code 101} -> 世界<br>
-     *      {@code 102} -> 更多
-     * </p>
-     * <p>
-     *     Create 3 Tabs.<br>
-     *      {@code 100} -> Game<br>
-     *      {@code 101} -> World<br>
-     *      {@code 102} -> More
-     * </p>
+     * 创建标签页按钮
      */
     @Unique
     private void modernWorldCreatingUI$createTabButtons() {
-        // 清空现有的 Tab 按钮
-        this.modernWorldCreatingUI$tabButtons.clear();
-
-        // 计算总宽度：3个tab + 2个间隔
         int totalWidth = TAB_WIDTH * 3 + 2;
-        // 计算起始位置，让整个tab组居中
         int startX = this.width / 2 - totalWidth / 2;
         String[] tabNames = {
                 I18n.format("createworldui.tab.game"),
@@ -273,14 +247,16 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         for (int i = 0; i < 3; i++) {
             int xPos = startX + i * (TAB_WIDTH + 1);
-            GuiButton tabButton = new GuiButton(100 + i, xPos, 0, TAB_WIDTH, TAB_HEIGHT, tabNames[i]) {
+            final int tabId = 100 + i;
+            GuiButton tabButton = new GuiButton(tabId, xPos, 0, TAB_WIDTH, TAB_HEIGHT, tabNames[i]) {
                 @Override
                 public void drawButton(Minecraft mc, int mouseX, int mouseY) {
                     if (this.visible) {
                         mc.getTextureManager().bindTexture(TABS_TEXTURE);
                         boolean isHovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
                                 mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
-                        boolean isSelected = modernWorldCreatingUI$currentTab == this.id;
+                        boolean isSelected = modernWorldCreatingUI$tabManager != null &&
+                                modernWorldCreatingUI$tabManager.getCurrentTabId() == this.id;
 
                         TabState state = isSelected ?
                                 (isHovered ? TabState.SELECTED_HOVER : TabState.SELECTED) :
@@ -293,244 +269,81 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                     }
                 }
             };
-            modernWorldCreatingUI$tabButtons.add(tabButton);
+            tabButton.visible = true;
             this.buttonList.add(tabButton);
+            System.out.println("MixinModernCreateWorld: Added tab button with ID: " + tabId);
         }
     }
 
     /**
-     * <p>
-     *     管理并更新按钮上的文字。
-     * </p>
-     * <p>
-     *     Manage and update the text on the button.
-     * </p>
-     */
-    @Unique
-    private void modernWorldCreatingUI$updateButtonText() {
-       // 确保字段不为空
-        if (this.field_146342_r == null) {
-            this.field_146342_r = "survival";
-        }
-        if (WorldType.worldTypes == null || this.field_146331_K >= WorldType.worldTypes.length || WorldType.worldTypes[this.field_146331_K] == null) {
-            this.field_146331_K = 0; // 重置为默认世界类型
-        }
-        // 更新游戏模式难度文本
-        if (this.modernWorldCreatingUI$difficultyButton != null) {
-            this.modernWorldCreatingUI$difficultyButton.displayString = modernWorldCreatingUI$getDifficultyText();
-        }
-
-
-        // 更新游戏模式按钮文本
-        this.field_146343_z.displayString = I18n.format("selectWorld.gameMode") + " " +
-                I18n.format("selectWorld.gameMode." + this.field_146342_r);
-
-        // 更新生成建筑按钮文本
-        this.field_146325_B.displayString = this.field_146341_s ? I18n.format("options.on") : I18n.format("options.off");
-
-        // 更新奖励箱按钮文本
-        this.field_146326_C.displayString = this.field_146338_v && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off");
-
-        // 更新世界类型按钮文本
-        this.field_146320_D.displayString = I18n.format("selectWorld.mapType") + " " +
-                I18n.format(WorldType.worldTypes[this.field_146331_K].getTranslateName());
-
-        // 更新允许作弊按钮文本
-        this.field_146321_E.displayString = I18n.format("selectWorld.allowCommands") + " " +
-                (this.field_146340_t && !this.field_146337_w ? I18n.format("options.on") : I18n.format("options.off"));
-    }
-
-    @Unique
-    private String modernWorldCreatingUI$getDifficultyText() {
-        return I18n.format("options.difficulty") + ": " +
-                I18n.format(modernWorldCreatingUI$difficulty.getDifficultyResourceKey());
-    }
-
-    /**
-     * <p>
-     *    根据当前 Tab 显示/隐藏相应的按钮（标签页由ID判断。）
-     * </p>
-     * <p>
-     *     Show or hide the correlate buttons based on the current tabs. (Tab's judging by ID)
-     * </p>
-     */
-    @Unique
-    private void modernWorldCreatingUI$updateButtonVisibilityNAbility() {
-        switch (modernWorldCreatingUI$currentTab) {
-            case 100:
-                this.field_146343_z.visible = true;
-                this.field_146321_E.visible = true;
-                this.modernWorldCreatingUI$difficultyButton.visible = true;
-                this.field_146325_B.visible = false;
-                this.field_146326_C.visible = false;
-                this.field_146320_D.visible = false;
-                this.field_146322_F.visible = false;
-                modernWorldCreatingUI$getButtonById(200).visible = false;
-                break;
-            case 101: // 世界 Tab
-                this.field_146343_z.visible = false;
-                this.field_146321_E.visible = false;
-                this.modernWorldCreatingUI$difficultyButton.visible = false;
-                this.field_146325_B.visible = true;
-                this.field_146326_C.visible = true;
-                this.field_146320_D.visible = true;
-                this.field_146322_F.enabled = WorldType.worldTypes[this.field_146331_K].isCustomizable();
-                this.field_146322_F.visible = true;
-                modernWorldCreatingUI$getButtonById(200).visible = false;
-                break;
-            case 102: // 更多 Tab
-                this.field_146343_z.visible = false;
-                this.field_146321_E.visible = false;
-                this.modernWorldCreatingUI$difficultyButton.visible = false;
-                this.field_146325_B.visible = false;
-                this.field_146326_C.visible = false;
-                this.field_146320_D.visible = false;
-                this.field_146322_F.visible = false;
-                modernWorldCreatingUI$getButtonById(200).visible = true;
-                break;
-        }
-
-        // 更新按钮文本
-        modernWorldCreatingUI$updateButtonText();
-    }
-
-    /**
-     * @param mouseX As vanilla done.
-     * @param mouseY Same to mouseX
-     * @param partialTicks Same to mouseX
-     * @author dfdvdsf
-     * @reason Enhance the vanilla
+     * 绘制屏幕
      */
     @Inject(method = {"drawScreen"}, at = @At("HEAD"), cancellable = true)
     public void onDrawScreen(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        if (!modernWorldCreatingUI$isInitialized) {
+            return;
+        }
+
         ci.cancel();
+
         // 绘制主背景
         this.drawBackground(0);
 
-        // 在顶部绘制暗黑色背景，从(0,0)到(width, tabs底部)
+        // 绘制顶部背景
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
-
-        // 计算Tab背景区域：从左上角(0,0)开始，宽度为整个窗口宽度，高度到Tabs底部
-        // Tabs的y位置 + Tabs高度
-        // 绘制暗黑色背景区域
         this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, TAB_HEIGHT - 2, 16, 16);
 
-        // 绘制两条横线
-        modernWorldCreatingUI$drawColoredLine(0, TAB_HEIGHT - 3, this.width, 0x00FFFFFF, 0x40FFFFFF); // 上透明下白，25%透明度
-        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, 0x40000000, 0x40FFFFFF); // 上白下黑，25%透明度
+        // 绘制分隔线
+        modernWorldCreatingUI$drawColoredLine(0, TAB_HEIGHT - 3, this.width, 0x00FFFFFF, 0x40FFFFFF);
+        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, 0x40000000, 0x40FFFFFF);
 
-        // 根据当前 Tab 显示不同的输入框
-        if (modernWorldCreatingUI$currentTab == 100) {
-            // 游戏 Tab 显示世界名称
-            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterName"), this.width / 2 - 104, this.height / 5 - 13, 0xA0A0A0);
-            field_146333_g.drawTextBox();
+        // 绘制当前标签页内容
+        if (modernWorldCreatingUI$tabManager != null) {
+            modernWorldCreatingUI$tabManager.drawScreen(mouseX, mouseY, partialTicks);
         }
 
-        if (modernWorldCreatingUI$currentTab == 101) {
-            // 世界 Tab 显示种子
-            this.drawString(this.fontRendererObj, I18n.format("selectWorld.enterSeed"), this.width / 2 - 154, this.height / 3 - 2 - 13, 0xA0A0A0);
-            field_146335_h.drawTextBox();
-
-            // 添加提示文字：如果种子输入框为空且没有焦点，则绘制提示文字
-            if (field_146335_h.getText().isEmpty() && !field_146335_h.isFocused()) {
-                String placeholder = I18n.format("selectWorld.seedInfo");
-                int x = field_146335_h.xPosition + 4;
-                int y = field_146335_h.yPosition + (field_146335_h.height - 8) / 2;
-                this.fontRendererObj.drawStringWithShadow(placeholder, x, y, 0x808080);
-            }
-
-            // 修改：在按钮左侧绘制标签文本
-            // 生成建筑标签
-            this.drawString(this.fontRendererObj, I18n.format("createworldui.selectWorld.mapFeatures"), this.width / 2 - 154, this.height / 2 + 15 + 6, 0xFFFFFF);
-            // 奖励箱标签
-            this.drawString(this.fontRendererObj, I18n.format("createworldui.selectWorld.bonusItems"), this.width / 2 - 154, this.height / 2 - 15 + 6, 0xFFFFFF);
-        }
-
-        super.drawScreen(mouseX, mouseY, partialTicks);
-
-        // 绘制悬停提示
-        modernWorldCreatingUI$drawHoverText(mouseX, mouseY);
-    }
-
-
-    @Unique
-    private void modernWorldCreatingUI$drawHoverText(int mouseX, int mouseY) {
-        // 只检查功能按钮的悬停
+        // 绘制所有按钮
         for (Object obj : this.buttonList) {
             if (obj instanceof GuiButton) {
                 GuiButton button = (GuiButton) obj;
-                if (button.visible && mouseX >= button.xPosition && mouseY >= button.yPosition &&
-                        mouseX < button.xPosition + button.width && mouseY < button.yPosition + button.height) {
-
-                    // 跳过标签页按钮、创建和取消按钮
-                    if (button.id >= 100 && button.id <= 102) continue;
-                    if (button.id == 0 || button.id == 1) continue;
-
-                    // 特殊处理游戏模式按钮
-                    if (button.id == 2) {
-                        String hoverText = modernWorldCreatingUI$getGameModeHoverText();
-                        if (hoverText != null && !hoverText.isEmpty()) {
-                            this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
-                            return;
-                        }
-                    }
-
-                    // 其他按钮从Map中获取悬停文本
-                    String hoverText = modernWorldCreatingUI$hoverTexts.get(button.id);
-                    if (hoverText != null && !hoverText.isEmpty()) {
-                        this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
-                        return;
-                    }
+                if (button.visible) {
+                    button.drawButton(this.mc, mouseX, mouseY);
                 }
             }
         }
 
-        // 检查文本框悬停
-        if (modernWorldCreatingUI$currentTab == 100 && field_146333_g != null) {
-            if (mouseX >= field_146333_g.xPosition && mouseY >= field_146333_g.yPosition &&
-                    mouseX < field_146333_g.xPosition + field_146333_g.width && mouseY < field_146333_g.yPosition + field_146333_g.height) {
-
-                String worldName = field_146333_g.getText();
-                String hoverText;
-                if (worldName.isEmpty()) {
-                    hoverText = I18n.format("createworldui.hover.worldName.empty");
-                } else {
-                    hoverText = I18n.format("createworldui.hover.worldName.filled", worldName);
-                }
-
-                this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
-            }
-        }
+        // 绘制悬停文本
+        modernWorldCreatingUI$drawHoverText(mouseX, mouseY);
     }
 
-    @Unique
-    private String modernWorldCreatingUI$getGameModeHoverText() {
-        if (this.field_146342_r == null) {
-            return I18n.format("createworldui.hover.gameMode");
-        }
-
-        switch (this.field_146342_r) {
-            case "survival":
-                return I18n.format("createworldui.hover.gameMode.survival");
-            case "creative":
-                return I18n.format("createworldui.hover.gameMode.creative");
-            case "hardcore":
-                return I18n.format("createworldui.hover.gameMode.hardcore");
-            case "adventure":
-                return I18n.format("createworldui.hover.gameMode.adventure");
-            default:
-                return I18n.format("createworldui.hover.gameMode");
-        }
-    }
-
+    /**
+     * 处理按钮点击
+     */
     @Inject(method = "actionPerformed", at = @At("HEAD"), cancellable = true)
     private void onActionPerformed(GuiButton button, CallbackInfo ci) {
-        // 处理 Tab 切换
-        if (button.id >= 100 && button.id <= 102) {
-            modernWorldCreatingUI$currentTab = button.id;
-            modernWorldCreatingUI$updateButtonVisibilityNAbility();
-            ci.cancel();
+        if (!modernWorldCreatingUI$isInitialized || button == null) {
             return;
+        }
+
+        System.out.println("MixinModernCreateWorld: Button action performed: " + button.id);
+
+        // 处理创建按钮 - 在创建前同步状态
+        if (button.id == 0) {
+            modernWorldCreatingUI$getStateFromTabManager();
+            System.out.println("MixinModernCreateWorld: Synced state before creating world");
+            // 让原版继续处理创建逻辑
+            return;
+        }
+
+        // 首先处理标签页管理器的事件
+        if (modernWorldCreatingUI$tabManager != null) {
+            modernWorldCreatingUI$tabManager.actionPerformed(button);
+
+            // 如果按钮ID在100-102之间，说明是标签页切换，取消后续处理
+            if (button.id >= 100 && button.id <= 102) {
+                ci.cancel();
+                return;
+            }
         }
 
         // 处理游戏规则编辑器按钮
@@ -538,23 +351,19 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             Map<String, String> pending = GameRuleApplier.getPendingGameRules();
             if (pending == null) pending = new HashMap<>();
 
-            // 如果 pending 空，尝试用 Monitor 从当前 client world 获取默认值（作为初始 editable）
-            if (pending.isEmpty()) {
-                try {
-                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getMinecraft();
-                    net.minecraft.world.World clientWorld = mc != null ? mc.theWorld : null;
-                    if (clientWorld != null) {
-                        // Monitor 提供的 optimal types map
-                        Map<String, Object> opt = GameRuleMonitorNSetter.getOptimalGameruleValues(clientWorld);
-                        if (opt != null && !opt.isEmpty()) {
-                            for (Map.Entry<String, Object> e : opt.entrySet()) {
-                                pending.put(e.getKey(), String.valueOf(e.getValue()));
-                            }
+            try {
+                Minecraft mc = Minecraft.getMinecraft();
+                net.minecraft.world.World clientWorld = mc != null ? mc.theWorld : null;
+                if (clientWorld != null) {
+                    Map<String, Object> opt = GameRuleMonitorNSetter.getOptimalGameruleValues(clientWorld);
+                    if (opt != null && !opt.isEmpty()) {
+                        for (Map.Entry<String, Object> e : opt.entrySet()) {
+                            pending.put(e.getKey(), String.valueOf(e.getValue()));
                         }
                     }
-                } catch (Throwable t) {
-                    t.printStackTrace();
                 }
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
 
             this.mc.displayGuiScreen(new GameRuleEditor((GuiCreateWorld)(Object)this, pending));
@@ -562,83 +371,15 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        // 处理世界类型选择按钮
-        if (button.id == 5) {
-            modernWorldCreatingUI$handleWorldTypeSelection();
+        // 其他按钮由标签页管理器处理，阻止原版处理
+        if (button.id >= 2 && button.id <= 9 || button.id == 200) {
             ci.cancel();
-            return;
         }
-
-        // 处理生成建筑按钮
-        if (button.id == 4) {
-            this.field_146341_s = !this.field_146341_s;
-            modernWorldCreatingUI$updateButtonText();
-            ci.cancel();
-            return;
-        }
-
-        // 处理允许作弊按钮
-        if (button.id == 6) {
-            // 硬核模式下不允许作弊
-            if (this.field_146337_w) {
-                this.field_146340_t = false;
-            } else {
-                this.field_146340_t = !this.field_146340_t;
-            }
-            modernWorldCreatingUI$updateButtonText();
-            ci.cancel();
-            return;
-        }
-
-        // 处理奖励箱按钮
-        if (button.id == 7) {
-            // 硬核模式下不允许奖励箱
-            if (this.field_146337_w) {
-                this.field_146338_v = false;
-            } else {
-                this.field_146338_v = !this.field_146338_v;
-            }
-            modernWorldCreatingUI$updateButtonText();
-            ci.cancel();
-            return;
-        }
-
-        // 处理两个难度按钮。
-        if (button.id == 9 || button.id == 110) {
-            int next = (this.modernWorldCreatingUI$difficulty.getDifficultyId() + 1) % EnumDifficulty.values().length;
-            this.modernWorldCreatingUI$difficulty = EnumDifficulty.getDifficultyEnum(next);
-
-            String newText = modernWorldCreatingUI$getDifficultyText();
-
-            // 更新被点击按钮
-            button.displayString = newText;
-
-            // 同步所有同 ID 的按钮
-            for (Object obj : this.buttonList) {
-                if (obj instanceof GuiButton) {
-                    GuiButton gb = (GuiButton) obj;
-                    if (gb.id == button.id) {
-                        gb.displayString = newText;
-                    }
-                }
-            }
-            
-            // 同步全局 GameSettings 难度
-            this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
-            this.mc.gameSettings.saveOptions();
-
-            System.out.println("MCW: difficulty updated -> " + this.modernWorldCreatingUI$difficulty);
-        }
-
-        // 对于其他原版按钮，更新文本显示
-        if (button.id == 2 || button.id == 4 || button.id == 5 || button.id == 6 || button.id == 7 || button.id == 110) {
-            modernWorldCreatingUI$scheduleButtonTextUpdate();
-        }
-
-        System.out.println("MCW: clicked button.id=" + button.id + ", btn.display=" + button.displayString);
-        System.out.println("MCW: internal diff = " + this.modernWorldCreatingUI$difficulty);
     }
 
+    /**
+     * 世界启动后处理
+     */
     @Inject(
             method = "actionPerformed",
             at = @At(
@@ -648,10 +389,17 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             )
     )
     private void modernWorldCreatingUI$afterLaunchWorld(GuiButton button, CallbackInfo ci) {
+        // 同步TabManager状态到原版字段
+        modernWorldCreatingUI$getStateFromTabManager();
+
+        if (modernWorldCreatingUI$tabManager == null) {
+            return;
+        }
+
+        // 应用难度设置到新创建的世界
         try {
             Object integrated = this.mc.getIntegratedServer();
             if (integrated == null) {
-                // fallback: theIntegratedServer field (in case getIntegratedServer is not yet assigned)
                 try {
                     Field fserv = Minecraft.class.getDeclaredField("theIntegratedServer");
                     fserv.setAccessible(true);
@@ -671,17 +419,17 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                                 try {
                                     Field diffField = w.getClass().getDeclaredField("difficultySetting");
                                     diffField.setAccessible(true);
-                                    diffField.set(w, this.modernWorldCreatingUI$difficulty);
+                                    diffField.set(w, modernWorldCreatingUI$tabManager.getDifficulty());
                                 } catch (NoSuchFieldException nsf) {
                                     try {
                                         Field diffField = w.getClass().getDeclaredField("field_73013_u");
                                         diffField.setAccessible(true);
-                                        diffField.set(w, this.modernWorldCreatingUI$difficulty);
+                                        diffField.set(w, modernWorldCreatingUI$tabManager.getDifficulty());
                                     } catch (Throwable ignored) {}
                                 }
                             }
                         }
-                        this.mc.gameSettings.difficulty = this.modernWorldCreatingUI$difficulty;
+                        this.mc.gameSettings.difficulty = modernWorldCreatingUI$tabManager.getDifficulty();
                         this.mc.gameSettings.saveOptions();
                     }
                 } catch (Throwable t) {
@@ -693,12 +441,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                             try {
                                 Field diffField = clientWorld.getClass().getDeclaredField("difficultySetting");
                                 diffField.setAccessible(true);
-                                diffField.set(clientWorld, this.modernWorldCreatingUI$difficulty);
+                                diffField.set(clientWorld, modernWorldCreatingUI$tabManager.getDifficulty());
                             } catch (NoSuchFieldException nsf) {
                                 try {
                                     Field diffField = clientWorld.getClass().getDeclaredField("field_73013_u");
                                     diffField.setAccessible(true);
-                                    diffField.set(clientWorld, this.modernWorldCreatingUI$difficulty);
+                                    diffField.set(clientWorld, modernWorldCreatingUI$tabManager.getDifficulty());
                                 } catch (Throwable ignored) {}
                             }
                         }
@@ -708,73 +456,92 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         } catch (Throwable ignored) {}
     }
 
-    @Unique
-    private void modernWorldCreatingUI$handleWorldTypeSelection() {
-        // 跳过空的世界类型
-        do {
-            this.field_146331_K = (this.field_146331_K + 1) % WorldType.worldTypes.length;
-        } while (WorldType.worldTypes[this.field_146331_K] == null);
-
-        // 更新按钮文本和可见性
-        modernWorldCreatingUI$updateButtonText();
-        modernWorldCreatingUI$updateButtonVisibilityNAbility();
-    }
-
-    @Unique
-    private void modernWorldCreatingUI$scheduleButtonTextUpdate() {
-        // 创建一个简单的 Runnable 来更新按钮文本
-        Runnable updateTask = new Runnable() {
-            @Override
-            public void run() {
-                modernWorldCreatingUI$updateButtonText();
-            }
-        };
-
-        // 使用 Minecraft 的任务调度系统
-        Minecraft.getMinecraft().func_152344_a(updateTask);
-    }
-
     /**
-     * @author dfdvdsf
-     * @param typedChar
-     * @param keyCode
+     * 处理按键输入
      */
     @Override
     protected void keyTyped(char typedChar, int keyCode) {
-        // 根据当前 Tab 处理不同的输入框
-        if (modernWorldCreatingUI$currentTab == 100) {
-            field_146333_g.textboxKeyTyped(typedChar, keyCode);
-            this.field_146330_J = this.field_146333_g.getText();
-        } else {
-            field_146335_h.textboxKeyTyped(typedChar, keyCode);
-            this.field_146329_I = this.field_146335_h.getText();
+        if (!modernWorldCreatingUI$isInitialized) {
+            super.keyTyped(typedChar, keyCode);
+            return;
+        }
+
+        if (modernWorldCreatingUI$tabManager != null) {
+            modernWorldCreatingUI$tabManager.keyTyped(typedChar, keyCode);
+        }
+
+        // 更新创建按钮状态
+        GuiButton createButton = modernWorldCreatingUI$getButtonById(0);
+        if (createButton != null) {
+            createButton.enabled = modernWorldCreatingUI$tabManager != null &&
+                    !modernWorldCreatingUI$tabManager.getWorldName().trim().isEmpty();
         }
 
         if (keyCode == 1) {
             this.mc.displayGuiScreen(field_146332_f);
         }
-
-        // 更新创建按钮状态
-        ((GuiButton)this.buttonList.get(2)).enabled = !this.field_146333_g.getText().isEmpty();
-
-        // 处理世界名称
-        this.func_146314_g();
     }
 
     /**
-     * @param mouseX
-     * @param mouseY
-     * @param mouseButton
+     * 处理鼠标点击
      */
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        if (!modernWorldCreatingUI$isInitialized) {
+            super.mouseClicked(mouseX, mouseY, mouseButton);
+            return;
+        }
+
         super.mouseClicked(mouseX, mouseY, mouseButton);
 
-        // 根据当前 Tab 处理不同的输入框点击
-        if (modernWorldCreatingUI$currentTab == 100) {
-            field_146333_g.mouseClicked(mouseX, mouseY, mouseButton);
-        } else {
-            field_146335_h.mouseClicked(mouseX, mouseY, mouseButton);
+        if (modernWorldCreatingUI$tabManager != null) {
+            modernWorldCreatingUI$tabManager.mouseClicked(mouseX, mouseY, mouseButton);
+        }
+    }
+
+    /**
+     * 绘制悬停文本
+     */
+    @Unique
+    private void modernWorldCreatingUI$drawHoverText(int mouseX, int mouseY) {
+        for (Object obj : this.buttonList) {
+            if (obj instanceof GuiButton) {
+                GuiButton button = (GuiButton) obj;
+                if (button.visible && mouseX >= button.xPosition && mouseY >= button.yPosition &&
+                        mouseX < button.xPosition + button.width && mouseY < button.yPosition + button.height) {
+
+                    // 跳过标签页按钮、创建和取消按钮
+                    if (button.id >= 100 && button.id <= 102) continue;
+                    if (button.id == 0 || button.id == 1) continue;
+
+                    // 从Map中获取悬停文本
+                    String hoverText = modernWorldCreatingUI$hoverTexts.get(button.id);
+                    if (hoverText != null && !hoverText.isEmpty()) {
+                        this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
+                        return;
+                    }
+                }
+            }
+        }
+
+        // 检查世界名称输入框的悬停提示
+        if (modernWorldCreatingUI$tabManager != null &&
+                modernWorldCreatingUI$tabManager.getCurrentTabId() == 100) {
+            String worldName = modernWorldCreatingUI$tabManager.getWorldName();
+            String hoverText;
+            if (worldName == null || worldName.isEmpty()) {
+                hoverText = I18n.format("createworldui.hover.worldName.empty");
+            } else {
+                hoverText = I18n.format("createworldui.hover.worldName.filled", worldName);
+            }
+
+            // 检查鼠标是否在世界名称输入框区域
+            int inputX = this.width / 2 - 104;
+            int inputY = this.height / 5;
+            if (mouseX >= inputX && mouseX <= inputX + 208 &&
+                    mouseY >= inputY && mouseY <= inputY + 20) {
+                this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
+            }
         }
     }
 
@@ -793,14 +560,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
     /**
      * 绘制平铺纹理
-     * 使用原版的drawTexturedModalRect方法将纹理平铺到指定区域
-     *
-     * @param x 绘制区域的起始X坐标
-     * @param y 绘制区域的起始Y坐标
-     * @param width 绘制区域的总宽度
-     * @param height 绘制区域的总高度
-     * @param textureWidth 单个纹理块的宽度
-     * @param textureHeight 单个纹理块的高度
      */
     @Unique
     private void modernWorldCreatingUI$drawTiledTexture(int x, int y, int width, int height, int textureWidth, int textureHeight) {
@@ -829,28 +588,18 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
     /**
      * 绘制彩色线条
-     * 绘制一个2像素高的线条，上半像素为指定颜色1，下半像素为指定颜色2
-     *
-     * @param x 线条起始X坐标
-     * @param y 线条起始Y坐标
-     * @param width 线条宽度
-     * @param topColor 上半像素颜色（ARGB格式）
-     * @param bottomColor 下半像素颜色（ARGB格式）
      */
     @Unique
     private void modernWorldCreatingUI$drawColoredLine(int x, int y, int width, int topColor, int bottomColor){
-        // 绘制上半像素（黑色，50%透明度）
+        // 绘制上半像素
         drawRect(x, y, x + width, y + 1, topColor);
-
-        // 绘制下半像素（白色，50%透明度）
+        // 绘制下半像素
         drawRect(x, y + 1, x + width, y + 2, bottomColor);
     }
 
-    // 保留原版的世界名称处理方法
+    // 保留原版方法
     @Shadow
     private void func_146314_g() {}
-
     @Shadow
     private void func_146319_h() {}
 }
-
