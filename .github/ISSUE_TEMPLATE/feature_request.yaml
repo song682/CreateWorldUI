@@ -1,4 +1,5 @@
 name: Feature request
+description: Have a Idea? Post it here.
 title: "[FEATURE REQUEST]: "
 labels: ["enhancement"]
 assignees: 
@@ -7,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have a idea that promotes this game?
+        Have a idea that promotes this mod?
   - type: input
     id: description
     attributes:
@@ -19,8 +20,8 @@ body:
     attributes:
       label: What do you want this mod do?
       description: |
-       Describe your idea or expected behavior.
-       Also tell us what you expected to happen.
+          Describe your idea or expected behavior.\
+          Also tell us what you expected to happen.
       placeholder: |
         1. I want to ......
         2. I want to ......
