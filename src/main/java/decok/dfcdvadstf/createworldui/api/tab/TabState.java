@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.api;
+package decok.dfcdvadstf.createworldui.api.tab;
 
 /**
  * <p>

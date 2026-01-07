@@ -4,13 +4,14 @@ import decok.dfcdvadstf.createworldui.tab.GameTab;
 import decok.dfcdvadstf.createworldui.tab.MoreTab;
 import decok.dfcdvadstf.createworldui.tab.WorldTab;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
+import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.world.EnumDifficulty;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 
 public class TabManager {
     private final Map<Integer, Tab> tabs = new HashMap<>();
@@ -29,6 +30,7 @@ public class TabManager {
     private boolean allowCheats = false;
     private boolean hardcore = false;
     private EnumDifficulty difficulty = EnumDifficulty.NORMAL;
+    private static final String DEFAULT_WORLD_NAME = "New World";
 
     public TabManager(GuiCreateWorld parent, List<GuiButton> buttonList, int width, int height) {
         this.parent = parent;
@@ -46,6 +48,55 @@ public class TabManager {
 
         // 设置当前标签页
         switchToTab(currentTabId);
+    }
+
+    // 从Mixin直接设置初始状态的方法
+    public void setInitialState(String worldName, String gameMode, String seed,
+                                int worldTypeIndex, boolean generateStructures,
+                                boolean bonusChest, boolean allowCheats,
+                                boolean hardcore, EnumDifficulty difficulty) {
+        System.out.println("TabManager: Setting initial state from Mixin");
+        System.out.println("  World name: " + worldName);
+        System.out.println("  Game mode: " + gameMode);
+        System.out.println("  Seed: " + seed);
+
+        this.worldName = worldName != null ? worldName : "";
+        this.gameMode = gameMode != null ? gameMode : "survival";
+        this.seed = seed != null ? seed : "";
+        this.worldTypeIndex = worldTypeIndex;
+        this.generateStructures = generateStructures;
+        this.bonusChest = bonusChest;
+        this.allowCheats = allowCheats;
+        this.hardcore = hardcore;
+        this.difficulty = difficulty != null ? difficulty : EnumDifficulty.NORMAL;
+
+        // 更新游戏设置
+        Minecraft.getMinecraft().gameSettings.difficulty = this.difficulty;
+        Minecraft.getMinecraft().gameSettings.saveOptions();
+    }
+
+    // 新增方法：获取用于创建世界的实际名称
+    public String getWorldNameForCreation() {
+        if (worldName == null || worldName.trim().isEmpty()) {
+            return I18n.format("selectWorld.newWorld"); // 返回默认名称
+        }
+        return worldName.trim();
+    }
+
+    // 从TabManager获取状态回传给Mixin
+    public void getCurrentState(String[] worldName, String[] gameMode, String[] seed,
+                                int[] worldTypeIndex, boolean[] generateStructures,
+                                boolean[] bonusChest, boolean[] allowCheats,
+                                boolean[] hardcore, EnumDifficulty[] difficulty) {
+        worldName[0] = this.worldName;
+        gameMode[0] = this.gameMode;
+        seed[0] = this.seed;
+        worldTypeIndex[0] = this.worldTypeIndex;
+        generateStructures[0] = this.generateStructures;
+        bonusChest[0] = this.bonusChest;
+        allowCheats[0] = this.allowCheats;
+        hardcore[0] = this.hardcore;
+        difficulty[0] = this.difficulty;
     }
 
     // 添加按钮到Mixin的按钮列表
