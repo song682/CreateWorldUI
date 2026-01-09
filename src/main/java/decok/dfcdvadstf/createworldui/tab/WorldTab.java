@@ -128,7 +128,7 @@ public class WorldTab extends AbstractScreenTab {
         int index = getWorldTypeIndex();
         if (WorldType.worldTypes == null || index >= WorldType.worldTypes.length ||
                 WorldType.worldTypes[index] == null) {
-            return I18n.format("selectWorld.mapType") + " " + I18n.format("worldType.default");
+            return I18n.format("selectWorld.mapType") + " " + I18n.format("selectWorld.mapType.normal");
         }
         return I18n.format("selectWorld.mapType") + " " +
                 I18n.format(WorldType.worldTypes[index].getTranslateName());

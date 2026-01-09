@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter.GameruleValue;
@@ -9,9 +10,8 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.world.World;
 import net.minecraft.world.GameRules;
-
+import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
@@ -174,9 +174,14 @@ public class GameRuleEditor extends GuiScreen {
 
         // 按钮布局（左右居中排列）
         // Button layout (centered horizontally)
-        this.saveButton = new GuiButton(0, this.width / 2 - 154, this.height - 30, 100, 20, I18n.format("options.save"));
-        this.cancelButton = new GuiButton(1, this.width / 2 - 50, this.height - 30, 100, 20, I18n.format("gui.cancel"));
-        this.resetButton = new GuiButton(2, this.width / 2 + 54, this.height - 30, 100, 20, I18n.format("options.reset"));
+        if (CreateWorldUI.config.enableResetButton) {
+            this.saveButton = new GuiButton(0, this.width / 2 - 154, this.height - 30, 100, 20, I18n.format("options.save"));
+            this.cancelButton = new GuiButton(1, this.width / 2 - 50, this.height - 30, 100, 20, I18n.format("gui.cancel"));
+            this.resetButton = new GuiButton(2, this.width / 2 + 54, this.height - 30, 100, 20, I18n.format("options.reset"));
+        } else {
+            this.cancelButton = new GuiButton(1, this.width / 2 + 50, this.height - 30, 120, 20, I18n.format("gui.cancel"));
+            this.saveButton = new GuiButton(0, this.width / 2 - 154, this.height - 30, 120, 20, I18n.format("options.save"));
+        }
 
         this.buttonList.add(this.saveButton);
         this.buttonList.add(this.cancelButton);

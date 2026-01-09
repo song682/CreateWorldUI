@@ -26,6 +26,14 @@ body:
       value: "A bug happened!"
     validations:
       required: true
+  - type: input
+    id: crash-report-url
+    attributes:
+      label: Crash Report
+      description: Do you have a crash report?
+      placeholder: ex. mclo.gs/_______
+    validations:
+      required: true
   - type: dropdown
     id: version
     attributes:

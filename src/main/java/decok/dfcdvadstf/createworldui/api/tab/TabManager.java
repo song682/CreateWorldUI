@@ -4,14 +4,14 @@ import decok.dfcdvadstf.createworldui.tab.GameTab;
 import decok.dfcdvadstf.createworldui.tab.MoreTab;
 import decok.dfcdvadstf.createworldui.tab.WorldTab;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.world.EnumDifficulty;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 public class TabManager {
     private final Map<Integer, Tab> tabs = new HashMap<>();

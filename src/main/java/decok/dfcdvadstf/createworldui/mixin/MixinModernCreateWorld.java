@@ -1,21 +1,25 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
+import cpw.mods.fml.common.Loader;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
 import decok.dfcdvadstf.createworldui.api.tab.TabState;
 import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldType;
-import org.spongepowered.asm.mixin.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -48,10 +52,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Shadow
     private boolean field_146340_t;
     @Shadow
-    private GuiTextField field_146335_h;
-    @Shadow
-    private GuiTextField field_146333_g;
-    @Shadow
     private int field_146331_K;
 
     // 新添加的字段
@@ -69,6 +69,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     private final Map<Integer, String> modernWorldCreatingUI$hoverTexts = new HashMap<>();
     @Unique
     private boolean modernWorldCreatingUI$isInitialized = false;
+    @Unique
+    private static Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
 
     /**
      * 初始化
@@ -81,7 +83,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
     @Inject(method = "initGui", at = @At("TAIL"))
     private void onInitGuiTail(CallbackInfo ci) {
-        System.out.println("MixinModernCreateWorld: Initializing GUI");
+        modernWorldCreatingUI$logger.info("Initializing GUI");
 
         // 首先清空按钮列表，但保留创建和取消按钮
         List<GuiButton> essentialButtons = new ArrayList<>();
@@ -93,9 +95,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         this.buttonList.clear();
         this.buttonList.addAll(essentialButtons);
-
-        // 确保字段不为空
-        modernWorldCreatingUI$ensureFieldsNotNull();
 
         // 初始化标签页管理器
         modernWorldCreatingUI$tabManager = new TabManager(
@@ -113,8 +112,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         modernWorldCreatingUI$initHoverTexts();
 
         modernWorldCreatingUI$isInitialized = true;
-
-        System.out.println("MixinModernCreateWorld: GUI initialized with " + this.buttonList.size() + " buttons");
     }
 
     /**
@@ -126,10 +123,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        System.out.println("MixinModernCreateWorld: Passing state to TabManager");
-        System.out.println("  field_146330_J (world name): " + field_146330_J);
-        System.out.println("  field_146342_r (game mode): " + field_146342_r);
-        System.out.println("  field_146329_I (seed): " + field_146329_I);
+        modernWorldCreatingUI$logger.info("MixinModernCreateWorld: Passing state to TabManager");
 
         // 获取当前游戏设置中的难度
         EnumDifficulty currentDifficulty = mc.gameSettings.difficulty;
@@ -165,10 +159,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             field_146340_t = modernWorldCreatingUI$tabManager.getAllowCheats();
             field_146337_w = modernWorldCreatingUI$tabManager.getHardcore();
             field_146330_J = modernWorldCreatingUI$tabManager.getWorldName();
-
-            System.out.println("MixinModernCreateWorld: State synced - WorldName: " + field_146330_J);
-            System.out.println("MixinModernCreateWorld: State synced - GameMode: " + field_146342_r);
-            System.out.println("MixinModernCreateWorld: State synced - Hardcore: " + field_146337_w);
         }
     }
 
@@ -189,10 +179,15 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$ensureFieldsNotNull() {
-        if (this.field_146330_J == null) {
+        if (!Loader.isModLoaded("archaicfix") && this.field_146330_J == null) {
             this.field_146330_J = I18n.format("selectWorld.newWorld");
-            System.out.println("MixinModernCreateWorld: Set default world name: " + this.field_146330_J);
+            modernWorldCreatingUI$logger.info("Set default world name: " + this.field_146330_J);
+        } else if (Loader.isModLoaded("archiackfix") && this.field_146330_J == null) {
+            modernWorldCreatingUI$logger.info("Archaic Fix detected, to avoid conflict, let it handle he world name itself.");
+        } else {
+            modernWorldCreatingUI$logger.info("Set default world name as: " + this.field_146330_J);
         }
+
         if (this.field_146329_I == null) {
             this.field_146329_I = "";
         }
@@ -219,7 +214,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             createButton.width = 150;
             createButton.height = 20;
             createButton.visible = true;
-            System.out.println("MixinModernCreateWorld: Repositioned create button");
         }
 
         if (cancelButton != null) {
@@ -228,7 +222,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             cancelButton.width = 150;
             cancelButton.height = 20;
             cancelButton.visible = true;
-            System.out.println("MixinModernCreateWorld: Repositioned cancel button");
         }
     }
 
@@ -271,7 +264,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             };
             tabButton.visible = true;
             this.buttonList.add(tabButton);
-            System.out.println("MixinModernCreateWorld: Added tab button with ID: " + tabId);
         }
     }
 
@@ -325,12 +317,9 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        System.out.println("MixinModernCreateWorld: Button action performed: " + button.id);
-
         // 处理创建按钮 - 在创建前同步状态
         if (button.id == 0) {
             modernWorldCreatingUI$getStateFromTabManager();
-            System.out.println("MixinModernCreateWorld: Synced state before creating world");
             // 让原版继续处理创建逻辑
             return;
         }
@@ -363,7 +352,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                     }
                 }
             } catch (Throwable t) {
-                t.printStackTrace();
+                modernWorldCreatingUI$logger.error("On opening GameRuleEditor, an error occoured is: ",t.getCause().fillInStackTrace().getMessage());
             }
 
             this.mc.displayGuiScreen(new GameRuleEditor((GuiCreateWorld)(Object)this, pending));
