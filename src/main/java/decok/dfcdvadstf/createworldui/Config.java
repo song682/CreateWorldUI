@@ -13,6 +13,7 @@ public class Config {
     public boolean topTabCharatorLegacyYellow;
     public boolean enableOtherMoreTabButton;
     public boolean showWorldNamePlaceHolder;
+    public boolean disableCreateButtonWhenWNIsBlank;
     public String paddingColor;
     public String customLineColorTop;
     public String customLineColorDown;
@@ -34,6 +35,7 @@ public class Config {
         igGameruleEdit = configFile.getBoolean("igGameruleEdit", "GameRule Editor", false, "Enable gamerule editor but in-game");
         enableOtherMoreTabButton = configFile.getBoolean("enableOtherMoreTabButton", "UI Management", false, "Enable unused modern feature button.");
         showWorldNamePlaceHolder = configFile.getBoolean("showWorldNamePlaceHolder", "UI Management", false, "Show a place-holder to gently reminds player to add a own world name");
+
     }
 
     public void saveConfigurationFile() {

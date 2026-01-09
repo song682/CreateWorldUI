@@ -7,7 +7,6 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.world.EnumDifficulty;
-import java.util.Arrays;
 
 public class GameTab extends AbstractScreenTab {
     private GuiTextField worldNameField;
@@ -89,8 +88,6 @@ public class GameTab extends AbstractScreenTab {
 
     @Override
     public void actionPerformed(GuiButton button) {
-        System.out.println("GameTab: Button clicked: " + button.id);
-
         switch (button.id) {
             case 2: // 游戏模式
                 cycleGameMode();
@@ -111,7 +108,7 @@ public class GameTab extends AbstractScreenTab {
         if (mode == null || mode.isEmpty()) {
             mode = "survival";
         }
-        return I18n.format("selectWorld.gameMode") + " " +
+        return I18n.format("selectWorld.gameMode") + ": " +
                 I18n.format("selectWorld.gameMode." + mode);
     }
 

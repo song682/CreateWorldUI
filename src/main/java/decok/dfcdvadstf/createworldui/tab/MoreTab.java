@@ -1,12 +1,13 @@
 package decok.dfcdvadstf.createworldui.tab;
 
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
+import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.resources.I18n;
-import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
+
 import java.util.HashMap;
 import java.util.Map;
 
