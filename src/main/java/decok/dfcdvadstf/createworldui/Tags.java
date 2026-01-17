@@ -3,6 +3,7 @@ package decok.dfcdvadstf.createworldui;
 public class Tags {
     public static final String MODID = "createworldui";
     public static final String NAME = "CreateWorldUI";
-    public static final String VERSION = "2.0.0 - hotfix";
+    public static final String VERSION = "2.1.0";
 }
+
 

@@ -1,11 +1,11 @@
-package decok.dfcdvadstf.createworldui;
+package decok.dfcdvadstf.createworldui.config;
 
 import net.minecraftforge.common.config.Configuration;
 
 import java.io.File;
 
 public class Config {
-    private final Configuration configFile;
+    public final Configuration configFile;
 
     public boolean enableResetButton;
     public boolean gameruleEdit;
@@ -35,7 +35,6 @@ public class Config {
         igGameruleEdit = configFile.getBoolean("igGameruleEdit", "GameRule Editor", false, "Enable gamerule editor but in-game");
         enableOtherMoreTabButton = configFile.getBoolean("enableOtherMoreTabButton", "UI Management", false, "Enable unused modern feature button.");
         showWorldNamePlaceHolder = configFile.getBoolean("showWorldNamePlaceHolder", "UI Management", false, "Show a place-holder to gently reminds player to add a own world name");
-
     }
 
     public void saveConfigurationFile() {

@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.api.tab;
 
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.tab.GameTab;
 import decok.dfcdvadstf.createworldui.tab.MoreTab;
 import decok.dfcdvadstf.createworldui.tab.WorldTab;
@@ -77,7 +78,7 @@ public class TabManager {
 
     // 新增方法：获取用于创建世界的实际名称
     public String getWorldNameForCreation() {
-        if (worldName == null || worldName.trim().isEmpty()) {
+        if ((worldName == null || worldName.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             return I18n.format("selectWorld.newWorld"); // 返回默认名称
         }
         return worldName.trim();

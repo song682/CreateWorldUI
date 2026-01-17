@@ -7,6 +7,7 @@ import decok.dfcdvadstf.createworldui.api.tab.TabManager;
 import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.world.GameRules;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,6 +66,18 @@ public class MoreTab extends AbstractScreenTab {
             // 打开游戏规则编辑器
             Map<String, String> pending = GameRuleApplier.getPendingGameRules();
             if (pending == null) pending = new HashMap<>();
+
+            // 预填充默认值
+            if (pending.isEmpty()) {
+                // 从临时 GameRules 获取默认值
+                GameRules temp = new GameRules();
+                String[] keys = temp.getRules();
+                if (keys != null) {
+                    for (String key : keys) {
+                        pending.put(key, temp.getGameRuleStringValue(key));
+                    }
+                }
+            }
 
             mc.displayGuiScreen(new GameRuleEditor(tabManager.getParent(), pending));
         } else if (button.id == 201) {
