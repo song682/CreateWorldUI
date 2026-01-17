@@ -28,7 +28,7 @@ public class GameTab extends AbstractScreenTab {
 
         // 从TabManager获取世界名称
         String worldName = getWorldName();
-        if (worldName == null || worldName.isEmpty()) {
+        if ((worldName == null || worldName.isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             // 使用默认的世界名称
             worldName = I18n.format("selectWorld.newWorld");
             tabManager.setWorldName(worldName);

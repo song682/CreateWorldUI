@@ -1,3 +1,10 @@
+# General
+## Don't delete.
+generator.default_1_1=Beta World Generation
+selectWorld.bonusItems=
+selectWorld.mapFeatures=
+
+## Options for button selecting
 options.on=ON
 options.off=OFF
 options.yes=Yes
@@ -5,10 +12,12 @@ options.no=No
 options.save=Save
 options.reset=Reset
 
+## Tab name
 createworldui.tab.game=Game
 createworldui.tab.world=World
 createworldui.tab.more=More
 
+## Button
 createworldui.button.create=Create
 createworldui.button.cancel=Cancel
 createworldui.button.selectWorld.difficulty=Difficulty:
@@ -21,31 +30,56 @@ createworldui.button.selectWorld.difficulty.normal.tooltip=
 createworldui.button.selectWorld.difficulty.hard=Hard
 createworldui.button.selectWorld.difficulty.hard.tooltip=
 createworldui.worldTypeSettings=World Type Settings
-createworldui.button.gameRuleEditor=GameRules
+createworldui.button.gameRuleEditor=Game Rules
 
+## For Replacements
 createworldui.selectWorld.bonusItems=Bonus Chest
 createworldui.selectWorld.mapFeatures=Generate Structures
 
+## Tooltips
+createworldui.hover.difficulty=Set the difficulty of the world
 createworldui.hover.gameMode=Game Mode
 createworldui.hover.gameMode.survival=Survival Mode: Explore the world, gather resources, craft tools, and fight monsters.
 createworldui.hover.gameMode.creative=Creative Mode: Unlimited resources, ability to fly, and break and build anything.
 createworldui.hover.gameMode.adventure=Adventure Mode: Same as survival mode, but blocks can't be added or removed.
 createworldui.hover.gameMode.hardcore=Hardcore Mode: Same as survival but locked to hard difficulty and only one life.
-createworldui.hover.generateStructures=Generate Structures: Villages, dungeons etc.
+createworldui.hover.generateStructures=Villages, dungeons etc.
 createworldui.hover.worldType=Select the world generating type.
 createworldui.hover.allowCheats=Use commands like /gamemode, /xp
 createworldui.hover.bonusChest=Generate a chest containing basic survival items.
 createworldui.hover.customize=Custom the world details.
 createworldui.hover.gameRuleEditor=Edit your game rules.
+createworldui.hover.worldName.empty=Please enter world name
+createworldui.hover.worldName.filled=Create world with name: %s
 
-createworldui.gamerules.title=Game Rules
-gamerules.doFireTick.description=Controls whether fire spreads and naturally extinguishes
-gamerules.mobGriefing.description=Controls whether mobs can destroy blocks
-gamerules.keepInventory.description=Keep inventory after death
-gamerules.doMobSpawning.description=Natural mob spawning
-gamerules.doMobLoot.description=Mobs drop loot
-gamerules.commandBlockOutput.description=Command blocks output to chat
-gamerules.naturalRegeneration.description=Natural health regeneration
-gamerules.doDaylightCycle.description=Day/night cycle
+## Place Holder
+createworldui.placeholder.worldName=Please type your world names here.
 
+# Gamerules
+## Title
+createworldui.gamerules.title=Edit your Game Rules
+
+## ToolTips
+gamerules.doFireTick.tooltip.description=Controls whether fire spreads and naturally extinguishes
+gamerules.mobGriefing.tooltip.description=Controls whether mobs can destroy blocks
+gamerules.keepInventory.tooltip.description=Keep inventory after death
+gamerules.doMobSpawning.tooltip.description=Natural mob spawning
+gamerules.doMobLoot.tooltip.description=Mobs drop loot
+gamerules.commandBlockOutput.tooltip.description=Command blocks output to chat
+gamerules.naturalRegeneration.tooltip.description=Natural health regeneration
+gamerules.doDaylightCycle.tooltip.description=Day/night cycle
+createworldui.customize.custom.default=Default:
+
+## Unused Nut
 createworldui.experimental.warning=Experimental settings may affect stability
+
+# Config
+## Config: Title
+config.title=CreateWorldUI
+
+## Config: Element
+config.button.GRE=GameRule Editor
+config.button.UIM=UI Management
+
+## Config: Subtitile
+config.subtitle.GRE=
