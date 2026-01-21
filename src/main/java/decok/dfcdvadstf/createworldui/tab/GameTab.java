@@ -82,8 +82,9 @@ public class GameTab extends AbstractScreenTab {
         difficultyButton.displayString = getDifficultyText();
         allowCheatsButton.displayString = getAllowCheatsText();
 
-        // 根据硬核模式更新允许作弊按钮状态
+        // 根据硬核模式更新允许作弊按钮以及难度状态
         allowCheatsButton.enabled = !getHardcore();
+        difficultyButton.enabled = !getHardcore();
     }
 
     @Override
@@ -98,7 +99,11 @@ public class GameTab extends AbstractScreenTab {
                 }
                 break;
             case 9: // 难度
-                cycleDifficulty();
+                if (!getHardcore()) {
+                    cycleDifficulty();
+                } else {
+                    hardcoreSetToHard();
+                }
                 break;
         }
     }
@@ -113,8 +118,13 @@ public class GameTab extends AbstractScreenTab {
     }
 
     private String getDifficultyText() {
-        return I18n.format("options.difficulty") + ": " +
-                I18n.format(getDifficulty().getDifficultyResourceKey());
+        if (getHardcore()){
+            return I18n.format("options.difficulty") + ": " +
+                    I18n.format("options.difficulty.hardcore");
+        } else {
+            return I18n.format("options.difficulty") + ": " +
+                    I18n.format(getDifficulty().getDifficultyResourceKey());
+        }
     }
 
     private String getAllowCheatsText() {
@@ -152,12 +162,21 @@ public class GameTab extends AbstractScreenTab {
         if (allowCheatsButton != null) {
             allowCheatsButton.enabled = !getHardcore();
         }
+        if (difficultyButton != null) {
+            difficultyButton.enabled = !getHardcore();
+        }
     }
 
     private void cycleDifficulty() {
         EnumDifficulty current = getDifficulty();
         int next = (current.getDifficultyId() + 1) % EnumDifficulty.values().length;
         tabManager.setDifficulty(EnumDifficulty.getDifficultyEnum(next));
+    }
+
+    private void hardcoreSetToHard() {
+        EnumDifficulty difficulty = getDifficulty();
+        int hcs2d = difficulty.getDifficultyId();
+        tabManager.setDifficulty(EnumDifficulty.getDifficultyEnum(hcs2d));
     }
 
     @Override
