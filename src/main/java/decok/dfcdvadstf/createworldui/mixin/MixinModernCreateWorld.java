@@ -179,14 +179,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$ensureFieldsNotNull() {
-        if (!Loader.isModLoaded("archaicfix") && this.field_146330_J == null) {
-            this.field_146330_J = I18n.format("selectWorld.newWorld");
-            modernWorldCreatingUI$logger.info("Set default world name: " + this.field_146330_J);
-        } else if (Loader.isModLoaded("archiackfix") && this.field_146330_J == null) {
-            modernWorldCreatingUI$logger.info("Archaic Fix detected, to avoid conflict, let it handle he world name itself.");
-        } else {
-            modernWorldCreatingUI$logger.info("Set default world name as: " + this.field_146330_J);
-        }
+        this.field_146330_J = I18n.format("selectWorld.newWorld");
+        modernWorldCreatingUI$logger.info("Set default world name: " + this.field_146330_J);
 
         if (this.field_146329_I == null) {
             this.field_146329_I = "";
