@@ -1,6 +1,5 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
-import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
@@ -58,9 +57,9 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private TabManager modernWorldCreatingUI$tabManager;
     @Unique
-    private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui:textures/gui/options_background_dark.png");
+    private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui","textures/gui/options_background_dark.png");
     @Unique
-    private static final ResourceLocation TABS_TEXTURE = new ResourceLocation("createworldui:textures/gui/tabs.png");
+    private static final ResourceLocation TABS_TEXTURE = new ResourceLocation("createworldui","textures/gui/tabs.png");
     @Unique
     private static final int TAB_WIDTH = 130;
     @Unique
@@ -70,7 +69,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private boolean modernWorldCreatingUI$isInitialized = false;
     @Unique
-    private static Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
+    private static final Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
 
     /**
      * 初始化
@@ -334,6 +333,14 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             Map<String, String> pending = GameRuleApplier.getPendingGameRules();
             if (pending == null) pending = new HashMap<>();
 
+            // 过滤掉 null 值
+            Map<String, String> cleanPending = new HashMap<>();
+            for (Map.Entry<String, String> entry : pending.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    cleanPending.put(entry.getKey(), entry.getValue());
+                }
+            }
+
             try {
                 Minecraft mc = Minecraft.getMinecraft();
                 net.minecraft.world.World clientWorld = mc != null ? mc.theWorld : null;
@@ -341,21 +348,23 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                     Map<String, Object> opt = GameRuleMonitorNSetter.getOptimalGameruleValues(clientWorld);
                     if (opt != null && !opt.isEmpty()) {
                         for (Map.Entry<String, Object> e : opt.entrySet()) {
-                            pending.put(e.getKey(), String.valueOf(e.getValue()));
+                            if (e.getKey() != null && e.getValue() != null) {
+                                cleanPending.put(e.getKey(), String.valueOf(e.getValue()));
+                            }
                         }
                     }
                 }
             } catch (Throwable t) {
-                modernWorldCreatingUI$logger.error("On opening GameRuleEditor, an error occoured is: ",t.getCause().fillInStackTrace().getMessage());
+                modernWorldCreatingUI$logger.error("On opening GameRuleEditor, an error occoured is: ", t.getMessage());
             }
 
-            this.mc.displayGuiScreen(new GameRuleEditor((GuiCreateWorld)(Object)this, pending));
+            this.mc.displayGuiScreen(new GameRuleEditor((GuiCreateWorld)(Object)this, cleanPending));
             ci.cancel();
             return;
         }
 
         // 其他按钮由标签页管理器处理，阻止原版处理
-        if (button.id >= 2 && button.id <= 9 || button.id == 200) {
+        if (button.id >= 2 && button.id <= 9) {
             ci.cancel();
         }
     }

@@ -7,7 +7,6 @@ import decok.dfcdvadstf.createworldui.api.tab.TabManager;
 import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.world.GameRules;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,19 +66,15 @@ public class MoreTab extends AbstractScreenTab {
             Map<String, String> pending = GameRuleApplier.getPendingGameRules();
             if (pending == null) pending = new HashMap<>();
 
-            // 预填充默认值
-            if (pending.isEmpty()) {
-                // 从临时 GameRules 获取默认值
-                GameRules temp = new GameRules();
-                String[] keys = temp.getRules();
-                if (keys != null) {
-                    for (String key : keys) {
-                        pending.put(key, temp.getGameRuleStringValue(key));
-                    }
+            // 过滤掉 null 值
+            Map<String, String> cleanPending = new HashMap<>();
+            for (Map.Entry<String, String> entry : pending.entrySet()) {
+                if (entry.getKey() != null && entry.getValue() != null) {
+                    cleanPending.put(entry.getKey(), entry.getValue());
                 }
             }
 
-            mc.displayGuiScreen(new GameRuleEditor(tabManager.getParent(), pending));
+            mc.displayGuiScreen(new GameRuleEditor(tabManager.getParent(), cleanPending));
         } else if (button.id == 201) {
             // 打开实验性功能界面
             System.out.println("MoreTab: Experiments button clicked");
