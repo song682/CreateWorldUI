@@ -47,11 +47,11 @@ public class CreateWorldConfigUI implements IModGuiFactory {
             elements.addAll((new ConfigElement(configuration.getCategory("general"))).getChildElements());
 
             ConfigCategory greCategory = configuration.getCategory("GameRule Editor").setLanguageKey("config.button.GRE");
-            greCategory.setComment(I18n.format(""));
+            greCategory.setComment(I18n.format("config.subtitle.GRE"));
             elements.add(new ConfigElement(greCategory));
 
             ConfigCategory uimCategory = configuration.getCategory("UI Management").setLanguageKey("config.button.UIM");
-            uimCategory.setComment("Choose priority per line");
+            uimCategory.setComment("config.subtitle.UIM");
             elements.add(new ConfigElement(uimCategory));
 
             return elements;

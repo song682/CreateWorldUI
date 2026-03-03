@@ -8,7 +8,7 @@ import decok.dfcdvadstf.createworldui.config.Config;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-@Mod(modid = Tags.MODID, name = Tags.NAME, version = Tags.VERSION, acceptedMinecraftVersions = "1.7.10", acceptableRemoteVersions = "1.7.10")
+@Mod(modid = Tags.MODID, name = Tags.NAME, version = Tags.VERSION, acceptedMinecraftVersions = "1.7.10", acceptableRemoteVersions = "1.7.10", guiFactory = "decok.dfcdvadstf.createworldui.config.CreateWorldConfigUI")
 public class CreateWorldUI {
 
     public static Config config;
