@@ -22,6 +22,8 @@ jobs:
       with:
         gradle-version: 7.4
       name: Set up Gradle
+    - name: Fix line endings
+      run: sed -i 's/\r$//' gradlew
     - name: Add permission
       run: chmod +x ./gradlew
     - name: Execute Gradle build
