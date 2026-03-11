@@ -4,7 +4,7 @@ import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
 import decok.dfcdvadstf.createworldui.api.tab.TabState;
-import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
+import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -358,7 +358,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 modernWorldCreatingUI$logger.error("On opening GameRuleEditor, an error occoured is: ", t.getMessage());
             }
 
-            this.mc.displayGuiScreen(new GameRuleEditor((GuiCreateWorld)(Object)this, cleanPending));
+            this.mc.displayGuiScreen(new GuiScreenGameRuleEditor((GuiCreateWorld)(Object)this, cleanPending));
             ci.cancel();
             return;
         }
