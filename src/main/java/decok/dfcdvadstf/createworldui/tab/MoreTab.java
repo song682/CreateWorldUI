@@ -4,7 +4,7 @@ import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
-import decok.dfcdvadstf.createworldui.gamerule.GameRuleEditor;
+import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.resources.I18n;
 
@@ -74,7 +74,7 @@ public class MoreTab extends AbstractScreenTab {
                 }
             }
 
-            mc.displayGuiScreen(new GameRuleEditor(tabManager.getParent(), cleanPending));
+            mc.displayGuiScreen(new GuiScreenGameRuleEditor(tabManager.getParent(), cleanPending));
         } else if (button.id == 201) {
             // 打开实验性功能界面
             System.out.println("MoreTab: Experiments button clicked");
