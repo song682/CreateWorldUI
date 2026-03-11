@@ -41,7 +41,7 @@ import java.util.*;
  */
 
 @SuppressWarnings("unchecked")
-public class GameRuleEditor extends GuiScreen {
+public class GuiScreenGameRuleEditor extends GuiScreen {
 
     private static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
 
@@ -67,11 +67,12 @@ public class GameRuleEditor extends GuiScreen {
     private static final Map<String, String> hardcodeToolTip = new HashMap<>();// 允许外部模组自己添加自己的描述 / Allow developers to add their own tooltips from external.
 
     private int scrollOffset = 0; // 滚动偏移量 / Scroll offset
-    private int maxScrollOffset = 0; // 最大滚动偏移量 / Maximum scroll offset
+    private int maxScrollOffset; // 最大滚动偏移量 / Maximum scroll offset
     private static final int ROW_HEIGHT = 25; // 行高 / Row height
-    private static final int VISIBLE_ROWS = 8; // 可见行数 / Number of visible rows
+    private int visibleRows = 8; // 可见行数 / Number of visible rows
     private boolean isScrolling = false; // 是否正在滚动 / Whether scrolling is in progress
     private GuiScreen parentScreen; // 父界面 / Parent screen
+    private static final int PANEL_TOP = 50;
 
     /**
      * 构造游戏规则编辑器<br>
@@ -79,7 +80,7 @@ public class GameRuleEditor extends GuiScreen {
      * @param parentScreen 父界面（创建世界界面） / Parent screen (world creation screen)
      * @param editableRules 可编辑的游戏规则映射 / Editable game rule map
      */
-    public GameRuleEditor(GuiScreen parentScreen, Map<String, String> editableRules) {
+    public GuiScreenGameRuleEditor(GuiScreen parentScreen, Map<String, String> editableRules) {
         this.parentScreen = parentScreen;
         LOGGER.error("GameRuleEditor CONSTRUCTOR CALLED");
 
@@ -176,7 +177,7 @@ public class GameRuleEditor extends GuiScreen {
             }
         }
 
-        this.maxScrollOffset = Math.max(0, defaultRules.size() - VISIBLE_ROWS);
+        this.maxScrollOffset = Math.max(0, defaultRules.size() - visibleRows);
 
         // 确保 buttonList 不为 null
         if (this.buttonList == null) {
@@ -201,6 +202,10 @@ public class GameRuleEditor extends GuiScreen {
         Keyboard.enableRepeatEvents(true);
 
         this.buttonList.clear();
+
+        int panelBottom = this.height - 50;
+        this.visibleRows = Math.max(1, (panelBottom - PANEL_TOP) / ROW_HEIGHT);
+        this.maxScrollOffset = Math.max(0, defaultRules.size() - this.visibleRows);
 
         // 按钮布局
         if (CreateWorldUI.config.enableResetButton) {
@@ -273,7 +278,7 @@ public class GameRuleEditor extends GuiScreen {
             }
 
             // 不在可见行中则跳过
-            if (index < scrollOffset || index >= scrollOffset + VISIBLE_ROWS) {
+            if (index < scrollOffset || index >= scrollOffset + visibleRows) {
                 index++;
                 continue;
             }
@@ -419,7 +424,7 @@ public class GameRuleEditor extends GuiScreen {
     }
 
     /**
-     * 获取当前游戏规则ID所对应的布尔值（modified > editable > default）
+     * 获取当前游戏规则ID所对应的布尔值（modified > editable > default）<br>
      * Get the boolean value of current Rule name, priority is modified > editable > default
      */
     private void toggleBooleanRule(String ruleName, GuiButton button) {
@@ -489,7 +494,7 @@ public class GameRuleEditor extends GuiScreen {
         // Check whether click the scroll bar.
         int scrollBarX = this.width / 2 - 10;
         int scrollBarY = 60;
-        int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
+        int scrollBarHeight = visibleRows * ROW_HEIGHT;
 
         if (mouseX >= scrollBarX && mouseX <= scrollBarX + 10 &&
                 mouseY >= scrollBarY && mouseY <= scrollBarY + scrollBarHeight) {
@@ -521,7 +526,7 @@ public class GameRuleEditor extends GuiScreen {
 
         if (this.isScrolling) {
             int scrollBarY = 60;
-            int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
+            int scrollBarHeight = visibleRows * ROW_HEIGHT;
 
             float relativePosition = (float) (mouseY - scrollBarY) / (float) scrollBarHeight;
             this.scrollOffset = (int) (relativePosition * (this.maxScrollOffset));
@@ -548,9 +553,14 @@ public class GameRuleEditor extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        LOGGER.error("GameRuleEditor drawScreen()");
         drawDefaultBackground();
         drawContentPanel();
+
+        // 动态计算可见行数 / 最大滚动量
+        // Calculate the dynamic visible rule roles / maximum scrolling amount
+        int panelBottom = this.height - 50;
+        this.visibleRows = Math.max(1, (panelBottom - PANEL_TOP) / ROW_HEIGHT);
+        this.maxScrollOffset = Math.max(0, defaultRules.size() - this.visibleRows);
 
         this.drawCenteredString(this.fontRendererObj, I18n.format("createworldui.gamerules.title"), this.width / 2, 20, 0xFFFFFF);
 
@@ -591,20 +601,18 @@ public class GameRuleEditor extends GuiScreen {
         super.drawScreen(mouseX, mouseY, partialTicks);
 
         drawTooltips(mouseX, mouseY);
-        LOGGER.error(" buttonList = {}", this.buttonList.size());
     }
 
     private void drawContentPanel() {
-        int panelTop    = 50;
+        int panelLeft = 0;
+        int panelRight = this.width;
         int panelBottom = this.height - 50;
-        int panelLeft   = 0;
-        int panelRight  = this.width;
 
         // 深色背景
-        drawGradientRect(panelLeft, panelTop, panelRight, panelBottom, 0xC0101010, 0xD0101010);
+        drawGradientRect(panelLeft, PANEL_TOP, panelRight, panelBottom, 0xC0101010, 0xD0101010);
 
         // 内边线（可选）
-        drawRect(panelLeft, panelTop, panelRight, panelTop + 1, 0xFF000000);  // top
+        drawRect(panelLeft, PANEL_TOP, panelRight, PANEL_TOP + 1, 0xFF000000);  // top
         drawRect(panelLeft, panelBottom - 1, panelRight, panelBottom, 0xFF000000); // bottom
     }
 
@@ -613,7 +621,7 @@ public class GameRuleEditor extends GuiScreen {
         int yPos = 60;
 
         for (Map.Entry<String, GameruleValue> entry : defaultRules.entrySet()) {
-            if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
+            if (index >= scrollOffset && index < scrollOffset + visibleRows) {
                 String ruleName = entry.getKey();
                 GameruleValue originalValue = entry.getValue();
 
@@ -637,15 +645,15 @@ public class GameRuleEditor extends GuiScreen {
 
     private void drawScrollBar() {
         if (maxScrollOffset > 0) {
-            int scrollBarX = this.width / 2 - 10;
+            int scrollBarX = this.width / 2 + 149;
             int scrollBarY = 60;
-            int scrollBarHeight = VISIBLE_ROWS * ROW_HEIGHT;
+            int scrollBarHeight = visibleRows * ROW_HEIGHT;
 
             drawRect(scrollBarX, scrollBarY, scrollBarX + 10, scrollBarY + scrollBarHeight, 0xAA333333);
             drawRect(scrollBarX + 1, scrollBarY + 1, scrollBarX + 9, scrollBarY + scrollBarHeight - 1, 0xAA555555);
 
             float scrollPercentage = (float) scrollOffset / maxScrollOffset;
-            int sliderHeight = Math.max(20, scrollBarHeight / (maxScrollOffset + VISIBLE_ROWS) * VISIBLE_ROWS);
+            int sliderHeight = Math.max(20, scrollBarHeight / (maxScrollOffset + visibleRows) * visibleRows);
             int sliderY = scrollBarY + (int) (scrollPercentage * (scrollBarHeight - sliderHeight));
 
             drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight, 0xFF888888);
@@ -658,7 +666,7 @@ public class GameRuleEditor extends GuiScreen {
         int yPos = 60;
 
         for (String ruleName : defaultRules.keySet()) {
-            if (index >= scrollOffset && index < scrollOffset + VISIBLE_ROWS) {
+            if (index >= scrollOffset && index < scrollOffset + visibleRows) {
                 int rowY = yPos + (index - scrollOffset) * ROW_HEIGHT;
 
                 if (isMouseOverRuleName(mouseX, mouseY, rowY)) {
@@ -801,6 +809,7 @@ public class GameRuleEditor extends GuiScreen {
     }
 
     // 组件包装
+    // Component Wrapper
     private static class GuiComponentWrapper {
         public final Object component;
         public final ComponentType type;
