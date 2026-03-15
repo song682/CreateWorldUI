@@ -492,7 +492,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
 
         // 检查是否点击滚动条区域（用于拖动）
         // Check whether click the scroll bar.
-        int scrollBarX = this.width / 2 - 10;
+        int scrollBarX = this.width / 2 - 149;
         int scrollBarY = 60;
         int scrollBarHeight = visibleRows * ROW_HEIGHT;
 

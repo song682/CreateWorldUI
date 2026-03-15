@@ -3,6 +3,7 @@ package decok.dfcdvadstf.createworldui.tab;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
+import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
@@ -10,9 +11,9 @@ import net.minecraft.world.EnumDifficulty;
 
 public class GameTab extends AbstractScreenTab {
     private GuiTextField worldNameField;
-    private GuiButton gameModeButton;
-    private GuiButton allowCheatsButton;
-    private GuiButton difficultyButton;
+    private GuiCyclableButton gameModeButton;
+    private GuiCyclableButton allowCheatsButton;
+    private GuiCyclableButton difficultyButton;
 
     public GameTab() {
         super(100, "createworldui.tab.game");
@@ -39,18 +40,28 @@ public class GameTab extends AbstractScreenTab {
         System.out.println("GameTab: Initializing with world name: " + worldName);
 
         // 创建游戏模式按钮
-        gameModeButton = new GuiButton(2, width / 2 - 104, height / 2,
-                208, 20, getGameModeText());
+        gameModeButton = new GuiCyclableButton(2, width / 2 - 104, height / 2,
+                208, 20, this::getGameModeText, direction -> cycleGameMode());
         addButton(gameModeButton);
 
         // 创建难度按钮
-        difficultyButton = new GuiButton(9, width / 2 - 104, height / 2 + 25,
-                208, 20, getDifficultyText());
+        difficultyButton = new GuiCyclableButton(9, width / 2 - 104, height / 2 + 25,
+                208, 20, this::getDifficultyText, direction -> {
+            if (!getHardcore()) {
+                cycleDifficulty();
+            } else {
+                hardcoreSetToHard();
+            }
+        });
         addButton(difficultyButton);
 
         // 创建允许作弊按钮
-        allowCheatsButton = new GuiButton(6, width / 2 - 104, height / 2 + 50,
-                208, 20, getAllowCheatsText());
+        allowCheatsButton = new GuiCyclableButton(6, width / 2 - 104, height / 2 + 50,
+                208, 20, this::getAllowCheatsText, direction -> {
+            if (!getHardcore()) {
+                tabManager.setAllowCheats(!getAllowCheats());
+            }
+        });
         addButton(allowCheatsButton);
 
         // 初始隐藏所有按钮，TabManager会根据当前标签页显示
@@ -78,34 +89,19 @@ public class GameTab extends AbstractScreenTab {
         }
 
         // 更新按钮文本
-        gameModeButton.displayString = getGameModeText();
-        difficultyButton.displayString = getDifficultyText();
-        allowCheatsButton.displayString = getAllowCheatsText();
+        if (gameModeButton != null) gameModeButton.updateText();
+        if (difficultyButton != null) difficultyButton.updateText();
+        if (allowCheatsButton != null) allowCheatsButton.updateText();
 
         // 根据硬核模式更新允许作弊按钮以及难度状态
-        allowCheatsButton.enabled = !getHardcore();
-        difficultyButton.enabled = !getHardcore();
+        if (allowCheatsButton != null) allowCheatsButton.enabled = !getHardcore();
+        if (difficultyButton != null) difficultyButton.enabled = !getHardcore();
     }
 
     @Override
     public void actionPerformed(GuiButton button) {
-        switch (button.id) {
-            case 2: // 游戏模式
-                cycleGameMode();
-                break;
-            case 6: // 允许作弊
-                if (!getHardcore()) {
-                    tabManager.setAllowCheats(!getAllowCheats());
-                }
-                break;
-            case 9: // 难度
-                if (!getHardcore()) {
-                    cycleDifficulty();
-                } else {
-                    hardcoreSetToHard();
-                }
-                break;
-        }
+        // 循环按钮的逻辑已在创建时定义，无需在此处理
+        // 此方法保留用于处理其他类型的按钮事件
     }
 
     private String getGameModeText() {
@@ -161,9 +157,11 @@ public class GameTab extends AbstractScreenTab {
         // 更新按钮显示
         if (allowCheatsButton != null) {
             allowCheatsButton.enabled = !getHardcore();
+            allowCheatsButton.updateText();
         }
         if (difficultyButton != null) {
             difficultyButton.enabled = !getHardcore();
+            difficultyButton.updateText();
         }
     }
 

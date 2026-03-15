@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
+import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
@@ -16,6 +17,7 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -488,6 +490,38 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         if (modernWorldCreatingUI$tabManager != null) {
             modernWorldCreatingUI$tabManager.mouseClicked(mouseX, mouseY, mouseButton);
+        }
+    }
+
+    /**
+     * 处理鼠标滚动
+     */
+    @Override
+    public void handleMouseInput() {
+        super.handleMouseInput();
+
+        if (!modernWorldCreatingUI$isInitialized) {
+            return;
+        }
+
+        int mouseX = Mouse.getEventX() * this.width / this.mc.displayWidth;
+        int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
+
+        if (modernWorldCreatingUI$tabManager != null) {
+            // 遍历当前标签页的按钮，查找是否有GuiCyclableButton需要处理滚动事件
+            for (Object obj : this.buttonList) {
+                if (obj instanceof GuiCyclableButton) {
+                    GuiCyclableButton button = (GuiCyclableButton) obj;
+                    if (button.visible && button.enabled &&
+                        mouseX >= button.xPosition && mouseX < button.xPosition + button.width &&
+                        mouseY >= button.yPosition && mouseY < button.yPosition + button.height) {
+                        int delta = Mouse.getEventDWheel();
+                        if (delta != 0) {
+                            button.mouseScrolled(delta);
+                        }
+                    }
+                }
+            }
         }
     }
 

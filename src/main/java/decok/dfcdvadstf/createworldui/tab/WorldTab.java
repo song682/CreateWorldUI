@@ -2,6 +2,7 @@ package decok.dfcdvadstf.createworldui.tab;
 
 import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
+import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
@@ -9,7 +10,7 @@ import net.minecraft.world.WorldType;
 
 public class WorldTab extends AbstractScreenTab {
     private GuiTextField seedField;
-    private GuiButton worldTypeButton;
+    private GuiCyclableButton worldTypeButton;
     private GuiButton generateStructuresButton;
     private GuiButton bonusChestButton;
     private GuiButton customizeButton;
@@ -41,8 +42,8 @@ public class WorldTab extends AbstractScreenTab {
         seedField.setText(getSeed());
 
         // 创建世界类型按钮
-        worldTypeButton = new GuiButton(5, width / 2 - 154, height / 8 + 10,
-                150, 20, getWorldTypeText());
+        worldTypeButton = new GuiCyclableButton(5, width / 2 - 154, height / 8 + 10,
+                150, 20, this::getWorldTypeText, direction -> cycleWorldType());
         addButton(worldTypeButton);
 
         // 创建自定义按钮
@@ -85,7 +86,7 @@ public class WorldTab extends AbstractScreenTab {
                 tabManager.getParent().height / 2 - 15 + 6, 0xFFFFFF);
 
         // 更新按钮文本和状态
-        worldTypeButton.displayString = getWorldTypeText();
+        if (worldTypeButton != null) worldTypeButton.updateText();
 
         if (WorldType.worldTypes != null && getWorldTypeIndex() < WorldType.worldTypes.length &&
                 WorldType.worldTypes[getWorldTypeIndex()] != null) {
@@ -108,9 +109,6 @@ public class WorldTab extends AbstractScreenTab {
         switch (button.id) {
             case 4: // 生成建筑
                 tabManager.setGenerateStructures(!getGenerateStructures());
-                break;
-            case 5: // 世界类型
-                cycleWorldType();
                 break;
             case 7: // 奖励箱
                 if (!getHardcore()) {
@@ -157,6 +155,9 @@ public class WorldTab extends AbstractScreenTab {
 
         if (WorldType.worldTypes[newIndex] != null) {
             tabManager.setWorldTypeIndex(newIndex);
+            if (worldTypeButton != null) {
+                worldTypeButton.updateText();
+            }
         }
     }
 
