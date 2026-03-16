@@ -213,6 +213,7 @@ public class TabManager {
         Minecraft.getMinecraft().gameSettings.saveOptions();
     }
 
-    public GuiCreateWorld getParent() { return parent; }
-    public int getCurrentTabId() { return currentTabId; }
-}
+        public GuiCreateWorld getParent() { return parent; }
+        public int getCurrentTabId() { return currentTabId; }
+        public int getTabCount() { return tabs.size(); }
+        public Map<Integer, Tab> getAllTabs() { return tabs; }}

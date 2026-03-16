@@ -17,6 +17,7 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -450,6 +451,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         } catch (Throwable ignored) {}
     }
 
+
+
     /**
      * 处理按键输入
      */
@@ -458,6 +461,32 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         if (!modernWorldCreatingUI$isInitialized) {
             super.keyTyped(typedChar, keyCode);
             return;
+        }
+
+        // 处理Control/Command + 数字键切换Tab
+        if (isCtrlKeyDown()) {  // 使用Minecraft内置的isCtrlKeyDown方法，该方法已处理Mac和Windows/Linux的差异
+            // 处理数字键 1-9 和 0 (0 通常在位置10)
+            if (keyCode >= 2 && keyCode <= 11) { // 键盘上的1-9,0键
+                int tabNumber = keyCode - 1; // 键码2对应数字1，码3对应数字2，以此类推
+                if (keyCode == 11) { // 数字0键
+                    tabNumber = 10;
+                }
+                
+                // 获取所有可用的标签页ID并排序
+                if (modernWorldCreatingUI$tabManager != null) {
+                    java.util.Map<Integer, ?> availableTabs = modernWorldCreatingUI$tabManager.getAllTabs();
+                    java.util.List<Integer> sortedTabIds = new java.util.ArrayList<>(availableTabs.keySet());
+                    java.util.Collections.sort(sortedTabIds);
+                    
+                    // 确保索引不超出范围（Fallback到最大可用Tab）
+                    int targetIndex = Math.min(tabNumber - 1, sortedTabIds.size() - 1);
+                    if (targetIndex >= 0 && targetIndex < sortedTabIds.size()) {
+                        int targetTabId = sortedTabIds.get(targetIndex);
+                        modernWorldCreatingUI$tabManager.switchToTab(targetTabId);
+                    }
+                }
+                return; // 拦截按键，不继续处理
+            }
         }
 
         if (modernWorldCreatingUI$tabManager != null) {
