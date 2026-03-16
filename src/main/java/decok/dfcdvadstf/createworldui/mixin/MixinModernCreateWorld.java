@@ -75,6 +75,10 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     private static final Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
 
     /**
+     * 检查是否按下了Shift键
+     */
+    @Unique
+    /**
      * 初始化
      */
     @Inject(method = "initGui", at = @At("HEAD"))
@@ -449,18 +453,42 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 }
             }
         } catch (Throwable ignored) {}
-    }
-
-
-
-    /**
-     * 处理按键输入
-     */
-    @Override
+            }
+        
+            /**
+             * 处理按键输入
+             */    @Override
     protected void keyTyped(char typedChar, int keyCode) {
         if (!modernWorldCreatingUI$isInitialized) {
             super.keyTyped(typedChar, keyCode);
             return;
+        }
+
+        // 处理Control + Tab 和 Control + Shift + Tab 切换Tab
+        if (isCtrlKeyDown() && keyCode == 15) { // Tab键的键码是15
+            if (modernWorldCreatingUI$tabManager != null) {
+                java.util.Map<Integer, ?> availableTabs = modernWorldCreatingUI$tabManager.getAllTabs();
+                java.util.List<Integer> sortedTabIds = new java.util.ArrayList<>(availableTabs.keySet());
+                java.util.Collections.sort(sortedTabIds);
+                
+                if (!sortedTabIds.isEmpty()) {
+                    int currentTabId = modernWorldCreatingUI$tabManager.getCurrentTabId();
+                    int currentIndex = sortedTabIds.indexOf(currentTabId);
+                    
+                    int nextIndex;
+                    if (isShiftKeyDown()) {
+                        // Control + Shift + Tab: 向左切换 (循环)
+                        nextIndex = (currentIndex - 1 + sortedTabIds.size()) % sortedTabIds.size();
+                    } else {
+                        // Control + Tab: 向右切换 (循环)
+                        nextIndex = (currentIndex + 1) % sortedTabIds.size();
+                    }
+                    
+                    int targetTabId = sortedTabIds.get(nextIndex);
+                    modernWorldCreatingUI$tabManager.switchToTab(targetTabId);
+                }
+            }
+            return; // 拦截按键，不继续处理
         }
 
         // 处理Control/Command + 数字键切换Tab
