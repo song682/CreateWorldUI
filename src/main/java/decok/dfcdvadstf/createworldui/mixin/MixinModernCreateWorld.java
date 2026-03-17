@@ -17,7 +17,6 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -64,6 +63,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private static final ResourceLocation TABS_TEXTURE = new ResourceLocation("createworldui","textures/gui/tabs.png");
     @Unique
+    private static final ResourceLocation HEADER_SEPARATOR = new ResourceLocation("createworldui","textures/gui/header_separator.png");
+    @Unique
+    private static final ResourceLocation FOOTER_SEPARATOR = new ResourceLocation("createworldui","textures/gui/footer_separator.png");
+    @Unique
+    private static final ResourceLocation OPTIONS_BACKGROUND_LIGHT = new ResourceLocation("createworldui","textures/gui/options_background_light.png");
+    @Unique
     private static final int TAB_WIDTH = 130;
     @Unique
     private static final int TAB_HEIGHT = 24;
@@ -102,6 +107,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         this.buttonList.clear();
         this.buttonList.addAll(essentialButtons);
 
+        // 检查是否已经有标签页管理器（在窗口调整大小时）
+        int previousTabId = -1;
+        if (modernWorldCreatingUI$tabManager != null) {
+            previousTabId = modernWorldCreatingUI$tabManager.getCurrentTabId();
+        }
+
         // 初始化标签页管理器
         modernWorldCreatingUI$tabManager = new TabManager(
                 (GuiCreateWorld)(Object)this, this.buttonList, this.width, this.height
@@ -116,6 +127,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         // 初始化悬停文本
         modernWorldCreatingUI$initHoverTexts();
+
+        // 如果之前有标签页管理器，则恢复之前的标签页
+        if (previousTabId != -1) {
+            modernWorldCreatingUI$tabManager.switchToTab(previousTabId);
+        }
 
         modernWorldCreatingUI$isInitialized = true;
     }
@@ -281,13 +297,15 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         // 绘制主背景
         this.drawBackground(0);
 
-        // 绘制顶部背景
-        this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
-        this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, TAB_HEIGHT - 2, 16, 16);
+        // 绘制顶部背景 - 使用纯色（#000000）填充代替纹理
+        drawRect(0, 0, this.width, TAB_HEIGHT - 2, 0xFF000000); // #000000
 
-        // 绘制分隔线
-        modernWorldCreatingUI$drawColoredLine(0, TAB_HEIGHT - 3, this.width, 0x00FFFFFF, 0x40FFFFFF);
-        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, 0x40000000, 0x40FFFFFF);
+        // 绘制分隔线 - 使用新的纹理
+        this.mc.getTextureManager().bindTexture(HEADER_SEPARATOR);
+        this.modernWorldCreatingUI$drawTiledTexture(0, TAB_HEIGHT - 3, this.width, 2, 16, 2);
+
+        this.mc.getTextureManager().bindTexture(FOOTER_SEPARATOR);
+        this.modernWorldCreatingUI$drawTiledTexture(0, this.height - 35, this.width, 2, 16, 2);
 
         // 绘制当前标签页内容
         if (modernWorldCreatingUI$tabManager != null) {

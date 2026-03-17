@@ -213,7 +213,35 @@ public class TabManager {
         Minecraft.getMinecraft().gameSettings.saveOptions();
     }
 
-        public GuiCreateWorld getParent() { return parent; }
-        public int getCurrentTabId() { return currentTabId; }
-        public int getTabCount() { return tabs.size(); }
-        public Map<Integer, Tab> getAllTabs() { return tabs; }}
+    /**
+     * 在窗口调整大小时重新初始化标签页，同时保持当前选中的标签页状态
+     */
+    public void reinitializeTabs(int width, int height) {
+        // 记录当前选中的标签页ID
+        int previousTabId = currentTabId;
+
+        // 隐藏当前标签页
+        if (currentTab != null) {
+            currentTab.setVisible(false);
+        }
+
+        // 重新初始化所有标签页
+        for (Tab tab : tabs.values()) {
+            tab.initGui(this, width, height);
+        }
+
+        // 恢复之前选中的标签页
+        switchToTab(previousTabId);
+    }
+
+        
+
+            public GuiCreateWorld getParent() { return parent; }
+
+                public int getCurrentTabId() { return currentTabId; }
+
+                public int getTabCount() { return tabs.size(); }
+
+                public Map<Integer, Tab> getAllTabs() { return tabs; }
+
+        }
