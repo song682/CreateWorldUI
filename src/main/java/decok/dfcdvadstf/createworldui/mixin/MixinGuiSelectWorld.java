@@ -1,9 +1,11 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiSelectWorld;
 import net.minecraft.world.storage.ISaveFormat;
+import net.minecraft.world.storage.SaveFormatComparator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.asm.mixin.Mixin;

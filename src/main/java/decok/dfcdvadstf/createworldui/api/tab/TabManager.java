@@ -156,6 +156,24 @@ public class TabManager {
         }
     }
 
+    /**
+     * 重新初始化标签页，在窗口大小改变时调用以保持当前选中的标签页
+     * @param width 新的窗口宽度
+     * @param height 新的窗口高度
+     */
+    public void reinitializeTabs(int width, int height) {
+        // 保存当前选中的标签页ID
+        int savedTabId = currentTabId;
+
+        // 重新初始化所有标签页
+        for (Tab tab : tabs.values()) {
+            tab.initGui(this, width, height);
+        }
+
+        // 恢复之前选中的标签页
+        switchToTab(savedTabId);
+    }
+
     // Getters and setters for shared state
     public String getWorldName() { return worldName; }
     public void setWorldName(String worldName) {
@@ -213,35 +231,8 @@ public class TabManager {
         Minecraft.getMinecraft().gameSettings.saveOptions();
     }
 
-    /**
-     * 在窗口调整大小时重新初始化标签页，同时保持当前选中的标签页状态
-     */
-    public void reinitializeTabs(int width, int height) {
-        // 记录当前选中的标签页ID
-        int previousTabId = currentTabId;
-
-        // 隐藏当前标签页
-        if (currentTab != null) {
-            currentTab.setVisible(false);
-        }
-
-        // 重新初始化所有标签页
-        for (Tab tab : tabs.values()) {
-            tab.initGui(this, width, height);
-        }
-
-        // 恢复之前选中的标签页
-        switchToTab(previousTabId);
-    }
-
-        
-
-            public GuiCreateWorld getParent() { return parent; }
-
-                public int getCurrentTabId() { return currentTabId; }
-
-                public int getTabCount() { return tabs.size(); }
-
-                public Map<Integer, Tab> getAllTabs() { return tabs; }
-
-        }
+        public GuiCreateWorld getParent() { return parent; }
+        public int getCurrentTabId() { return currentTabId; }
+        public int getTabCount() { return tabs.size(); }
+        public Map<Integer, Tab> getAllTabs() { return tabs; }
+}
