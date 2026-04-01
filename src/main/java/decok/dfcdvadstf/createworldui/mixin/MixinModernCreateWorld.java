@@ -102,15 +102,21 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         this.buttonList.clear();
         this.buttonList.addAll(essentialButtons);
 
-        // 初始化标签页管理器
-        modernWorldCreatingUI$tabManager = new TabManager(
-                (GuiCreateWorld)(Object)this, this.buttonList, this.width, this.height
-        );
+        // 检查是否是resize导致的重新初始化（TabManager已存在）
+        if (modernWorldCreatingUI$tabManager != null) {
+            // resize情况：重新初始化TabManager中的tabs，而不是创建新的TabManager
+            modernWorldCreatingUI$tabManager.reinitializeTabs(this.width, this.height);
+            modernWorldCreatingUI$logger.info("Reinitialized tabs after resize");
+        } else {
+            // 首次初始化：创建新的TabManager
+            modernWorldCreatingUI$tabManager = new TabManager(
+                    (GuiCreateWorld)(Object)this, this.buttonList, this.width, this.height
+            );
+            // 将原版状态传递给TabManager
+            modernWorldCreatingUI$sendStateToTabManager();
+        }
 
-        // 将原版状态传递给TabManager
-        modernWorldCreatingUI$sendStateToTabManager();
-
-        // 创建标签页按钮
+        // 创建标签页按钮（resize时需要重新创建，因为按钮位置可能改变）
         modernWorldCreatingUI$createTabButtons();
         modernWorldCreatingUI$repositionActionButtons();
 
