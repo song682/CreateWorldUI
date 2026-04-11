@@ -51,7 +51,7 @@ public class TabManager {
         switchToTab(currentTabId);
     }
 
-    // 从Mixin直接设置初始状态的方法
+    // Set initial state directly from Mixin / 从 Mixin 直接设置初始状态的方法
     public void setInitialState(String worldName, String gameMode, String seed,
                                 int worldTypeIndex, boolean generateStructures,
                                 boolean bonusChest, boolean allowCheats,
@@ -71,20 +71,22 @@ public class TabManager {
         this.hardcore = hardcore;
         this.difficulty = difficulty != null ? difficulty : EnumDifficulty.NORMAL;
 
+        // Update game settings
         // 更新游戏设置
         Minecraft.getMinecraft().gameSettings.difficulty = this.difficulty;
         Minecraft.getMinecraft().gameSettings.saveOptions();
     }
 
+    // New method: Get the actual name used for world creation
     // 新增方法：获取用于创建世界的实际名称
     public String getWorldNameForCreation() {
         if ((worldName == null || worldName.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
-            return I18n.format("selectWorld.newWorld"); // 返回默认名称
+            return I18n.format("selectWorld.newWorld"); // Return default name / 返回默认名称
         }
         return worldName.trim();
     }
 
-    // 从TabManager获取状态回传给Mixin
+    // Get state back from TabManager to Mixin / 从 TabManager 获取状态回传给 Mixin
     public void getCurrentState(String[] worldName, String[] gameMode, String[] seed,
                                 int[] worldTypeIndex, boolean[] generateStructures,
                                 boolean[] bonusChest, boolean[] allowCheats,
@@ -100,7 +102,8 @@ public class TabManager {
         difficulty[0] = this.difficulty;
     }
 
-    // 添加按钮到Mixin的按钮列表
+    // Add a button to the Mixin's button list
+    // 添加按钮到 Mixin 的按钮列表
     public void addButton(GuiButton button) {
         if (!buttonList.contains(button)) {
             buttonList.add(button);

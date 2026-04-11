@@ -51,6 +51,7 @@ public abstract class AbstractScreenTab implements Tab {
         tabManager.addButton(button);
     }
 
+    // Helper methods for accessing shared state
     // 辅助方法获取状态
     protected String getWorldName() { return tabManager.getWorldName(); }
     protected String getGameMode() { return tabManager.getGameMode(); }

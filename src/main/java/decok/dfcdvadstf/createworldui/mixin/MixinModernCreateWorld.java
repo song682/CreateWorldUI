@@ -17,7 +17,6 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,6 +29,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 /**
+ * <p>Transforms the vanilla world creation screen via Mixin to implement a tabbed layout.</p>
  * <p>通过Mixin技术改造原版创建世界界面，实现标签页式布局</p>
  */
 @SuppressWarnings("unchecked")
@@ -91,6 +91,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     private void onInitGuiTail(CallbackInfo ci) {
         modernWorldCreatingUI$logger.info("Initializing GUI");
 
+        // Clear button list, but keep the Create and Cancel buttons
         // 首先清空按钮列表，但保留创建和取消按钮
         List<GuiButton> essentialButtons = new ArrayList<>();
         for (GuiButton button : (List<GuiButton>)this.buttonList) {
@@ -102,24 +103,30 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         this.buttonList.clear();
         this.buttonList.addAll(essentialButtons);
 
-        // 检查是否是resize导致的重新初始化（TabManager已存在）
+        // Check whether this is a re-init triggered by resize (TabManager already exists)
+        // 检查是否是 resize 导致的重新初始化（TabManager 已存在）
         if (modernWorldCreatingUI$tabManager != null) {
-            // resize情况：重新初始化TabManager中的tabs，而不是创建新的TabManager
+            // resize case: reinitialize tabs in TabManager without creating a new one
+            // resize 情况：重新初始化 TabManager 中的 tabs，而不是创建新的 TabManager
             modernWorldCreatingUI$tabManager.reinitializeTabs(this.width, this.height);
             modernWorldCreatingUI$logger.info("Reinitialized tabs after resize");
         } else {
-            // 首次初始化：创建新的TabManager
+            // First initialization: create a new TabManager
+            // 首次初始化：创建新的 TabManager
             modernWorldCreatingUI$tabManager = new TabManager(
                     (GuiCreateWorld)(Object)this, this.buttonList, this.width, this.height
             );
-            // 将原版状态传递给TabManager
+            // Pass vanilla state to TabManager
+            // 将原版状态传递给 TabManager
             modernWorldCreatingUI$sendStateToTabManager();
         }
 
-        // 创建标签页按钮（resize时需要重新创建，因为按钮位置可能改变）
+        // Create tab buttons (need to recreate on resize as button positions may change)
+        // 创建标签页按钮（resize 时需要重新创建，因为按钮位置可能改变）
         modernWorldCreatingUI$createTabButtons();
         modernWorldCreatingUI$repositionActionButtons();
 
+        // Initialize hover texts
         // 初始化悬停文本
         modernWorldCreatingUI$initHoverTexts();
 
@@ -127,7 +134,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * 同步原版状态到TabManager
+     * Synchronize vanilla state to TabManager
+     * 同步原版状态到 TabManager
      */
     @Unique
     private void modernWorldCreatingUI$sendStateToTabManager() {
@@ -157,7 +165,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * 同步TabManager状态到原版字段
+     * Synchronize TabManager state back to vanilla fields
+     * 同步 TabManager 状态到原版字段
      */
     @Unique
     private void modernWorldCreatingUI$getStateFromTabManager() {
@@ -207,6 +216,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }       
 
     /**
+     * Repositions the action buttons (Create and Cancel)
      * 重新定位操作按钮（创建和取消）
      */
     @Unique
@@ -232,6 +242,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Creates the tab buttons
      * 创建标签页按钮
      */
     @Unique
@@ -274,6 +285,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Draws the screen
      * 绘制屏幕
      */
     @Inject(method = {"drawScreen"}, at = @At("HEAD"), cancellable = true)
@@ -315,6 +327,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Handles button click events
      * 处理按钮点击
      */
     @Inject(method = "actionPerformed", at = @At("HEAD"), cancellable = true)
@@ -323,6 +336,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
+        // Handle Create button - sync state before creating world
         // 处理创建按钮 - 在创建前同步状态
         if (button.id == 0) {
             modernWorldCreatingUI$getStateFromTabManager();
@@ -334,7 +348,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         if (modernWorldCreatingUI$tabManager != null) {
             modernWorldCreatingUI$tabManager.actionPerformed(button);
 
-            // 如果按钮ID在100-102之间，说明是标签页切换，取消后续处理
+            // If button ID is 100-102, it's a tab switch; cancel further processing
+            // 如果按钮 ID 在 100-102 之间，说明是标签页切换，取消后续处理
             if (button.id >= 100 && button.id <= 102) {
                 ci.cancel();
                 return;
@@ -376,6 +391,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
+        // Other buttons are handled by TabManager; prevent vanilla processing
         // 其他按钮由标签页管理器处理，阻止原版处理
         if (button.id >= 2 && button.id <= 9) {
             ci.cancel();
@@ -383,6 +399,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Post-world launch processing
      * 世界启动后处理
      */
     @Inject(
@@ -401,6 +418,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
+        // Apply difficulty setting to newly created world
         // 应用难度设置到新创建的世界
         try {
             Object integrated = this.mc.getIntegratedServer();
@@ -462,6 +480,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             }
         
             /**
+             * Handles keyboard input
              * 处理按键输入
              */    @Override
     protected void keyTyped(char typedChar, int keyCode) {
@@ -470,7 +489,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        // 处理Control + Tab 和 Control + Shift + Tab 切换Tab
+        // Handle Control + Tab and Control + Shift + Tab to switch tabs
+        // 处理 Control + Tab 和 Control + Shift + Tab 切换 Tab
         if (isCtrlKeyDown() && keyCode == 15) { // Tab键的键码是15
             if (modernWorldCreatingUI$tabManager != null) {
                 java.util.Map<Integer, ?> availableTabs = modernWorldCreatingUI$tabManager.getAllTabs();
@@ -483,9 +503,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                     
                     int nextIndex;
                     if (isShiftKeyDown()) {
+                        // Control + Shift + Tab: switch left (cycle)
                         // Control + Shift + Tab: 向左切换 (循环)
                         nextIndex = (currentIndex - 1 + sortedTabIds.size()) % sortedTabIds.size();
                     } else {
+                        // Control + Tab: switch right (cycle)
                         // Control + Tab: 向右切换 (循环)
                         nextIndex = (currentIndex + 1) % sortedTabIds.size();
                     }
@@ -497,8 +519,10 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return; // 拦截按键，不继续处理
         }
 
-        // 处理Control/Command + 数字键切换Tab
+        // Handle Control/Command + number keys to switch tabs
+        // 处理 Control/Command + 数字键切换 Tab
         if (isCtrlKeyDown()) {  // 使用Minecraft内置的isCtrlKeyDown方法，该方法已处理Mac和Windows/Linux的差异
+            // Handle number keys 1-9 and 0 (0 is usually at position 10)
             // 处理数字键 1-9 和 0 (0 通常在位置10)
             if (keyCode >= 2 && keyCode <= 11) { // 键盘上的1-9,0键
                 int tabNumber = keyCode - 1; // 键码2对应数字1，码3对应数字2，以此类推
@@ -540,6 +564,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Handles mouse clicks
      * 处理鼠标点击
      */
     @Override
@@ -557,6 +582,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Handles mouse scroll
      * 处理鼠标滚动
      */
     @Override
@@ -589,6 +615,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Draws hover text
      * 绘制悬停文本
      */
     @Unique
@@ -648,6 +675,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Draws a tiled texture
      * 绘制平铺纹理
      */
     @Unique
@@ -676,6 +704,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
+     * Draws a colored line
      * 绘制彩色线条
      */
     @Unique

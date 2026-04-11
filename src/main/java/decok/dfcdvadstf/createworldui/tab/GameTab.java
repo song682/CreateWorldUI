@@ -1,9 +1,9 @@
 package decok.dfcdvadstf.createworldui.tab;
 
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
-import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
@@ -23,6 +23,7 @@ public class GameTab extends AbstractScreenTab {
     public void initGui(TabManager tabManager, int width, int height) {
         super.initGui(tabManager, width, height);
 
+        // Create world name text field
         // 创建世界名称输入框
         worldNameField = new GuiTextField(mc.fontRenderer,
                 width / 2 - 104, height / 5, 208, 20);
@@ -39,11 +40,13 @@ public class GameTab extends AbstractScreenTab {
 
         System.out.println("GameTab: Initializing with world name: " + worldName);
 
+        // Create game mode button
         // 创建游戏模式按钮
         gameModeButton = new GuiCyclableButton(2, width / 2 - 104, height / 2,
                 208, 20, this::getGameModeText, direction -> cycleGameMode());
         addButton(gameModeButton);
 
+        // Create difficulty button
         // 创建难度按钮
         difficultyButton = new GuiCyclableButton(9, width / 2 - 104, height / 2 + 25,
                 208, 20, this::getDifficultyText, direction -> {
@@ -55,6 +58,7 @@ public class GameTab extends AbstractScreenTab {
         });
         addButton(difficultyButton);
 
+        // Create allow cheats button
         // 创建允许作弊按钮
         allowCheatsButton = new GuiCyclableButton(6, width / 2 - 104, height / 2 + 50,
                 208, 20, this::getAllowCheatsText, direction -> {
@@ -64,6 +68,7 @@ public class GameTab extends AbstractScreenTab {
         });
         addButton(allowCheatsButton);
 
+        // Initially hide all buttons; TabManager will show them based on the active tab
         // 初始隐藏所有按钮，TabManager会根据当前标签页显示
         setVisible(false);
     }

@@ -60,14 +60,14 @@ createworldui.placeholder.worldName=Please type your world names here.
 createworldui.gamerules.title=Edit your Game Rules
 
 ## ToolTips
-gamerules.doFireTick.tooltip.description=Controls whether fire spreads and naturally extinguishes
-gamerules.mobGriefing.tooltip.description=Controls whether mobs can destroy blocks
-gamerules.keepInventory.tooltip.description=Keep inventory after death
-gamerules.doMobSpawning.tooltip.description=Natural mob spawning
-gamerules.doMobLoot.tooltip.description=Mobs drop loot
-gamerules.commandBlockOutput.tooltip.description=Command blocks output to chat
-gamerules.naturalRegeneration.tooltip.description=Natural health regeneration
-gamerules.doDaylightCycle.tooltip.description=Day/night cycle
+gamerule.doFireTick.tooltip.description=Controls whether fire spreads and naturally extinguishes
+gamerule.mobGriefing.tooltip.description=Controls whether mobs can destroy blocks
+gamerule.keepInventory.tooltip.description=Keep inventory after death
+gamerule.doMobSpawning.tooltip.description=Natural mob spawning
+gamerule.doMobLoot.tooltip.description=Mobs drop loot
+gamerule.commandBlockOutput.tooltip.description=Command blocks output to chat
+gamerule.naturalRegeneration.tooltip.description=Natural health regeneration
+gamerule.doDaylightCycle.tooltip.description=Day/night cycle
 createworldui.customize.custom.default=Default:
 
 ## Unused Nut
@@ -82,4 +82,5 @@ config.button.GRE=GameRule Editor
 config.button.UIM=UI Management
 
 ## Config: Subtitile
-config.subtitle.GRE=
+config.subtitle.GRE=Settings about gamerule editors.
+config.subtitle.UIM=Manage your UI paddings, tab buttons, etc.
