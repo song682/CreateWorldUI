@@ -1,8 +1,8 @@
 package decok.dfcdvadstf.createworldui.tab;
 
+import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
-import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
@@ -23,16 +23,18 @@ public class WorldTab extends AbstractScreenTab {
     public void initGui(TabManager tabManager, int width, int height) {
         super.initGui(tabManager, width, height);
 
+        // Create seed text field
         // 创建种子输入框
         seedField = new GuiTextField(mc.fontRenderer,
                 width / 2 - 154, height / 3 - 1, 308, 20) {
             @Override
             public void drawTextBox() {
                 super.drawTextBox();
+                // Draw placeholder text
                 // 绘制占位符
                 if (this.getText().isEmpty() && !this.isFocused()) {
                     String placeholder = I18n.format("selectWorld.seedInfo");
-                    int textColor = 0x808080; // 灰色
+                    int textColor = 0x808080; // gray / 灰色
                     int x = this.xPosition + 4;
                     int y = this.yPosition + (this.height - 8) / 2;
                     mc.fontRenderer.drawStringWithShadow(placeholder, x, y, textColor);
@@ -41,26 +43,31 @@ public class WorldTab extends AbstractScreenTab {
         };
         seedField.setText(getSeed());
 
+        // Create world type button
         // 创建世界类型按钮
         worldTypeButton = new GuiCyclableButton(5, width / 2 - 154, height / 8 + 10,
                 150, 20, this::getWorldTypeText, direction -> cycleWorldType());
         addButton(worldTypeButton);
 
+        // Create customize button
         // 创建自定义按钮
         customizeButton = new GuiButton(8, width / 2 + 4, height / 8 + 10,
                 150, 20, I18n.format("selectWorld.customizeType"));
         addButton(customizeButton);
 
+        // Create generate structures button
         // 创建生成建筑按钮
         generateStructuresButton = new GuiButton(4, width / 2 + 110, height / 2 + 15,
                 44, 20, getGenerateStructuresText());
         addButton(generateStructuresButton);
 
-        // 创建奖励箱按钮
+        // Create bonus chest button
+        // 创建奖励筱按钮
         bonusChestButton = new GuiButton(7, width / 2 + 110, height / 2 - 15,
                 44, 20, getBonusChestText());
         addButton(bonusChestButton);
 
+        // Initially hide all buttons
         // 初始隐藏所有按钮
         setVisible(false);
     }
@@ -69,14 +76,17 @@ public class WorldTab extends AbstractScreenTab {
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         if (!visible) return;
 
+        // Draw seed label
         // 绘制种子标签
         mc.fontRenderer.drawString(I18n.format("selectWorld.enterSeed"),
                 tabManager.getParent().width / 2 - 154,
                 tabManager.getParent().height / 3 - 2 - 13, 0xA0A0A0);
 
+        // Draw text field (including placeholder)
         // 绘制输入框（包括占位符）
         seedField.drawTextBox();
 
+        // Draw button labels
         // 绘制按钮标签
         mc.fontRenderer.drawString(I18n.format("createworldui.selectWorld.mapFeatures"),
                 tabManager.getParent().width / 2 - 154,
@@ -85,6 +95,7 @@ public class WorldTab extends AbstractScreenTab {
                 tabManager.getParent().width / 2 - 154,
                 tabManager.getParent().height / 2 - 15 + 6, 0xFFFFFF);
 
+        // Update button text and state
         // 更新按钮文本和状态
         if (worldTypeButton != null) worldTypeButton.updateText();
 
@@ -98,7 +109,8 @@ public class WorldTab extends AbstractScreenTab {
         generateStructuresButton.displayString = getGenerateStructuresText();
         bonusChestButton.displayString = getBonusChestText();
 
-        // 根据硬核模式更新奖励箱按钮状态
+        // Update bonus chest button state based on hardcore mode
+        // 根据硬核模式更新奖励筱按钮状态
         bonusChestButton.enabled = !getHardcore();
     }
 
@@ -107,15 +119,16 @@ public class WorldTab extends AbstractScreenTab {
         System.out.println("WorldTab: Button clicked: " + button.id);
 
         switch (button.id) {
-            case 4: // 生成建筑
+            case 4: // generate structures / 生成建筑
                 tabManager.setGenerateStructures(!getGenerateStructures());
                 break;
-            case 7: // 奖励箱
+            case 7: // bonus chest / 奖励筱
                 if (!getHardcore()) {
                     tabManager.setBonusChest(!getBonusChest());
                 }
                 break;
-            case 8: // 自定义
+            case 8: // customize / 自定义
+                // Open the customize screen
                 // 打开自定义界面
                 System.out.println("WorldTab: Customize button clicked");
                 break;

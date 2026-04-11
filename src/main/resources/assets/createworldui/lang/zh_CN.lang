@@ -51,14 +51,14 @@ createworldui.hover.gameRuleEditor=编辑你的游戏规则。
 
 # 游戏规则编辑
 createworldui.gamerules.title=编辑游戏规则
-gamerules.doFireTick.tooltip.description=控制火焰是否蔓延和自然熄灭
-gamerules.mobGriefing.tooltip.description=控制生物是否可以破坏方块
-gamerules.keepInventory.tooltip.description=死亡后保留物品栏
-gamerules.doMobSpawning.tooltip.description=生物自然生成
-gamerules.doMobLoot.tooltip.description=生物掉落战利品
-gamerules.commandBlockOutput.tooltip.description=命令方块输出到聊天
-gamerules.naturalRegeneration.tooltip.description=自然生命值恢复
-gamerules.doDaylightCycle.tooltip.description=昼夜循环
+gamerule.doFireTick.tooltip.description=控制火焰是否蔓延和自然熄灭
+gamerule.mobGriefing.tooltip.description=控制生物是否可以破坏方块
+gamerule.keepInventory.tooltip.description=死亡后保留物品栏
+gamerule.doMobSpawning.tooltip.description=生物自然生成
+gamerule.doMobLoot.tooltip.description=生物掉落战利品
+gamerule.commandBlockOutput.tooltip.description=命令方块输出到聊天
+gamerule.naturalRegeneration.tooltip.description=自然生命值恢复
+gamerule.doDaylightCycle.tooltip.description=昼夜循环
 
 # 文本框悬停文本
 createworldui.hover.worldName.empty=请输入世界名称
@@ -68,4 +68,10 @@ createworldui.customize.custom.default=默认:
 
 createworldui.placeholder.worldName=请输入世界名称
 
-config.title=CreateWorldUI
+# 配置界面按钮
+config.button.GRE=游戏规则编辑器
+config.button.UIM=UI管理
+
+# 解释
+config.subtitle.GRE=游戏规则编辑器相关
+config.subtitle.UIM=UI元素，内容，等等……

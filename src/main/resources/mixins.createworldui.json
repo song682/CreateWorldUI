@@ -3,10 +3,14 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "mixins.createworldui.refmap.json",
   "mixins": [
-    "MixinModernCreateWorld"
+    "MixinModernCreateWorld",
+    "MixinGuiSelectWorld",
+    "MixinMinecraft"
   ],
   "client": [
-    "MixinModernCreateWorld"
+    "MixinModernCreateWorld",
+    "MixinGuiSelectWorld",
+    "MixinMinecraft"
   ],
   "required": true,
   "minVersion": "0.8.5"
