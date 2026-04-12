@@ -5,14 +5,11 @@ import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
 import decok.dfcdvadstf.createworldui.api.tab.TabState;
-import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
@@ -21,15 +18,13 @@ import net.minecraft.world.WorldType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import org.lwjgl.opengl.GL11;
-import net.minecraft.client.renderer.OpenGlHelper;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -68,25 +63,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui","textures/gui/options_background_dark.png");
     @Unique
-    private static final ResourceLocation OPTIONS_BG_OPAQUE = new ResourceLocation("createworldui","textures/gui/options_background_opaque.png");
-    @Unique
-    private static final ResourceLocation VANILLA_DIRT_BACKGROUND = new ResourceLocation("textures/gui/options_background.png");
-    @Unique
     private static final ResourceLocation TABS_TEXTURE = new ResourceLocation("createworldui","textures/gui/tabs.png");
-    @Unique
-    private static final ResourceLocation TABS_LEGACY_TEXTURE = new ResourceLocation("createworldui","textures/gui/tabs.png");
-    @Unique
-    private static final ResourceLocation TABS_OPAQUE_TEXTURE = new ResourceLocation("createworldui","textures/gui/tabs_opaque.png");
-    @Unique
-    private static final ResourceLocation LIGHT_DIRT_BACKGROUND = new ResourceLocation("createworldui","textures/gui/light_dirt_background.png");
-    @Unique
-    private static final ResourceLocation HEADER_SEPARATOR = new ResourceLocation("createworldui","textures/gui/header_separator.png");
-    @Unique
-    private static final ResourceLocation FOOTER_SEPARATOR = new ResourceLocation("createworldui","textures/gui/footer_separator.png");
-    @Unique
-    private static final ResourceLocation HEADER_SEPARATOR_OPAQUE = new ResourceLocation("createworldui","textures/gui/header_separator_opaque.png");
-    @Unique
-    private static final ResourceLocation FOOTER_SEPARATOR_OPAQUE = new ResourceLocation("createworldui","textures/gui/footer_separator_opaque.png");
     @Unique
     private static final int TAB_WIDTH = 130;
     @Unique
@@ -286,28 +263,10 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 @Override
                 public void drawButton(Minecraft mc, int mouseX, int mouseY) {
                     if (this.visible) {
-                        // Select texture based on background rendering mode
-                        // 根据背景渲染模式选择纹理
-                        int renderType = CreateWorldUI.config.backgroundRenderingType;
-                        // Mode 0: tabs_legacy.png, Mode 1: tabs.png, Mode 2: tabs_opaque.png
-                        // 模式 0: tabs_legacy.png, 模式 1: tabs.png, 模式 2: tabs_opaque.png
-                        ResourceLocation tabTexture;
-                        switch (renderType) {
-                            case 0:
-                                tabTexture = TABS_LEGACY_TEXTURE;
-                                break;
-                            case 1:
-                                tabTexture = TABS_TEXTURE;
-                                break;
-                            case 2:
-                                tabTexture = TABS_OPAQUE_TEXTURE;
-                                break;
-                            default:
-                                tabTexture = TABS_LEGACY_TEXTURE;
-                                break;
-                        }
-                        mc.getTextureManager().bindTexture(tabTexture);
-                        
+                        mc.getTextureManager().bindTexture(TABS_TEXTURE);
+                        // Reset OpenGL color state to white to prevent texture tinting
+                        // 重置OpenGL颜色状态为白色，防止纹理被着色
+                        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
                         boolean isHovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
                                 mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
                         boolean isSelected = modernWorldCreatingUI$tabManager != null &&
@@ -320,7 +279,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                         drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, TAB_WIDTH, TAB_HEIGHT);
                         drawCenteredString(mc.fontRenderer, this.displayString,
                                 this.xPosition + this.width / 2,
-                                this.yPosition + (this.height - 8) / 2, state.textColor);
+                                this.yPosition + (this.height - 8) / 2, state.getTextColor());
                     }
                 }
             };
@@ -341,37 +300,16 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         ci.cancel();
 
-        int renderType = CreateWorldUI.config.backgroundRenderingType;
-        boolean isClearMyBackgroundLoaded = Loader.isModLoaded("clearmybackground");
+        // 绘制主背景
+        this.drawBackground(0);
 
-        switch (renderType) {
-            case 0:
-                // Legacy mode (mode 0)
-                // Legacy 模式 (模式 0)
-                modernWorldCreatingUI$drawLegacyBackground(isClearMyBackgroundLoaded);
-                break;
-            case 1:
-                // 1.17-1.20.4 style (mode 1)
-                // 1.17-1.20.4 风格 (模式 1)
-                modernWorldCreatingUI$drawModernBackground();
-                break;
-            case 2:
-                // 1.20.5+ style (mode 2) - requires ClearMyBackground mod
-                // 1.20.5+ 风格 (模式 2) - 需要 ClearMyBackground 模组
-                if (isClearMyBackgroundLoaded) {
-                    modernWorldCreatingUI$drawClearMyBackgroundStyle();
-                } else {
-                    // Fallback to mode 1 if mod not loaded
-                    // 如果模组未加载，回退到模式 1
-                    modernWorldCreatingUI$drawModernBackground();
-                }
-                break;
-            default:
-                // Default to legacy mode
-                // 默认使用 Legacy 模式
-                modernWorldCreatingUI$drawLegacyBackground(isClearMyBackgroundLoaded);
-                break;
-        }
+        // 绘制顶部背景
+        this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
+        this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, TAB_HEIGHT - 2, 16, 16);
+
+        // 绘制分隔线
+        modernWorldCreatingUI$drawColoredLine(0, TAB_HEIGHT - 3, this.width, 0x00FFFFFF, 0x40FFFFFF);
+        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, 0x40000000, 0x40FFFFFF);
 
         // 绘制当前标签页内容
         if (modernWorldCreatingUI$tabManager != null) {
@@ -390,70 +328,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         // 绘制悬停文本
         modernWorldCreatingUI$drawHoverText(mouseX, mouseY);
-    }
-
-    /**
-     * Legacy background rendering (mode 0)
-     * Legacy 背景渲染 (模式 0)
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawLegacyBackground(boolean isClearMyBackgroundLoaded) {
-        // Always draw vanilla dirt background, bypassing ClearMyBackground's mixin interception
-        // 始终绘制原版泥土背景，绕过 ClearMyBackground 的 mixin 拦截
-        modernWorldCreatingUI$drawVanillaDirtBackground();
-
-        // Draw tab button background with OPTIONS_BG_DARK texture
-        // 使用 OPTIONS_BG_DARK 纹理绘制标签按钮背景
-        this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
-        this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, TAB_HEIGHT, 16, 16);
-
-        // Draw semi-transparent separator lines
-        // 绘制半透明分隔线
-        modernWorldCreatingUI$drawColoredLine(0, TAB_HEIGHT - 3, this.width, 0x00FFFFFF, 0x40FFFFFF);
-        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, 0x40000000, 0x40FFFFFF);
-    }
-
-    /**
-     * Modern background rendering (mode 1, 1.17-1.20.4 style)
-     * 现代背景渲染 (模式 1, 1.17-1.20.4 风格)
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawModernBackground() {
-        // Draw vanilla dirt background texture, bypassing ClearMyBackground's mixin interception
-        // 绘制原版泥土背景纹理，绕过 ClearMyBackground 的 mixin 拦截
-        modernWorldCreatingUI$drawVanillaDirtBackground();
-
-        // Draw tab button background: solid black #000000 with 100% opacity
-        // 绘制标签按钮背景：纯黑色 #000000，不透明度 100%
-        modernWorldCreatingUI$drawTabButtonBackground(100);
-
-        // Draw textured separator lines using header_separator.png and footer_separator.png
-        // 使用 header_separator.png 和 footer_separator.png 绘制纹理分隔线
-        modernWorldCreatingUI$drawTexturedSeparator(0, TAB_HEIGHT - 2, this.width, true, false);
-        modernWorldCreatingUI$drawTexturedSeparator(0, this.height - 35, this.width, false, false);
-    }
-
-    /**
-     * ClearMyBackground style rendering (mode 2, 1.20.5+ style)
-     * ClearMyBackground 风格渲染 (模式 2, 1.20.5+ 风格)
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawClearMyBackgroundStyle() {
-        // Use ClearMyBackground's background rendering
-        // drawDefaultBackground will be intercepted by ClearMyBackground and render its custom background
-        // 使用 ClearMyBackground 的背景渲染
-        // drawDefaultBackground 会被 ClearMyBackground 拦截并渲染其自定义背景
-        this.drawDefaultBackground();
-
-        // Draw tab button background with OPTIONS_BG_OPAQUE texture
-        // 使用 OPTIONS_BG_OPAQUE 纹理绘制标签按钮背景
-        this.mc.getTextureManager().bindTexture(OPTIONS_BG_OPAQUE);
-        this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, TAB_HEIGHT, 16, 16);
-
-        // Draw textured separator lines using header_separator_opaque.png and footer_separator_opaque.png
-        // 使用 header_separator_opaque.png 和 footer_separator_opaque.png 绘制纹理分隔线
-        modernWorldCreatingUI$drawTexturedSeparator(0, TAB_HEIGHT - 2, this.width, true, true);
-        modernWorldCreatingUI$drawTexturedSeparator(0, this.height - 35, this.width, false, true);
     }
 
     /**
@@ -843,93 +717,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         drawRect(x, y, x + width, y + 1, topColor);
         // 绘制下半像素
         drawRect(x, y + 1, x + width, y + 2, bottomColor);
-    }
-
-    /**
-     * Draws light dirt background texture (1.17-1.20.4 style)
-     * 绘制浅色泥土背景纹理 (1.17-1.20.4 风格)
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawLightDirtBackground() {
-        boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
-        GL11.glEnable(GL11.GL_BLEND);
-        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-
-        this.mc.getTextureManager().bindTexture(LIGHT_DIRT_BACKGROUND);
-        // Use Gui.func_146110_a to draw a stretched texture
-        // 使用 Gui.func_146110_a 绘制拉伸纹理
-        Gui.func_146110_a(0, 0, 0.0F, 0.0F, this.width, this.height, 32, 32);
-
-        if (blend) GL11.glEnable(GL11.GL_BLEND);
-        else GL11.glDisable(GL11.GL_BLEND);
-    }
-
-    /**
-     * Draws vanilla dirt background texture (bypasses ClearMyBackground mixin)
-     * 绘制原版泥土背景纹理（绕过 ClearMyBackground mixin）
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawVanillaDirtBackground() {
-        GL11.glDisable(GL11.GL_LIGHTING);
-        GL11.glDisable(GL11.GL_FOG);
-
-        Tessellator tessellator = Tessellator.instance;
-        this.mc.getTextureManager().bindTexture(VANILLA_DIRT_BACKGROUND);
-        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-
-        float f = 32.0F;
-        tessellator.startDrawingQuads();
-        // Set color to darken the background (same as vanilla: 4210752 = 0x404040)
-        // 设置颜色降低背景明度（与原版一致：4210752 = 0x404040）
-        tessellator.setColorOpaque_I(4210752);
-        tessellator.addVertexWithUV(0.0D, (double)this.height, 0.0D, 0.0D, (double)((float)this.height / f));
-        tessellator.addVertexWithUV((double)this.width, (double)this.height, 0.0D, (double)((float)this.width / f), (double)((float)this.height / f));
-        tessellator.addVertexWithUV((double)this.width, 0.0D, 0.0D, (double)((float)this.width / f), 0.0D);
-        tessellator.addVertexWithUV(0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
-        tessellator.draw();
-    }
-
-    /**
-     * Draws textured separator line using header_separator.png or footer_separator.png
-     * 使用 header_separator.png 或 footer_separator.png 绘制纹理分隔线
-     * @param useOpaque if true, uses _opaque suffix textures
-     * @param useOpaque 如果为 true，使用 _opaque 后缀纹理
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawTexturedSeparator(int x, int y, int width, boolean isHeader, boolean useOpaque) {
-        boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
-        GL11.glEnable(GL11.GL_BLEND);
-        OpenGlHelper.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA, GL11.GL_ONE, GL11.GL_ZERO);
-
-        ResourceLocation headerTexture = useOpaque ? HEADER_SEPARATOR_OPAQUE : HEADER_SEPARATOR;
-        ResourceLocation footerTexture = useOpaque ? FOOTER_SEPARATOR_OPAQUE : FOOTER_SEPARATOR;
-        this.mc.getTextureManager().bindTexture(isHeader ? headerTexture : footerTexture);
-        Gui.func_146110_a(x, y, 0.0F, 0.0F, width, 2, 32, 2);
-
-        if (blend) GL11.glEnable(GL11.GL_BLEND);
-        else GL11.glDisable(GL11.GL_BLEND);
-    }
-
-    /**
-     * Draws solid color background with specified opacity
-     * 绘制指定不透明度的纯色背景
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawSolidColorBackground(int color) {
-        drawRect(0, 0, this.width, this.height, color);
-    }
-
-    /**
-     * Draws tab button background with solid black color
-     * 绘制标签按钮背景（纯黑色填充）
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawTabButtonBackground(int opacityPercent) {
-        // Calculate ARGB color: AARRGGBB where AA is alpha (0-255)
-        // 计算 ARGB 颜色：AARRGGBB，其中 AA 是透明度 (0-255)
-        int alpha = (int)(opacityPercent * 2.55); // Convert percentage to 0-255 range
-        int color = (alpha << 24) | 0x000000; // Black with custom opacity
-        drawRect(0, 0, this.width, TAB_HEIGHT, color);
     }
 
     // 保留原版方法
