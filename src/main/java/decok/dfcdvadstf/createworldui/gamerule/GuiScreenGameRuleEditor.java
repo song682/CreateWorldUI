@@ -230,8 +230,8 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             this.cancelButton = new GuiButton(1, this.width / 2 - 50, this.height - 30, 100, 20, I18n.format("gui.cancel"));
             this.resetButton = new GuiButton(2, this.width / 2 + 54, this.height - 30, 100, 20, I18n.format("options.reset"));
         } else {
-            this.cancelButton = new GuiButton(1, this.width / 2 + 50, this.height - 30, 120, 20, I18n.format("gui.cancel"));
-            this.saveButton = new GuiButton(0, this.width / 2 - 154, this.height - 30, 120, 20, I18n.format("options.save"));
+            this.cancelButton = new GuiButton(1, this.width / 2 + 2, this.height - 30, 150, 20, I18n.format("gui.cancel"));
+            this.saveButton = new GuiButton(0, this.width / 2 - 152, this.height - 30, 150, 20, I18n.format("options.save"));
         }
 
         // Ensure added buttons are not null

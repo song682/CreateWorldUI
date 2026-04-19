@@ -41,7 +41,7 @@ public class MixinGuiSelectWorld extends GuiScreen {
         // 检测是否有存档
         if (modernWorldCreatingUI$hasNoSaves()) {
             modernWorldCreatingUI$logger.info("No saves detected, redirecting to Create World screen");
-            
+
             // Redirect to Create World screen and cancel vanilla initGui
             // 直接跳转到创建世界界面并取消原版initGui的执行
             this.mc.displayGuiScreen(new GuiCreateWorld(field_146632_a)); // 使用原版的父界面引用
@@ -59,19 +59,19 @@ public class MixinGuiSelectWorld extends GuiScreen {
             // 使用与原版代码相同的方法获取存档列表
             ISaveFormat saveFormat = this.mc.getSaveLoader();
             List saveList = saveFormat.getSaveList();
-            
+
             if (saveList == null) {
                 modernWorldCreatingUI$logger.warn("Could not get save list");
                 return true; // Cannot get save list, treat as no saves / 无法获取存档列表，视为没有存档
             }
-            
+
             modernWorldCreatingUI$logger.info("Found {} save entries", saveList.size());
-            
+
             return saveList.isEmpty();
         } catch (Exception e) {
             modernWorldCreatingUI$logger.error("Error checking for saves: ", e);
             return true; // On error, treat as no saves to ensure user can create a new world
-                         // 发生错误时，视为没有存档以确保用户能够创建新世界
+            // 发生错误时，视为没有存档以确保用户能够创建新世界
         }
     }
 }
