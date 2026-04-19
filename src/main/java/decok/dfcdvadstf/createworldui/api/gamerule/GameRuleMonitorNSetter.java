@@ -6,6 +6,9 @@ import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,6 +24,7 @@ import java.util.TreeMap;
  *     Provides operations such as getting, setting, adding game rules, supporting multiple data types
  * </p>
  */
+@SideOnly(Side.CLIENT)
 public class GameRuleMonitorNSetter {
 
     private static final Logger LOGGER = LogManager.getLogger(Tags.NAME + ":GameruleMonitorAndSetter");
