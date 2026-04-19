@@ -214,7 +214,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 WorldType.worldTypes[this.field_146331_K] == null) {
             this.field_146331_K = 0;
         }
-    }       
+    }
 
     /**
      * Repositions the action buttons (Create and Cancel)
@@ -307,9 +307,45 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
         this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, TAB_HEIGHT - 2, 16, 16);
 
-        // 绘制分隔线
-        modernWorldCreatingUI$drawColoredLine(0, TAB_HEIGHT - 3, this.width, 0x00FFFFFF, 0x40FFFFFF);
-        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, 0x40000000, 0x40FFFFFF);
+        // 绘制分隔线（选中Tab下方隐藏）
+        // Draw separator lines (hidden under selected tab)
+        int lineY = TAB_HEIGHT - 2; // 下移一格 / Move down one pixel
+        int currentTabId = modernWorldCreatingUI$tabManager != null ?
+                modernWorldCreatingUI$tabManager.getCurrentTabId() : -1;
+
+        // 计算选中Tab的x位置范围
+        // Calculate x position range of selected tab
+        int totalWidth = TAB_WIDTH * 3 + 2;
+        int startX = this.width / 2 - totalWidth / 2;
+        int tabIndex = currentTabId - 100; // Tab ID: 100, 101, 102 -> index: 0, 1, 2
+
+        // 颜色：顶部黑色75%，底部白色20%
+        // Colors: top black 75%, bottom white 20%
+        int lineTopColor = 0xC0000000;
+        int lineBottomColor = 0x33FFFFFF;
+
+        if (tabIndex >= 0 && tabIndex < 3) {
+            // 选中的Tab位置
+            // Position of selected tab
+            int selectedTabX = startX + tabIndex * (TAB_WIDTH + 1);
+            int selectedTabEnd = selectedTabX + TAB_WIDTH;
+
+            // 绘制选中Tab左侧的分隔线
+            // Draw separator line left of selected tab
+            if (selectedTabX > 0) {
+                modernWorldCreatingUI$drawColoredLine(0, lineY, selectedTabX, lineTopColor, lineBottomColor);
+            }
+            // 绘制选中Tab右侧的分隔线
+            // Draw separator line right of selected tab
+            if (selectedTabEnd < this.width) {
+                modernWorldCreatingUI$drawColoredLine(selectedTabEnd, lineY, this.width - selectedTabEnd, lineTopColor, lineBottomColor);
+            }
+        } else {
+            // 没有选中的Tab，绘制完整分隔线
+            // No selected tab, draw full separator line
+            modernWorldCreatingUI$drawColoredLine(0, lineY, this.width, lineTopColor, lineBottomColor);
+        }
+        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, lineTopColor, lineBottomColor);
 
         // 绘制当前标签页内容
         if (modernWorldCreatingUI$tabManager != null) {
@@ -481,12 +517,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 }
             }
         } catch (Throwable ignored) {}
-            }
-        
-            /**
-             * Handles keyboard input
-             * 处理按键输入
-             */    @Override
+    }
+
+    /**
+     * Handles keyboard input
+     * 处理按键输入
+     */    @Override
     protected void keyTyped(char typedChar, int keyCode) {
         if (!modernWorldCreatingUI$isInitialized) {
             super.keyTyped(typedChar, keyCode);
@@ -500,11 +536,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 java.util.Map<Integer, ?> availableTabs = modernWorldCreatingUI$tabManager.getAllTabs();
                 java.util.List<Integer> sortedTabIds = new java.util.ArrayList<>(availableTabs.keySet());
                 java.util.Collections.sort(sortedTabIds);
-                
+
                 if (!sortedTabIds.isEmpty()) {
                     int currentTabId = modernWorldCreatingUI$tabManager.getCurrentTabId();
                     int currentIndex = sortedTabIds.indexOf(currentTabId);
-                    
+
                     int nextIndex;
                     if (isShiftKeyDown()) {
                         // Control + Shift + Tab: switch left (cycle)
@@ -515,7 +551,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                         // Control + Tab: 向右切换 (循环)
                         nextIndex = (currentIndex + 1) % sortedTabIds.size();
                     }
-                    
+
                     int targetTabId = sortedTabIds.get(nextIndex);
                     modernWorldCreatingUI$tabManager.switchToTab(targetTabId);
                 }
@@ -533,13 +569,13 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 if (keyCode == 11) { // 数字0键
                     tabNumber = 10;
                 }
-                
+
                 // 获取所有可用的标签页ID并排序
                 if (modernWorldCreatingUI$tabManager != null) {
                     java.util.Map<Integer, ?> availableTabs = modernWorldCreatingUI$tabManager.getAllTabs();
                     java.util.List<Integer> sortedTabIds = new java.util.ArrayList<>(availableTabs.keySet());
                     java.util.Collections.sort(sortedTabIds);
-                    
+
                     // 确保索引不超出范围（Fallback到最大可用Tab）
                     int targetIndex = Math.min(tabNumber - 1, sortedTabIds.size() - 1);
                     if (targetIndex >= 0 && targetIndex < sortedTabIds.size()) {
@@ -606,8 +642,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 if (obj instanceof GuiCyclableButton) {
                     GuiCyclableButton button = (GuiCyclableButton) obj;
                     if (button.visible && button.enabled &&
-                        mouseX >= button.xPosition && mouseX < button.xPosition + button.width &&
-                        mouseY >= button.yPosition && mouseY < button.yPosition + button.height) {
+                            mouseX >= button.xPosition && mouseX < button.xPosition + button.width &&
+                            mouseY >= button.yPosition && mouseY < button.yPosition + button.height) {
                         int delta = Mouse.getEventDWheel();
                         if (delta != 0) {
                             button.mouseScrolled(delta);
