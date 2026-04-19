@@ -4,6 +4,8 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,5 +26,13 @@ public class CreateWorldUI {
     @EventHandler
     public void init(FMLInitializationEvent event) {
         logger.info("CreateWorldUI Mod loaded successfully");
+    }
+
+    @EventHandler
+    public void onServerStarting(FMLServerStartingEvent event) {
+        // Register the /gameruleEditor command
+        // 注册/gameruleEditor命令
+        event.registerServerCommand(new CommandGameRuleEditor());
+        logger.info("Registered /gameruleEditor command");
     }
 }

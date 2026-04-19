@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.GL11;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -40,6 +41,14 @@ import java.util.*;
  * <p>
  *     注意：所有保存到待应用规则的值均转换为字符串（与{@link GameRules}存储格式一致）<br>
  *     Note: All values saved to pending rules are converted to strings (consistent with {@link GameRules} storage format)
+ * </p>
+ * <p>
+ *     平滑滚动特性：使用像素级滚动位置（scrollPosition）代替行级整数偏移，<br>
+ *     通过GL Scissor裁剪和GL Translate偏移实现亚像素级平滑过渡，<br>
+ *     允许行在面板边缘部分可见，且部分可见的交互组件仍可操作。<br>
+ *     Smooth scroll feature: Uses pixel-level scroll position instead of integer row offset,<br>
+ *     achieving sub-pixel smooth transition via GL Scissor clipping and GL Translate offset,<br>
+ *     allowing rows to be partially visible at panel edges with interactive components still operable.
  * </p>
  */
 
@@ -71,13 +80,37 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     private GuiButton resetButton; // 重置按钮 / Reset button
     private static final Map<String, String> hardcodeToolTip = new HashMap<>();// 允许外部模组自己添加自己的描述 / Allow developers to add their own tooltips from external.
 
-    private int scrollOffset = 0; // 滚动偏移量 / Scroll offset
-    private int maxScrollOffset; // 最大滚动偏移量 / Maximum scroll offset
+    // ===== 平滑滚动相关字段 / Smooth scroll related fields =====
+
+    // 当前滚动位置（像素级） / Current scroll position (pixel-level)
+    private float scrollPosition = 0f;
+    // 平滑插值目标滚动位置 / Target scroll position for smooth lerp
+    private float targetScrollPosition = 0f;
+    // 行内像素偏移量（由scrollPosition派生，用于GL Translate） / Sub-row pixel offset (derived from scrollPosition, for GL Translate)
+    private float scrollSubOffset = 0f;
+    // 最大滚动位置（像素） / Maximum scroll position (pixels)
+    private int maxScrollPosition;
+    // 整数行偏移（由scrollPosition派生，用于组件创建索引）/ Integer row offset (derived from scrollPosition, for component creation index)
+    private int scrollOffset = 0;
+
+    // 上次组件创建时的scrollOffset，用于判断是否需要重建组件
+    // scrollOffset at last component creation, used to determine if components need rebuilding
+    private int lastComponentScrollOffset = -1;
+
+    // 焦点保存：滚动导致组件重建时保存/恢复文本框焦点
+    // Focus preservation: save/restore text field focus when components are rebuilt due to scrolling
+    private String focusedRuleName = null;
+
+    // 插值速度 / Lerp speed (0.0~1.0, higher = faster snap)
+    private static final float SCROLL_LERP_SPEED = 0.2f;
+
     private static final int ROW_HEIGHT = 25; // 行高 / Row height
     private int visibleRows = 8; // 可见行数 / Number of visible rows
     private boolean isScrolling = false; // 是否正在滚动 / Whether scrolling is in progress
     private GuiScreen parentScreen; // 父界面 / Parent screen
     private static final int PANEL_TOP = 50;
+    // 内容区起始Y（面板顶部内边距后） / Content area start Y (after panel top padding)
+    private static final int CONTENT_TOP = 60;
 
     /**
      * 构造游戏规则编辑器<br>
@@ -192,13 +225,9 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             }
         }
 
-        this.maxScrollOffset = Math.max(0, defaultRules.size() - visibleRows);
-
-        // Ensure buttonList is not null
-        // 确保 buttonList 不为 null
-        if (this.buttonList == null) {
-            this.buttonList = new ArrayList<>();
-        }
+        // 初始maxScrollPosition在initGui中根据实际可见行数计算
+        // Initial maxScrollPosition is calculated in initGui based on actual visible rows
+        this.maxScrollPosition = 0;
     }
 
 
@@ -220,8 +249,14 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         this.buttonList.clear();
 
         int panelBottom = this.height - 50;
-        this.visibleRows = Math.max(1, (panelBottom - PANEL_TOP) / ROW_HEIGHT);
-        this.maxScrollOffset = Math.max(0, defaultRules.size() - this.visibleRows);
+        this.visibleRows = Math.max(1, (panelBottom - CONTENT_TOP) / ROW_HEIGHT);
+        this.maxScrollPosition = Math.max(0, (defaultRules.size() - this.visibleRows) * ROW_HEIGHT);
+
+        // Clamp scroll position after resize
+        // resize后夹紧滚动位置
+        this.targetScrollPosition = Math.max(0, Math.min(this.targetScrollPosition, this.maxScrollPosition));
+        this.scrollPosition = Math.max(0, Math.min(this.scrollPosition, this.maxScrollPosition));
+        updateScrollDerivedValues();
 
         // Button layout
         // 按钮布局
@@ -257,18 +292,53 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     }
 
     /**
-     * 创建并布局规则组件（布尔值使用按钮，其他类型使用文本框）
+     * <p>
+     *     从scrollPosition派生scrollOffset（整数行偏移）和scrollSubOffset（行内像素偏移）。<br>
+     *     这两个值用于组件创建（scrollOffset）和GL渲染偏移（scrollSubOffset）。
+     * </p>
+     * <p>
+     *     Derive scrollOffset (integer row offset) and scrollSubOffset (sub-row pixel offset) from scrollPosition.<br>
+     *     These values are used for component creation (scrollOffset) and GL render offset (scrollSubOffset).
+     * </p>
+     */
+    private void updateScrollDerivedValues() {
+        int newScrollOffset = (int)(scrollPosition / ROW_HEIGHT);
+        // 限制scrollOffset不超过最大行偏移 / Clamp scrollOffset to max row offset
+        int maxRowOffset = Math.max(0, defaultRules.size() - visibleRows);
+        newScrollOffset = Math.max(0, Math.min(newScrollOffset, maxRowOffset));
+        this.scrollOffset = newScrollOffset;
+        this.scrollSubOffset = scrollPosition - this.scrollOffset * ROW_HEIGHT;
+        // 确保scrollSubOffset非负 / Ensure scrollSubOffset is non-negative
+        if (this.scrollSubOffset < 0) this.scrollSubOffset = 0;
+    }
+
+    /**
+     * 创建并布局规则组件（布尔值使用按钮，其他类型使用文本框）<br>
+     * 支持平滑滚动：包含额外一行以处理底部部分可见行，保存/恢复文本框焦点。
      *
-     * Create and layout rule components (boolean uses button, other types use text field)
+     * Create and layout rule components (boolean uses button, other types use text field).<br>
+     * Smooth scroll support: includes one extra row for bottom partial visibility, saves/restores text field focus.
      */
     private void createRuleComponents() {
-        LOGGER.info("createRuleComponents() START, total rules = {}", defaultRules.size());
+        LOGGER.info("createRuleComponents() START, total rules = {}, scrollOffset = {}", defaultRules.size(), scrollOffset);
 
         // 安全检查：确保 buttonList 不为 null
         if (this.buttonList == null) {
             LOGGER.error("buttonList is null! Initializing...");
             this.buttonList = new ArrayList<>();
             return;
+        }
+
+        // ===== 保存当前焦点文本框 / Save current focused text field =====
+        focusedRuleName = null;
+        for (Map.Entry<String, GuiComponentWrapper> entry : ruleComponents.entrySet()) {
+            if (entry.getValue().type == ComponentType.TEXT_FIELD) {
+                GuiTextField tf = (GuiTextField) entry.getValue().component;
+                if (tf.isFocused()) {
+                    focusedRuleName = entry.getKey();
+                    break;
+                }
+            }
         }
 
         // Remove old boolean buttons that are not visible on screen
@@ -285,6 +355,9 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         int index = 0;
         int visibleUIRowIndex = 0;
 
+        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
+        int maxVisibleIndex = scrollOffset + visibleRows + 1;
+
         for (Map.Entry<String, GameruleValue> entry : defaultRules.entrySet()) {
             String ruleName = entry.getKey();
             GameruleValue value = entry.getValue();
@@ -296,9 +369,9 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 continue;
             }
 
-            // Skip rows not in visible range
-            // 不在可见行中则跳过
-            if (index < scrollOffset || index >= scrollOffset + visibleRows) {
+            // Skip rows not in visible range (including extra row at bottom)
+            // 不在可见行中则跳过（包含底部额外行）
+            if (index < scrollOffset || index >= maxVisibleIndex) {
                 index++;
                 continue;
             }
@@ -325,11 +398,22 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             // 创建组件
             GuiComponentWrapper wrapper = createComponentForRule(ruleName, displayObj, yPos, 100 + visibleUIRowIndex);
             if (wrapper != null) {
+                wrapper.globalIndex = index;
                 ruleComponents.put(ruleName, wrapper);
             }
 
             visibleUIRowIndex++;
             index++;
+        }
+
+        lastComponentScrollOffset = scrollOffset;
+
+        // ===== 恢复焦点 / Restore focus =====
+        if (focusedRuleName != null && ruleComponents.containsKey(focusedRuleName)) {
+            GuiComponentWrapper wrapper = ruleComponents.get(focusedRuleName);
+            if (wrapper != null && wrapper.type == ComponentType.TEXT_FIELD) {
+                ((GuiTextField) wrapper.component).setFocused(true);
+            }
         }
     }
 
@@ -502,22 +586,59 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         }
     }
 
+    /**
+     * <p>
+     *     处理鼠标点击事件（覆盖父类方法）。<br>
+     *     标准按钮使用原始坐标，规则组件使用调整后的坐标（补偿scrollSubOffset），<br>
+     *     且仅当点击位于面板可见区域内时才处理规则组件交互。
+     * </p>
+     * <p>
+     *     Handle mouse click events (override).<br>
+     *     Standard buttons use original coordinates, rule components use adjusted coordinates (compensating scrollSubOffset),<br>
+     *     and rule component interaction is only processed when the click is within the panel's visible area.
+     * </p>
+     */
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
+        int panelBottom = this.height - 50;
 
-        // 文本框交互
-        // Text Field interaction
-        for (GuiComponentWrapper wrapper : ruleComponents.values()) {
-            if (wrapper.type == ComponentType.TEXT_FIELD) {
-                GuiTextField textField = (GuiTextField) wrapper.component;
-                textField.mouseClicked(mouseX, mouseY, mouseButton);
+        // ===== 标准按钮（保存/取消/重置）- 使用原始坐标 / Standard buttons - use original coordinates =====
+        for (GuiButton button : (List<GuiButton>)this.buttonList) {
+            if (button.id < 100 && button.enabled) {
+                if (button.mousePressed(this.mc, mouseX, mouseY)) {
+                    this.actionPerformed(button);
+                }
             }
         }
 
-        // 检查是否点击滚动条区域（用于拖动）
-        // Check whether click the scroll bar.
-        int scrollBarX = this.width / 2 - 149;
+        // ===== 规则组件 - 仅在面板可见区域内交互 / Rule components - only interact within panel visible area =====
+        if (mouseY >= CONTENT_TOP && mouseY <= panelBottom) {
+            // 补偿GL Translate偏移：屏幕mouseY → 组件空间mouseY
+            // Compensate GL Translate offset: screen mouseY → component-space mouseY
+            int adjustedMouseY = mouseY + Math.round(scrollSubOffset);
+
+            for (GuiComponentWrapper wrapper : ruleComponents.values()) {
+                if (wrapper.type == ComponentType.BOOLEAN_BUTTON) {
+                    GuiButton button = (GuiButton) wrapper.component;
+                    if (button.enabled && button.mousePressed(this.mc, mouseX, adjustedMouseY)) {
+                        this.actionPerformed(button);
+                    }
+                } else if (wrapper.type == ComponentType.TEXT_FIELD) {
+                    GuiTextField textField = (GuiTextField) wrapper.component;
+                    textField.mouseClicked(mouseX, adjustedMouseY, mouseButton);
+                }
+            }
+        } else {
+            // 点击面板外 - 取消所有文本框焦点 / Click outside panel - unfocus all text fields
+            for (GuiComponentWrapper wrapper : ruleComponents.values()) {
+                if (wrapper.type == ComponentType.TEXT_FIELD) {
+                    ((GuiTextField) wrapper.component).setFocused(false);
+                }
+            }
+        }
+
+        // ===== 滚动条交互 / Scrollbar interaction =====
+        int scrollBarX = this.width / 2 + 149;
         int scrollBarY = 60;
         int scrollBarHeight = visibleRows * ROW_HEIGHT;
 
@@ -540,7 +661,16 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     }
 
     /**
-     * handleMouseInput
+     * <p>
+     *     处理鼠标输入（滚轮和滚动条拖动）。<br>
+     *     滚轮：设置targetScrollPosition，由drawScreen中lerp平滑过渡。<br>
+     *     滚动条拖动：直接设置scrollPosition和targetScrollPosition（即时响应）。
+     * </p>
+     * <p>
+     *     Handle mouse input (wheel and scrollbar drag).<br>
+     *     Wheel: sets targetScrollPosition, smoothly interpolated in drawScreen.<br>
+     *     Scrollbar drag: directly sets both scrollPosition and targetScrollPosition (instant response).
+     * </p>
      */
     @Override
     public void handleMouseInput() {
@@ -552,22 +682,36 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         if (this.isScrolling) {
             int scrollBarY = 60;
             int scrollBarHeight = visibleRows * ROW_HEIGHT;
+            // 滑块高度计算（与drawScrollBar一致）/ Slider height calc (consistent with drawScrollBar)
+            int sliderHeight = Math.max(20, scrollBarHeight * visibleRows / defaultRules.size());
 
-            float relativePosition = (float) (mouseY - scrollBarY) / (float) scrollBarHeight;
-            this.scrollOffset = (int) (relativePosition * (this.maxScrollOffset));
-            this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScrollOffset));
+            // 基于滑块中心位置计算滚动比例，使拖动时滑块跟随鼠标
+            // Calculate scroll ratio based on slider center, so slider follows mouse during drag
+            float relativePosition = (float) (mouseY - scrollBarY - sliderHeight / 2) / (float) (scrollBarHeight - sliderHeight);
+            float newPos = relativePosition * this.maxScrollPosition;
+            newPos = Math.max(0, Math.min(newPos, this.maxScrollPosition));
+            // 滚动条拖动：即时响应，不使用lerp
+            // Scrollbar drag: instant response, no lerp
+            this.scrollPosition = this.targetScrollPosition = newPos;
+            updateScrollDerivedValues();
 
-            createRuleComponents();
+            if (scrollOffset != lastComponentScrollOffset) {
+                createRuleComponents();
+            }
         } else if (Mouse.getEventDWheel() != 0) {
             int scrollAmount = Mouse.getEventDWheel() > 0 ? -1 : 1;
-            this.scrollOffset += scrollAmount;
-            this.scrollOffset = Math.max(0, Math.min(this.scrollOffset, this.maxScrollOffset));
-            createRuleComponents();
+            // 滚轮：设置目标位置，由drawScreen中lerp平滑过渡
+            // Wheel: set target position, smoothly interpolated in drawScreen
+            this.targetScrollPosition += scrollAmount * ROW_HEIGHT;
+            this.targetScrollPosition = Math.max(0, Math.min(this.targetScrollPosition, this.maxScrollPosition));
+            // 不在此处调用createRuleComponents，由drawScreen中的lerp逻辑处理
+            // Don't call createRuleComponents here; handled by lerp logic in drawScreen
         }
     }
 
     @Override
     public void updateScreen() {
+        // 文本框光标更新 / Text field cursor update
         for (GuiComponentWrapper wrapper : ruleComponents.values()) {
             if (wrapper.type == ComponentType.TEXT_FIELD) {
                 GuiTextField textField = (GuiTextField) wrapper.component;
@@ -576,24 +720,87 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         }
     }
 
+    /**
+     * <p>
+     *     主渲染方法。包含平滑滚动插值、GL Scissor裁剪和GL Translate偏移。<br>
+     *     渲染流程：<br>
+     *     1. 插值scrollPosition → targetScrollPosition<br>
+     *     2. 更新派生值，必要时重建组件<br>
+     *     3. 绘制背景和面板<br>
+     *     4. 启用Scissor裁剪 + GL Translate偏移<br>
+     *     5. 绘制规则列表和组件<br>
+     *     6. 关闭Scissor和Translate<br>
+     *     7. 绘制滚动条和tooltip
+     * </p>
+     * <p>
+     *     Main render method. Includes smooth scroll lerp, GL Scissor clipping, and GL Translate offset.<br>
+     *     Render flow:<br>
+     *     1. Lerp scrollPosition → targetScrollPosition<br>
+     *     2. Update derived values, rebuild components if needed<br>
+     *     3. Draw background and panel<br>
+     *     4. Enable Scissor clipping + GL Translate offset<br>
+     *     5. Draw rule list and components<br>
+     *     6. Disable Scissor and Translate<br>
+     *     7. Draw scrollbar and tooltips
+     * </p>
+     */
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        // ===== 动态计算可见行数和最大滚动量（在lerp之前，确保派生值使用最新参数）=====
+        // Calculate dynamic visible rows and max scroll position (before lerp, to ensure derived values use latest parameters)
+        int panelBottom = this.height - 50;
+        this.visibleRows = Math.max(1, (panelBottom - CONTENT_TOP) / ROW_HEIGHT);
+        this.maxScrollPosition = Math.max(0, (defaultRules.size() - this.visibleRows) * ROW_HEIGHT);
+
+        // ===== 平滑滚动插值 / Smooth scroll lerp =====
+        if (Math.abs(scrollPosition - targetScrollPosition) > 0.5f) {
+            scrollPosition += (targetScrollPosition - scrollPosition) * SCROLL_LERP_SPEED;
+        } else if (scrollPosition != targetScrollPosition) {
+            scrollPosition = targetScrollPosition;
+        }
+
+        // 更新派生值 / Update derived values
+        updateScrollDerivedValues();
+
+        // 当scrollOffset改变时重建组件 / Rebuild components when scrollOffset changes
+        if (scrollOffset != lastComponentScrollOffset) {
+            createRuleComponents();
+        }
+
         drawDefaultBackground();
         drawContentPanel();
 
-        // Dynamic visible rows / max scroll calculation
-        // 动态计算可见行数 / 最大滚动量
-        // Calculate the dynamic visible rule roles / maximum scrolling amount
-        int panelBottom = this.height - 50;
-        this.visibleRows = Math.max(1, (panelBottom - PANEL_TOP) / ROW_HEIGHT);
-        this.maxScrollOffset = Math.max(0, defaultRules.size() - this.visibleRows);
-
         this.drawCenteredString(this.fontRendererObj, I18n.format("createworldui.gamerules.title"), this.width / 2, 20, 0xFFFFFF);
 
+        // ===== GL Scissor裁剪：限制绘制区域到内容区内 / GL Scissor clipping: limit drawing to content area =====
+        // 使用浮点比例计算，避免GuiScale Auto时整数乘法的舍入误差
+        // Use floating-point ratio to avoid integer multiplication rounding errors with GuiScale Auto
+        // glScissor使用OpenGL坐标系（原点左下角，y向上），与GUI坐标系Y轴方向相反
+        // glScissor uses OpenGL coordinate system (origin bottom-left, y upward), opposite to GUI coordinate Y axis
+        double scaleY = (double) mc.displayHeight / this.height;
+        int scissorX = 0;
+        int scissorWidth = mc.displayWidth;
+        // scissorY: 面板底边以下的帧缓冲像素数（GUI Y=panelBottom → GL Y方向计算）
+        // scissorY: framebuffer pixels below panel bottom edge (GUI Y=panelBottom → GL Y calculation)
+        int scissorY = (int) Math.floor((this.height - panelBottom) * scaleY);
+        // scissorHeight: 内容区在帧缓冲中的像素高度（用ceil向上取整确保不裁小）
+        // scissorHeight: content area height in framebuffer pixels (ceil to ensure we don't clip too small)
+        int scissorHeight = (int) Math.ceil((panelBottom - CONTENT_TOP) * scaleY);
+
+        GL11.glEnable(GL11.GL_SCISSOR_TEST);
+        GL11.glScissor(scissorX, scissorY, scissorWidth, scissorHeight);
+
+        // ===== GL Translate偏移：实现亚像素平滑滚动 / GL Translate offset: sub-pixel smooth scrolling =====
+        GL11.glPushMatrix();
+        GL11.glTranslatef(0f, -scrollSubOffset, 0f);
+
+        // 绘制规则列表（文本在GL Translate下自然偏移）
+        // Draw rule list (text naturally shifted under GL Translate)
         drawRuleList(mouseX, mouseY);
 
-        // Component rendering - add null check
-        // 组件渲染 - 添加空値检查
+        // 组件渲染 - 使用调整后的mouseY以正确处理悬停状态
+        // Component rendering - use adjusted mouseY for correct hover state
+        int adjustedMouseY = mouseY + Math.round(scrollSubOffset);
         for (GuiComponentWrapper wrapper : ruleComponents.values()) {
             if (wrapper != null && wrapper.component != null) {
                 if (wrapper.type == ComponentType.TEXT_FIELD) {
@@ -604,29 +811,37 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 } else if (wrapper.type == ComponentType.BOOLEAN_BUTTON) {
                     GuiButton button = (GuiButton) wrapper.component;
                     if (button != null) {
-                        button.drawButton(this.mc, mouseX, mouseY);
+                        button.drawButton(this.mc, mouseX, adjustedMouseY);
                     }
                 }
             }
         }
 
+        GL11.glPopMatrix();
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+
+        // 滚动条不受GL Translate影响 / Scrollbar is not affected by GL Translate
         drawScrollBar();
 
-        // Ensure there are no null elements in buttonList before calling super.drawScreen
-        // 在调用 super.drawScreen 前，确保 buttonList 中没有 null 元素
-        List<GuiButton> cleanButtonList = new ArrayList<>();
+        // ===== 仅保留标准按钮给super.drawScreen / Only keep standard buttons for super.drawScreen =====
+        // 规则按钮已由上方显式绘制（在GL Translate内），不应再由super重复绘制
+        // Rule buttons are already drawn explicitly above (within GL Translate), should not be redrawn by super
+        List<GuiButton> savedButtonList = new ArrayList<>(this.buttonList);
+        List<GuiButton> standardButtons = new ArrayList<>();
         for (Object obj : this.buttonList) {
             if (obj instanceof GuiButton) {
                 GuiButton btn = (GuiButton) obj;
-                if (btn != null) {
-                    cleanButtonList.add(btn);
+                if (btn != null && btn.id < 100) {
+                    standardButtons.add(btn);
                 }
             }
         }
         this.buttonList.clear();
-        this.buttonList.addAll(cleanButtonList);
-
+        this.buttonList.addAll(standardButtons);
         super.drawScreen(mouseX, mouseY, partialTicks);
+        // 恢复完整buttonList（用于事件处理）/ Restore full buttonList (for event handling)
+        this.buttonList.clear();
+        this.buttonList.addAll(savedButtonList);
 
         drawTooltips(mouseX, mouseY);
     }
@@ -636,22 +851,32 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         int panelRight = this.width;
         int panelBottom = this.height - 50;
 
-        // Dark background
-        // 深色背景
-        drawGradientRect(panelLeft, PANEL_TOP, panelRight, panelBottom, 0xC0101010, 0xD0101010);
+        // Semi-transparent background similar to GuiOptions
+        // 与GuiOptions类似的半透明背景
+        drawGradientRect(panelLeft, PANEL_TOP, panelRight, panelBottom, 0x60101010, 0x80101010);
 
-        // Border lines (optional)
-        // 内边线（可选）
+        // Border lines
+        // 内边线
         drawRect(panelLeft, PANEL_TOP, panelRight, PANEL_TOP + 1, 0xFF000000);  // top
         drawRect(panelLeft, panelBottom - 1, panelRight, panelBottom, 0xFF000000); // bottom
     }
 
+    /**
+     * 绘制规则列表。在GL Translate上下文中调用，文本位置使用scrollOffset（整数），
+     * GL Translate负责亚像素偏移。
+     *
+     * Draw rule list. Called within GL Translate context, text positions use scrollOffset (integer),
+     * GL Translate handles sub-pixel offset.
+     */
     private void drawRuleList(int mouseX, int mouseY) {
         int index = 0;
         int yPos = 60;
 
+        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
+        int maxVisibleIndex = scrollOffset + visibleRows + 1;
+
         for (Map.Entry<String, GameruleValue> entry : defaultRules.entrySet()) {
-            if (index >= scrollOffset && index < scrollOffset + visibleRows) {
+            if (index >= scrollOffset && index < maxVisibleIndex) {
                 String ruleName = entry.getKey();
                 GameruleValue originalValue = entry.getValue();
 
@@ -679,8 +904,12 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         }
     }
 
+    /**
+     * 绘制滚动条。使用scrollPosition（float）计算滑块位置。
+     * Draw scrollbar. Uses scrollPosition (float) for slider position calculation.
+     */
     private void drawScrollBar() {
-        if (maxScrollOffset > 0) {
+        if (maxScrollPosition > 0) {
             int scrollBarX = this.width / 2 + 149;
             int scrollBarY = 60;
             int scrollBarHeight = visibleRows * ROW_HEIGHT;
@@ -688,8 +917,8 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             drawRect(scrollBarX, scrollBarY, scrollBarX + 10, scrollBarY + scrollBarHeight, 0xAA333333);
             drawRect(scrollBarX + 1, scrollBarY + 1, scrollBarX + 9, scrollBarY + scrollBarHeight - 1, 0xAA555555);
 
-            float scrollPercentage = (float) scrollOffset / maxScrollOffset;
-            int sliderHeight = Math.max(20, scrollBarHeight / (maxScrollOffset + visibleRows) * visibleRows);
+            float scrollPercentage = maxScrollPosition > 0 ? (float) scrollPosition / maxScrollPosition : 0;
+            int sliderHeight = Math.max(20, scrollBarHeight * visibleRows / (defaultRules.size()));
             int sliderY = scrollBarY + (int) (scrollPercentage * (scrollBarHeight - sliderHeight));
 
             drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight, 0xFF888888);
@@ -697,15 +926,28 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         }
     }
 
+    /**
+     * 绘制tooltip。使用调整后的坐标进行悬停检测。
+     * Draw tooltips. Uses adjusted coordinates for hover detection.
+     */
     private void drawTooltips(int mouseX, int mouseY) {
+        int panelBottom = this.height - 50;
+        // 仅在内容区域内显示tooltip / Only show tooltip within content area
+        if (mouseY < CONTENT_TOP || mouseY > panelBottom) return;
+
         int index = 0;
         int yPos = 60;
+        // 补偿GL Translate偏移用于悬停检测 / Compensate GL Translate offset for hover detection
+        int adjustedMouseY = mouseY + Math.round(scrollSubOffset);
+
+        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
+        int maxVisibleIndex = scrollOffset + visibleRows + 1;
 
         for (String ruleName : defaultRules.keySet()) {
-            if (index >= scrollOffset && index < scrollOffset + visibleRows) {
+            if (index >= scrollOffset && index < maxVisibleIndex) {
                 int rowY = yPos + (index - scrollOffset) * ROW_HEIGHT;
 
-                if (isMouseOverRuleName(mouseX, mouseY, rowY)) {
+                if (isMouseOverRuleName(mouseX, adjustedMouseY, rowY)) {
                     List<String> tooltipList = new ArrayList<>();
 
                     // First line: rule name (yellow)
@@ -859,6 +1101,8 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         public final Object component;
         public final ComponentType type;
         public boolean currentBooleanValue;
+        // 全局索引（用于平滑滚动时定位）/ Global index (for positioning during smooth scroll)
+        public int globalIndex = 0;
 
         public GuiComponentWrapper(Object component, ComponentType type) {
             this.component = component;
