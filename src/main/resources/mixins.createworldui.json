@@ -5,12 +5,12 @@
   "mixins": [
     "MixinModernCreateWorld",
     "MixinGuiSelectWorld",
-    "MixinMinecraft"
+    "MixinIntegratedServer"
   ],
   "client": [
     "MixinModernCreateWorld",
     "MixinGuiSelectWorld",
-    "MixinMinecraft"
+    "MixinIntegratedServer"
   ],
   "required": true,
   "minVersion": "0.8.5"
