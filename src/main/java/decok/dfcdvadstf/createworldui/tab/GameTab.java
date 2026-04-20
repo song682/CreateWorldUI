@@ -153,10 +153,12 @@ public class GameTab extends AbstractScreenTab {
         tabManager.setGameMode(newMode);
         tabManager.setHardcore("hardcore".equals(newMode));
 
-        // 如果是硬核模式，禁用作弊和奖励箱
+        // 如果是硬核模式，禁用作弊和奖励箱；如果是创造模式，自动开启作弊
         if ("hardcore".equals(newMode)) {
             tabManager.setAllowCheats(false);
             tabManager.setBonusChest(false);
+        } else if ("creative".equals(newMode)) {
+            tabManager.setAllowCheats(true);
         }
 
         // 更新按钮显示
