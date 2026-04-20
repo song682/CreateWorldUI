@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
+import decok.dfcdvadstf.createworldui.api.gamerule.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
@@ -26,7 +27,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -248,7 +248,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$createTabButtons() {
-        int totalWidth = TAB_WIDTH * 3 + 2;
+        int totalWidth = TAB_WIDTH * 3;
         int startX = this.width / 2 - totalWidth / 2;
         String[] tabNames = {
                 I18n.format("createworldui.tab.game"),
@@ -257,7 +257,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         };
 
         for (int i = 0; i < 3; i++) {
-            int xPos = startX + i * (TAB_WIDTH + 1);
+            int xPos = startX + i * TAB_WIDTH;
             final int tabId = 100 + i;
             GuiButton tabButton = new GuiButton(tabId, xPos, 0, TAB_WIDTH, TAB_HEIGHT, tabNames[i]) {
                 @Override
@@ -315,7 +315,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         // 计算选中Tab的x位置范围
         // Calculate x position range of selected tab
-        int totalWidth = TAB_WIDTH * 3 + 2;
+        int totalWidth = TAB_WIDTH * 3;
         int startX = this.width / 2 - totalWidth / 2;
         int tabIndex = currentTabId - 100; // Tab ID: 100, 101, 102 -> index: 0, 1, 2
 
@@ -327,7 +327,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         if (tabIndex >= 0 && tabIndex < 3) {
             // 选中的Tab位置
             // Position of selected tab
-            int selectedTabX = startX + tabIndex * (TAB_WIDTH + 1);
+            int selectedTabX = startX + tabIndex * TAB_WIDTH;
             int selectedTabEnd = selectedTabX + TAB_WIDTH;
 
             // 绘制选中Tab左侧的分隔线
@@ -458,65 +458,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        // Apply difficulty setting to newly created world
-        // 应用难度设置到新创建的世界
-        try {
-            Object integrated = this.mc.getIntegratedServer();
-            if (integrated == null) {
-                try {
-                    Field fserv = Minecraft.class.getDeclaredField("theIntegratedServer");
-                    fserv.setAccessible(true);
-                    integrated = fserv.get(this.mc);
-                } catch (Throwable ignored) {}
-            }
-
-            if (integrated != null) {
-                Class<?> serverClass = integrated.getClass();
-                try {
-                    Field worldsField = serverClass.getDeclaredField("worldServers");
-                    worldsField.setAccessible(true);
-                    Object[] worlds = (Object[]) worldsField.get(integrated);
-                    if (worlds != null && worlds.length > 0) {
-                        for (Object w : worlds) {
-                            if (w != null) {
-                                try {
-                                    Field diffField = w.getClass().getDeclaredField("difficultySetting");
-                                    diffField.setAccessible(true);
-                                    diffField.set(w, modernWorldCreatingUI$tabManager.getDifficulty());
-                                } catch (NoSuchFieldException nsf) {
-                                    try {
-                                        Field diffField = w.getClass().getDeclaredField("field_73013_u");
-                                        diffField.setAccessible(true);
-                                        diffField.set(w, modernWorldCreatingUI$tabManager.getDifficulty());
-                                    } catch (Throwable ignored) {}
-                                }
-                            }
-                        }
-                        this.mc.gameSettings.difficulty = modernWorldCreatingUI$tabManager.getDifficulty();
-                        this.mc.gameSettings.saveOptions();
-                    }
-                } catch (Throwable t) {
-                    try {
-                        Field tw = Minecraft.class.getDeclaredField("theWorld");
-                        tw.setAccessible(true);
-                        Object clientWorld = tw.get(this.mc);
-                        if (clientWorld != null) {
-                            try {
-                                Field diffField = clientWorld.getClass().getDeclaredField("difficultySetting");
-                                diffField.setAccessible(true);
-                                diffField.set(clientWorld, modernWorldCreatingUI$tabManager.getDifficulty());
-                            } catch (NoSuchFieldException nsf) {
-                                try {
-                                    Field diffField = clientWorld.getClass().getDeclaredField("field_73013_u");
-                                    diffField.setAccessible(true);
-                                    diffField.set(clientWorld, modernWorldCreatingUI$tabManager.getDifficulty());
-                                } catch (Throwable ignored) {}
-                            }
-                        }
-                    } catch (Throwable ignored) {}
-                }
-            }
-        } catch (Throwable ignored) {}
+        // Set pending difficulty, which will be applied by MixinIntegratedServer.loadAllWorlds TAIL
+        // No reflection needed - MixinIntegratedServer directly accesses worldServers after initialization
+        //
+        // 设置待应用的难度，将由MixinIntegratedServer.loadAllWorlds TAIL处应用
+        // 无需反射 - MixinIntegratedServer在worldServers初始化后直接访问
+        DifficultyApplier.setPendingDifficulty(modernWorldCreatingUI$tabManager.getDifficulty());
     }
 
     /**
