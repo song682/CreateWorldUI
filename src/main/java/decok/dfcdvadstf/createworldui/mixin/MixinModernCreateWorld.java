@@ -73,6 +73,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private boolean modernWorldCreatingUI$isInitialized = false;
     @Unique
+    private int modernWorldCreatingUI$tabButtonWidth = TAB_WIDTH;
+    @Unique
     private static final Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
 
     /**
@@ -243,48 +245,53 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * Creates the tab buttons
-     * 创建标签页按钮
+     * Creates the tab buttons dynamically based on registered tabs
+     * 根据已注册的标签页动态创建标签页按钮
      */
     @Unique
     private void modernWorldCreatingUI$createTabButtons() {
-        int totalWidth = TAB_WIDTH * 3;
+        int tabCount = modernWorldCreatingUI$tabManager != null ? modernWorldCreatingUI$tabManager.getTabCount() : 3;
+        if (tabCount <= 0) tabCount = 3;
+
+        modernWorldCreatingUI$tabButtonWidth = Math.min(TAB_WIDTH, this.width / tabCount);
+        int totalWidth = modernWorldCreatingUI$tabButtonWidth * tabCount;
         int startX = this.width / 2 - totalWidth / 2;
-        String[] tabNames = {
-                I18n.format("createworldui.tab.game"),
-                I18n.format("createworldui.tab.world"),
-                I18n.format("createworldui.tab.more")
-        };
 
-        for (int i = 0; i < 3; i++) {
-            int xPos = startX + i * TAB_WIDTH;
-            final int tabId = 100 + i;
-            GuiButton tabButton = new GuiButton(tabId, xPos, 0, TAB_WIDTH, TAB_HEIGHT, tabNames[i]) {
-                @Override
-                public void drawButton(Minecraft mc, int mouseX, int mouseY) {
-                    if (this.visible) {
-                        mc.getTextureManager().bindTexture(TABS_TEXTURE);
-                        // Reset OpenGL color state to white to prevent texture tinting
-                        // 重置OpenGL颜色状态为白色，防止纹理被着色
-                        GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-                        boolean isHovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
-                                mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
-                        boolean isSelected = modernWorldCreatingUI$tabManager != null &&
-                                modernWorldCreatingUI$tabManager.getCurrentTabId() == this.id;
+        if (modernWorldCreatingUI$tabManager != null) {
+            java.util.List<Integer> sortedIds = modernWorldCreatingUI$tabManager.getSortedTabIds();
+            for (int i = 0; i < sortedIds.size(); i++) {
+                int tabId = sortedIds.get(i);
+                decok.dfcdvadstf.createworldui.api.tab.Tab tab = modernWorldCreatingUI$tabManager.getAllTabs().get(tabId);
+                String tabName = tab != null ? tab.getTabName() : "";
+                int xPos = startX + i * modernWorldCreatingUI$tabButtonWidth;
 
-                        TabState state = isSelected ?
-                                (isHovered ? TabState.SELECTED_HOVER : TabState.SELECTED) :
-                                (isHovered ? TabState.HOVER : TabState.NORMAL);
+                GuiButton tabButton = new GuiButton(tabId, xPos, 0, modernWorldCreatingUI$tabButtonWidth, TAB_HEIGHT, tabName) {
+                    @Override
+                    public void drawButton(Minecraft mc, int mouseX, int mouseY) {
+                        if (this.visible) {
+                            mc.getTextureManager().bindTexture(TABS_TEXTURE);
+                            // Reset OpenGL color state to white to prevent texture tinting
+                            // 重置OpenGL颜色状态为白色，防止纹理被着色
+                            GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+                            boolean isHovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
+                                    mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
+                            boolean isSelected = modernWorldCreatingUI$tabManager != null &&
+                                    modernWorldCreatingUI$tabManager.getCurrentTabId() == this.id;
 
-                        drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, TAB_WIDTH, TAB_HEIGHT);
-                        drawCenteredString(mc.fontRenderer, this.displayString,
-                                this.xPosition + this.width / 2,
-                                this.yPosition + (this.height - 8) / 2, state.getTextColor());
+                            TabState state = isSelected ?
+                                    (isHovered ? TabState.SELECTED_HOVER : TabState.SELECTED) :
+                                    (isHovered ? TabState.HOVER : TabState.NORMAL);
+
+                            drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, this.width, TAB_HEIGHT);
+                            drawCenteredString(mc.fontRenderer, this.displayString,
+                                    this.xPosition + this.width / 2,
+                                    this.yPosition + (this.height - 8) / 2, state.getTextColor());
+                        }
                     }
-                }
-            };
-            tabButton.visible = true;
-            this.buttonList.add(tabButton);
+                };
+                tabButton.visible = true;
+                this.buttonList.add(tabButton);
+            }
         }
     }
 
@@ -313,22 +320,26 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         int currentTabId = modernWorldCreatingUI$tabManager != null ?
                 modernWorldCreatingUI$tabManager.getCurrentTabId() : -1;
 
-        // 计算选中Tab的x位置范围
-        // Calculate x position range of selected tab
-        int totalWidth = TAB_WIDTH * 3;
+        // Dynamically calculate tab layout based on registered tab count
+        // 根据已注册标签页数量动态计算布局
+        int tabCount = modernWorldCreatingUI$tabManager != null ? modernWorldCreatingUI$tabManager.getTabCount() : 3;
+        if (tabCount <= 0) tabCount = 3;
+        int actualTabWidth = Math.min(TAB_WIDTH, this.width / tabCount);
+        int totalWidth = actualTabWidth * tabCount;
         int startX = this.width / 2 - totalWidth / 2;
-        int tabIndex = currentTabId - 100; // Tab ID: 100, 101, 102 -> index: 0, 1, 2
+        int tabIndex = modernWorldCreatingUI$tabManager != null ?
+                modernWorldCreatingUI$tabManager.getTabIndex(currentTabId) : -1;
 
         // 颜色：顶部黑色75%，底部白色20%
         // Colors: top black 75%, bottom white 20%
         int lineTopColor = 0xC0000000;
         int lineBottomColor = 0x33FFFFFF;
 
-        if (tabIndex >= 0 && tabIndex < 3) {
+        if (tabIndex >= 0 && tabIndex < tabCount) {
             // 选中的Tab位置
             // Position of selected tab
-            int selectedTabX = startX + tabIndex * TAB_WIDTH;
-            int selectedTabEnd = selectedTabX + TAB_WIDTH;
+            int selectedTabX = startX + tabIndex * actualTabWidth;
+            int selectedTabEnd = selectedTabX + actualTabWidth;
 
             // 绘制选中Tab左侧的分隔线
             // Draw separator line left of selected tab
@@ -388,9 +399,9 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         if (modernWorldCreatingUI$tabManager != null) {
             modernWorldCreatingUI$tabManager.actionPerformed(button);
 
-            // If button ID is 100-102, it's a tab switch; cancel further processing
-            // 如果按钮 ID 在 100-102 之间，说明是标签页切换，取消后续处理
-            if (button.id >= 100 && button.id <= 102) {
+            // If it's a tab switch button, cancel further processing
+            // 如果是标签页切换按钮，取消后续处理
+            if (modernWorldCreatingUI$tabManager.isTabButton(button.id)) {
                 ci.cancel();
                 return;
             }
@@ -614,7 +625,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                         mouseX < button.xPosition + button.width && mouseY < button.yPosition + button.height) {
 
                     // 跳过标签页按钮、创建和取消按钮
-                    if (button.id >= 100 && button.id <= 102) continue;
+                    if (modernWorldCreatingUI$tabManager != null && modernWorldCreatingUI$tabManager.isTabButton(button.id)) continue;
                     if (button.id == 0 || button.id == 1) continue;
 
                     // 从Map中获取悬停文本

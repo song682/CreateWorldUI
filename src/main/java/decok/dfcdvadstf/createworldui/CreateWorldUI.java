@@ -5,8 +5,12 @@ import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import decok.dfcdvadstf.createworldui.api.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
+import decok.dfcdvadstf.createworldui.tab.GameTab;
+import decok.dfcdvadstf.createworldui.tab.MoreTab;
+import decok.dfcdvadstf.createworldui.tab.WorldTab;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -21,6 +25,13 @@ public class CreateWorldUI {
         config = new Config(event.getSuggestedConfigurationFile());
         logger = event.getModLog();
         logger.info("Initializing CreateWorldUI Mod");
+
+        // Register built-in tabs
+        // 注册内置标签页
+        TabRegistry.registerTab(GameTab::new, 100, "createworldui.tab.game", 0);
+        TabRegistry.registerTab(WorldTab::new, 101, "createworldui.tab.world", 1);
+        TabRegistry.registerTab(MoreTab::new, 102, "createworldui.tab.more", 2);
+        logger.info("Registered built-in tabs: Game, World, More");
     }
 
     @EventHandler
