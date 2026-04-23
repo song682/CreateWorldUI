@@ -10,6 +10,8 @@ public class Config {
     public boolean enableResetButton;
     public boolean gameruleEdit;
     public boolean igGameruleEdit;
+    public boolean changedRulesInChatHighLighted;
+    public boolean highlightModifiedRulesInGUI;
     public boolean topTabCharatorModernWhite;
     public boolean enableOtherMoreTabButton;
     public boolean showWorldNamePlaceHolder;
@@ -27,12 +29,43 @@ public class Config {
     }
 
     public void UIOPtions(){
-        topTabCharatorModernWhite = configFile.getBoolean("topTabCharatorModernWhite", "UI Management", false, "Set True to enable the white color for the top tab text");
-        enableResetButton = configFile.getBoolean("enableReloadButton", "GameRule Editor", false, "Set True to enable the Reload Button");
-        gameruleEdit = configFile.getBoolean("gameruleEdit", "UI Management", true, "Enable the Gamerule Editor");
-        igGameruleEdit = configFile.getBoolean("igGameruleEdit", "GameRule Editor", false, "Enable gamerule editor but in-game");
-        enableOtherMoreTabButton = configFile.getBoolean("enableOtherMoreTabButton", "UI Management", false, "Enable unused modern feature button.");
-        showWorldNamePlaceHolder = configFile.getBoolean("showWorldNamePlaceHolder", "UI Management", false, "Show a place-holder to gently reminds player to add a own world name");
+        // UI Management category options
+        topTabCharatorModernWhite = configFile.getBoolean("topTabCharatorModernWhite", "UI Management", false, 
+            "Set True to enable the white color for the top tab text (require ArchaicFix)", 
+            "config.option.topTabCharatorModernWhite");
+        
+        gameruleEdit = configFile.getBoolean("gameruleEdit", "UI Management", true, 
+            "Enable the Gamerule Editor", 
+            "config.option.gameruleEdit");
+        
+        enableOtherMoreTabButton = configFile.getBoolean("enableOtherMoreTabButton", "UI Management", false, 
+            "Enable unused modern feature button.", 
+            "config.option.enableOtherMoreTabButton");
+        
+        showWorldNamePlaceHolder = configFile.getBoolean("showWorldNamePlaceHolder", "UI Management", false, 
+            "Show a place-holder to gently reminds player to add a own world name", 
+            "config.option.showWorldNamePlaceHolder");
+        
+        disableCreateButtonWhenWNIsBlank = configFile.getBoolean("disableCreateButtonWhenWNIsBlank", "UI Management", false, 
+            "Set True to disable the Create Button when world name is blank", 
+            "config.option.disableCreateButtonWhenWNIsBlank");
+        
+        // GameRule Editor category options
+        enableResetButton = configFile.getBoolean("enableReloadButton", "GameRule Editor", false, 
+            "Set True to enable the Reload Button", 
+            "config.option.enableReloadButton");
+        
+        igGameruleEdit = configFile.getBoolean("igGameruleEdit", "GameRule Editor", false, 
+            "Enable gamerule editor but in-game", 
+            "config.option.igGameruleEdit");
+        
+        changedRulesInChatHighLighted = configFile.getBoolean("changedRulesInChatHighLighted", "GameRule Editor", false, 
+            "Set True to highlight changed rules name in yellow color in chat notification", 
+            "config.option.changedRulesInChatHighLighted");
+        
+        highlightModifiedRulesInGUI = configFile.getBoolean("highlightModifiedRulesInGUI", "GameRule Editor", true, 
+            "Set True to highlight modified rules with yellow color in GUI", 
+            "config.option.highlightModifiedRulesInGUI");
     }
 
     public void saveConfigurationFile() {

@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.api;
+package decok.dfcdvadstf.createworldui.api.gamerule;
 
 import decok.dfcdvadstf.createworldui.Tags;
 import net.minecraft.world.EnumDifficulty;

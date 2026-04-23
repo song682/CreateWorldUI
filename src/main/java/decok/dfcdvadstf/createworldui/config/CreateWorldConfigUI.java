@@ -44,11 +44,15 @@ public class CreateWorldConfigUI implements IModGuiFactory {
         private static List<IConfigElement> getConfigElements(final Configuration configuration) {
             List<IConfigElement> elements = new ArrayList<>();
 
-            ConfigCategory greCategory = configuration.getCategory("GameRule Editor").setLanguageKey("config.button.GRE");
+            // 添加 GameRule Editor 分类
+            ConfigCategory greCategory = configuration.getCategory("GameRule Editor");
+            greCategory.setLanguageKey("config.button.GRE");
             greCategory.setComment(I18n.format("config.subtitle.GRE"));
             elements.add(new ConfigElement(greCategory));
 
-            ConfigCategory uimCategory = configuration.getCategory("UI Management").setLanguageKey("config.button.UIM");
+            // 添加 UI Management 分类
+            ConfigCategory uimCategory = configuration.getCategory("UI Management");
+            uimCategory.setLanguageKey("config.button.UIM");
             uimCategory.setComment(I18n.format("config.subtitle.UIM"));
             elements.add(new ConfigElement(uimCategory));
 
