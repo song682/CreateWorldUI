@@ -1,15 +1,14 @@
 package decok.dfcdvadstf.createworldui.api.tab;
 
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.tab.GameTab;
-import decok.dfcdvadstf.createworldui.tab.MoreTab;
-import decok.dfcdvadstf.createworldui.tab.WorldTab;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.world.EnumDifficulty;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,17 +36,31 @@ public class TabManager {
         this.parent = parent;
         this.buttonList = buttonList;
 
-        // 创建所有标签页
-        registerTab(new GameTab());
-        registerTab(new WorldTab());
-        registerTab(new MoreTab());
+        // Freeze registry to prevent further registration
+        // 冻结注册表，阻止后续注册
+        if (!TabRegistry.isFrozen()) {
+            TabRegistry.freeze();
+        }
 
+        // Create all registered tabs
+        // 创建所有已注册的标签页
+        for (TabRegistry.TabEntry entry : TabRegistry.getEntries()) {
+            Tab tab = entry.factory.get();
+            registerTab(tab);
+        }
+
+        // Initialize all tabs
         // 初始化所有标签页
         for (Tab tab : tabs.values()) {
             tab.initGui(this, width, height);
         }
 
-        // 设置当前标签页
+        // Set current tab (default to first registered tab)
+        // 设置当前标签页（默认为第一个注册的）
+        List<Integer> sortedIds = getSortedTabIds();
+        if (!sortedIds.isEmpty()) {
+            currentTabId = sortedIds.get(0);
+        }
         switchToTab(currentTabId);
     }
 
@@ -111,8 +124,40 @@ public class TabManager {
         }
     }
 
-    private void registerTab(Tab tab) {
+    /**
+     * <p>
+     *     注册一个标签页<br>
+     *     内部使用，外部模组应通过 {@link TabRegistry#registerTab} 注册
+     * </p>
+     * <p>
+     *     Register a tab<br>
+     *     For internal use; external mods should use {@link TabRegistry#registerTab}
+     * </p>
+     */
+    public void registerTab(Tab tab) {
         tabs.put(tab.getTabId(), tab);
+    }
+
+    /**
+     * <p>
+     *     检查指定ID是否为标签页按钮ID<br>
+     *     Check if the given ID belongs to a tab button
+     * </p>
+     */
+    public boolean isTabButton(int id) {
+        return tabs.containsKey(id);
+    }
+
+    /**
+     * <p>
+     *     获取按顺序排列的所有标签页ID<br>
+     *     Get all tab IDs in sorted order
+     * </p>
+     */
+    public List<Integer> getSortedTabIds() {
+        List<Integer> ids = new ArrayList<>(tabs.keySet());
+        Collections.sort(ids);
+        return ids;
     }
 
     public void switchToTab(int tabId) {
@@ -235,8 +280,19 @@ public class TabManager {
         Minecraft.getMinecraft().gameSettings.saveOptions();
     }
 
-        public GuiCreateWorld getParent() { return parent; }
-        public int getCurrentTabId() { return currentTabId; }
-        public int getTabCount() { return tabs.size(); }
-        public Map<Integer, Tab> getAllTabs() { return tabs; }
+    /**
+     * <p>
+     *     获取指定ID的标签页在其排序位置中的索引<br>
+     *     Get the sorted index of the tab with the given ID
+     * </p>
+     */
+    public int getTabIndex(int tabId) {
+        List<Integer> sortedIds = getSortedTabIds();
+        return sortedIds.indexOf(tabId);
+    }
+
+    public GuiCreateWorld getParent() { return parent; }
+    public int getCurrentTabId() { return currentTabId; }
+    public int getTabCount() { return tabs.size(); }
+    public Map<Integer, Tab> getAllTabs() { return tabs; }
 }
