@@ -9,6 +9,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
@@ -71,6 +72,10 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     // Temporarily save values modified by user in UI (in string form)
     private final Map<String, String> modifiedRules = new HashMap<>();
 
+    // 跟踪已修改的规则（用于显示通知）
+    // Track modified rules (for displaying notifications)
+    private final Set<String> changedRules = new HashSet<>();
+
     // 规则与UI组件的映射
     // Map of rules to UI components
     private final Map<String, GuiComponentWrapper> ruleComponents = new LinkedHashMap<>();
@@ -129,6 +134,14 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 if (entry.getKey() != null && entry.getValue() != null) {
                     this.editableRules.put(entry.getKey(), entry.getValue());
                 }
+            }
+        }
+
+        // 保存原始规则的副本，用于比较哪些规则被修改了
+        // Save a copy of original rules for comparing which rules were modified
+        for (Map.Entry<String,String> e : this.editableRules.entrySet()) {
+            if (e.getKey() != null && e.getValue() != null) {
+                this.modifiedRules.put(e.getKey(), e.getValue());
             }
         }
 
@@ -214,14 +227,6 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 try { dv = Double.parseDouble(s); } catch (Exception ignored) {}
                 GameruleValue gv = new GameruleValue(s, b, iv, dv);
                 this.defaultRules.put(k, gv);
-            }
-        }
-
-        // Pre-fill modifiedRules
-        // 预填 modifiedRules
-        for (Map.Entry<String,String> e : this.editableRules.entrySet()) {
-            if (e.getKey() != null && e.getValue() != null) {
-                this.modifiedRules.put(e.getKey(), e.getValue());
             }
         }
 
@@ -493,6 +498,10 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 return;
             case 2:
                 modifiedRules.clear();
+                changedRules.clear();
+                // 重置为原始值
+                // Reset to original values
+                modifiedRules.putAll(editableRules);
                 createRuleComponents();
                 return;
         }
@@ -606,6 +615,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         for (GuiButton button : (List<GuiButton>)this.buttonList) {
             if (button.id < 100 && button.enabled) {
                 if (button.mousePressed(this.mc, mouseX, mouseY)) {
+                    button.func_146113_a(this.mc.getSoundHandler());
                     this.actionPerformed(button);
                 }
             }
@@ -621,6 +631,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 if (wrapper.type == ComponentType.BOOLEAN_BUTTON) {
                     GuiButton button = (GuiButton) wrapper.component;
                     if (button.enabled && button.mousePressed(this.mc, mouseX, adjustedMouseY)) {
+                        button.func_146113_a(this.mc.getSoundHandler());
                         this.actionPerformed(button);
                     }
                 } else if (wrapper.type == ComponentType.TEXT_FIELD) {
@@ -898,7 +909,21 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 if (localizedRuleName == null || localizedRuleName.isEmpty() || localizedRuleName.equals("gamerule." + ruleName + ".name")) {
                     localizedRuleName = ruleName;
                 }
-                this.drawString(this.fontRendererObj, localizedRuleName, this.width / 2 - 155, rowY + 6, 0xFFFFFF);
+                
+                // 检查规则是否被修改过，如果是则用不同颜色显示
+                // Check if rule was modified, if so display with different color
+                boolean isModified = isRuleModified(ruleName);
+                int textColor;
+                
+                // 根据配置项决定是否高亮
+                // Check config to decide whether to highlight
+                if (isModified && CreateWorldUI.config != null && CreateWorldUI.config.highlightModifiedRulesInGUI) {
+                    textColor = 0xFFFF55; // 黄色表示已修改 / Yellow for modified
+                } else {
+                    textColor = 0xFFFFFF; // 白色 / White
+                }
+                
+                this.drawString(this.fontRendererObj, localizedRuleName, this.width / 2 - 155, rowY + 6, textColor);
             }
             index++;
         }
@@ -972,6 +997,26 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             }
             index++;
         }
+    }
+
+    /**
+     * 检查规则是否被修改过（与原始值不同）
+     * Check if a rule has been modified (different from original value)
+     * 
+     * @param ruleName 规则名称 / Rule name
+     * @return 如果规则被修改过则返回true / True if rule was modified
+     */
+    private boolean isRuleModified(String ruleName) {
+        String currentValue = modifiedRules.get(ruleName);
+        String originalValue = editableRules.get(ruleName);
+        
+        if (currentValue == null && originalValue == null) {
+            return false;
+        }
+        if (currentValue == null || originalValue == null) {
+            return true;
+        }
+        return !currentValue.equals(originalValue);
     }
 
     private boolean isMouseOverRuleName(int mouseX, int mouseY, int rowY) {
@@ -1061,37 +1106,107 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
      * 保存用户修改的游戏规则
      * 1. 从UI组件中提取修改后的值
      * 2. 更新editableRules映射
-     * 3. 通过GameRuleApplier设置为待应用规则
+     * 3. 如果是在游戏中（有当前世界），立即应用到当前世界
+     * 4. 通过GameRuleApplier设置为待应用规则（用于新世界创建）
+     * 5. 显示通知告知用户哪些规则被修改
      *
      * Save game rules modified by user
      * 1. Extract modified values from UI components
      * 2. Update editableRules map
-     * 3. Set as pending rules via GameRuleApplier
+     * 3. If in-game (has current world), apply to current world immediately
+     * 4. Set as pending rules via GameRuleApplier (for new world creation)
+     * 5. Display notification to inform user which rules were modified
      */
     private void saveChanges() {
         LOGGER.info("saveChanges() called");
 
+        // 收集用户修改过的规则（String -> String）
         // Only write rules modified by user (String -> String)
-        // 仅写入用户修改过的规则（String → String）
         Map<String, String> result = new HashMap<>();
+        changedRules.clear();
 
-        // 从UI组件提取值并更新modifiedRules
-        // Extract values from UI components and update modifiedRules
-        // 从 UI 组件提取値并更新 modifiedRules 和 editableRules
-        // Extract values from UI components and update modifiedRules and editableRules
+        // 比较modifiedRules和editableRules，找出真正被修改的规则
+        // Compare modifiedRules and editableRules to find actually changed rules
         for (Map.Entry<String, String> e : modifiedRules.entrySet()) {
-            if (e.getKey() != null && e.getValue() != null) {
-                result.put(e.getKey(), e.getValue());
+            String ruleName = e.getKey();
+            String newValue = e.getValue();
+            
+            if (ruleName != null && newValue != null) {
+                result.put(ruleName, newValue);
+                
+                // 检查是否与原始值不同
+                // Check if different from original value
+                String originalValue = editableRules.get(ruleName);
+                if (originalValue == null || !originalValue.equals(newValue)) {
+                    changedRules.add(ruleName);
+                }
             }
         }
 
-        // 将修改后的规则设置为待应用规则
-        // Set modified rules as pending rules
+        // 如果是在游戏中，立即应用到当前世界
+        // If in-game, apply to current world immediately
+        World currentWorld = Minecraft.getMinecraft().theWorld;
+        if (currentWorld != null && !changedRules.isEmpty()) {
+            int appliedCount = 0;
+            for (String ruleName : changedRules) {
+                String newValue = result.get(ruleName);
+                if (newValue != null) {
+                    boolean success = GameRuleMonitorNSetter.setGamerule(currentWorld, ruleName, newValue);
+                    if (success) {
+                        appliedCount++;
+                    }
+                }
+            }
+            
+            // 更新editableRules以反映新值
+            // Update editableRules to reflect new values
+            editableRules.putAll(result);
+            
+            LOGGER.info("Applied {} game rules to current world.", appliedCount);
+        }
+
+        // 将修改后的规则设置为待应用规则（用于新世界）
+        // Set modified rules as pending rules (for new world)
         try {
             GameRuleApplier.setPendingGameRules(result);
             LOGGER.info("Saved {} modified game rules to pendingGameRules.", result.size());
         } catch (Exception ex) {
             LOGGER.error("Failed to set pending game rules: {}", ex.getMessage());
+        }
+
+        // 显示通知
+        // Display notification
+        if (!changedRules.isEmpty()) {
+            String notificationText = I18n.format("createworldui.gamerules.notification.changed");
+            String rulesList = String.join(", ", changedRules);
+            
+            String message;
+            if (CreateWorldUI.config != null && CreateWorldUI.config.changedRulesInChatHighLighted) {
+                // 高亮模式：提示文字白色，规则名黄色
+                // Highlight mode: notification text white, rule names yellow
+                message = EnumChatFormatting.WHITE + notificationText + 
+                         EnumChatFormatting.YELLOW + rulesList;
+            } else {
+                // 默认模式：全部白色
+                // Default mode: all white
+                message = EnumChatFormatting.WHITE + notificationText + 
+                         EnumChatFormatting.WHITE + rulesList;
+            }
+            
+            if (Minecraft.getMinecraft().ingameGUI != null) {
+                Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(
+                    new ChatComponentText(message)
+                );
+            }
+            LOGGER.info("Changed rules: {}", changedRules);
+        } else {
+            String message = I18n.format("createworldui.gamerules.notification.noChanges");
+            
+            if (Minecraft.getMinecraft().ingameGUI != null) {
+                Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(
+                    new ChatComponentText(EnumChatFormatting.WHITE + message)
+                );
+            }
         }
     }
 

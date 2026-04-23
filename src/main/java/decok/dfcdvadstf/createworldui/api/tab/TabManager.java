@@ -80,10 +80,11 @@ public class TabManager {
     // New method: Get the actual name used for world creation
     // 新增方法：获取用于创建世界的实际名称
     public String getWorldNameForCreation() {
-        if ((worldName == null || worldName.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
+        String trimmedName = worldName != null ? worldName.trim() : "";
+        if (trimmedName.isEmpty() && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             return I18n.format("selectWorld.newWorld"); // Return default name / 返回默认名称
         }
-        return worldName.trim();
+        return trimmedName;
     }
 
     // Get state back from TabManager to Mixin / 从 TabManager 获取状态回传给 Mixin

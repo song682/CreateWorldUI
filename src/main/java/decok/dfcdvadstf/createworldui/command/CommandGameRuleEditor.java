@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.command;
 
+import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
 import net.minecraft.client.Minecraft;
@@ -42,9 +43,10 @@ public class CommandGameRuleEditor extends CommandBase {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
-        // Check if igGameruleEdit is enabled in config
-        // 检查配置中是否启用了igGameruleEdit
-        if (CreateWorldUI.config == null || !CreateWorldUI.config.igGameruleEdit) {
+        // Check if igGameruleEdit is enabled in config, or if ModernDifficultyLocker is loaded
+        // 检查配置中是否启用了igGameruleEdit，或是否加载了ModernDifficultyLocker
+        boolean modernDifficultyLockerLoaded = Loader.isModLoaded("difficultylocker");
+        if (CreateWorldUI.config == null || (!CreateWorldUI.config.igGameruleEdit && !modernDifficultyLockerLoaded)) {
             return;
         }
 

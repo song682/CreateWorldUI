@@ -30,10 +30,13 @@ public class GameTab extends AbstractScreenTab {
 
         // 从TabManager获取世界名称
         String worldName = getWorldName();
-        if ((worldName == null || worldName.isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
+        if ((worldName == null || worldName.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             // 使用默认的世界名称
             worldName = I18n.format("selectWorld.newWorld");
             tabManager.setWorldName(worldName);
+        } else if (worldName == null || worldName.trim().isEmpty()) {
+            // 如果启用了disableCreateButtonWhenWNIsBlank且世界名称为空，则保持为空
+            worldName = "";
         }
         worldNameField.setText(worldName);
         worldNameField.setFocused(true);
@@ -203,11 +206,17 @@ public class GameTab extends AbstractScreenTab {
         for (GuiButton button : tabButtons) {
             if (button.id == 0) {
                 String text = worldNameField.getText().trim();
-                // 如果文本为空或是默认提示文本，则禁用按钮
-                if (text.isEmpty() || text.equals(I18n.format("createworldui.placeholder.worldName"))) {
-                    button.enabled = false;
+                // 如果启用了disableCreateButtonWhenWNIsBlank配置，则检查世界名称是否为空
+                if (CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
+                    // 如果文本为空，则禁用按钮
+                    button.enabled = !text.isEmpty();
                 } else {
-                    button.enabled = true;
+                    // 如果文本为空或是默认提示文本，则禁用按钮
+                    if (text.isEmpty() || text.equals(I18n.format("createworldui.placeholder.worldName"))) {
+                        button.enabled = false;
+                    } else {
+                        button.enabled = true;
+                    }
                 }
                 break;
             }
