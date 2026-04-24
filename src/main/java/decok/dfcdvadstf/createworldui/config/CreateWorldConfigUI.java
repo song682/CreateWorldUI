@@ -44,14 +44,15 @@ public class CreateWorldConfigUI implements IModGuiFactory {
         private static List<IConfigElement> getConfigElements(final Configuration configuration) {
             List<IConfigElement> elements = new ArrayList<>();
 
-            // 添加 GameRule Editor 分类
-            ConfigCategory greCategory = configuration.getCategory("GameRule Editor");
+            // Note: Forge Configuration lowercases category names internally,
+            // so we must use lowercase here to match the stored categories.
+            // 注意：Forge Configuration 内部会将分类名转为小写，所以这里必须用小写来匹配。
+            ConfigCategory greCategory = configuration.getCategory("gamerule editor");
             greCategory.setLanguageKey("config.button.GRE");
             greCategory.setComment(I18n.format("config.subtitle.GRE"));
             elements.add(new ConfigElement(greCategory));
 
-            // 添加 UI Management 分类
-            ConfigCategory uimCategory = configuration.getCategory("UI Management");
+            ConfigCategory uimCategory = configuration.getCategory("ui management");
             uimCategory.setLanguageKey("config.button.UIM");
             uimCategory.setComment(I18n.format("config.subtitle.UIM"));
             elements.add(new ConfigElement(uimCategory));
