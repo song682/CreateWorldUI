@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
+import decok.dfcdvadstf.createworldui.api.ContentPanelRenderer;
 import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
 import decok.dfcdvadstf.createworldui.api.gamerule.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
@@ -330,10 +331,13 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         int tabIndex = modernWorldCreatingUI$tabManager != null ?
                 modernWorldCreatingUI$tabManager.getTabIndex(currentTabId) : -1;
 
-        // 颜色：顶部黑色75%，底部白色20%
-        // Colors: top black 75%, bottom white 20%
-        int lineTopColor = 0xC0000000;
-        int lineBottomColor = 0x33FFFFFF;
+        // Draw panel background between the two separator lines
+        // 在两条分隔线之间绘制面板背景
+        int panelTop = TAB_HEIGHT;
+        int panelBottom = this.height - 35;
+        if (panelBottom > panelTop) {
+            ContentPanelRenderer.drawPanelBackground(0, panelTop, this.width, panelBottom - panelTop);
+        }
 
         if (tabIndex >= 0 && tabIndex < tabCount) {
             // 选中的Tab位置
@@ -344,19 +348,19 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             // 绘制选中Tab左侧的分隔线
             // Draw separator line left of selected tab
             if (selectedTabX > 0) {
-                modernWorldCreatingUI$drawColoredLine(0, lineY, selectedTabX, lineTopColor, lineBottomColor);
+                ContentPanelRenderer.drawHeaderSeparator(0, lineY, selectedTabX);
             }
             // 绘制选中Tab右侧的分隔线
             // Draw separator line right of selected tab
             if (selectedTabEnd < this.width) {
-                modernWorldCreatingUI$drawColoredLine(selectedTabEnd, lineY, this.width - selectedTabEnd, lineTopColor, lineBottomColor);
+                ContentPanelRenderer.drawHeaderSeparator(selectedTabEnd, lineY, this.width - selectedTabEnd);
             }
         } else {
             // 没有选中的Tab，绘制完整分隔线
             // No selected tab, draw full separator line
-            modernWorldCreatingUI$drawColoredLine(0, lineY, this.width, lineTopColor, lineBottomColor);
+            ContentPanelRenderer.drawHeaderSeparator(0, lineY, this.width);
         }
-        modernWorldCreatingUI$drawColoredLine(0, this.height - 35, this.width, lineTopColor, lineBottomColor);
+        ContentPanelRenderer.drawFooterSeparator(0, this.height - 35, this.width);
 
         // 绘制当前标签页内容
         if (modernWorldCreatingUI$tabManager != null) {
@@ -699,18 +703,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         }
 
         tessellator.draw();
-    }
-
-    /**
-     * Draws a colored line
-     * 绘制彩色线条
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawColoredLine(int x, int y, int width, int topColor, int bottomColor){
-        // 绘制上半像素
-        drawRect(x, y, x + width, y + 1, topColor);
-        // 绘制下半像素
-        drawRect(x, y + 1, x + width, y + 2, bottomColor);
     }
 
     // 保留原版方法

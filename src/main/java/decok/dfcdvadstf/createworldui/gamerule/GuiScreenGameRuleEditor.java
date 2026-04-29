@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.api.ContentPanelRenderer;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter.GameruleValue;
@@ -19,6 +20,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
@@ -116,6 +118,10 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     private static final int PANEL_TOP = 50;
     // 内容区起始Y（面板顶部内边距后） / Content area start Y (after panel top padding)
     private static final int CONTENT_TOP = 60;
+
+    // Cached ClearMyBackground presence — checked once at class load
+    // 缓存 ClearMyBackground 是否加载——类加载时检查一次
+    private static final boolean CLEAR_MY_BACKGROUND_LOADED = Loader.isModLoaded("clearmybackground");
 
     /**
      * 构造游戏规则编辑器<br>
@@ -862,8 +868,15 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         int panelRight = this.width;
         int panelBottom = this.height - 50;
 
-        // Semi-transparent background similar to GuiOptions
-        // 与GuiOptions类似的半透明背景
+        // When ClearMyBackground is loaded — use the shared textured panel (header + tiled bg + footer)
+        // 当 ClearMyBackground 加载时，用提取出来的纹理化面板（顶线 + 平铺背景 + 底线）
+        if (CLEAR_MY_BACKGROUND_LOADED) {
+            ContentPanelRenderer.drawContentPanel(panelLeft, PANEL_TOP, panelRight - panelLeft, panelBottom);
+            return;
+        }
+
+        // Fallback: vanilla-style semi-transparent gradient similar to GuiOptions
+        // 回退：与 GuiOptions 类似的半透明渐变背景
         drawGradientRect(panelLeft, PANEL_TOP, panelRight, panelBottom, 0x60101010, 0x80101010);
 
         // Border lines

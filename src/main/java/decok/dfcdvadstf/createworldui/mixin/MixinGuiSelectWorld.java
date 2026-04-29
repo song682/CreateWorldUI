@@ -1,5 +1,7 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
+import cpw.mods.fml.client.FMLClientHandler;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.GuiSelectWorld;
@@ -44,7 +46,8 @@ public class MixinGuiSelectWorld extends GuiScreen {
 
             // Redirect to Create World screen and cancel vanilla initGui
             // 直接跳转到创建世界界面并取消原版initGui的执行
-            this.mc.displayGuiScreen(new GuiCreateWorld(field_146632_a)); // 使用原版的父界面引用
+            Minecraft mcInstance = FMLClientHandler.instance().getClient();
+            mcInstance.displayGuiScreen(new GuiCreateWorld(field_146632_a)); // 使用原版的父界面引用
             ci.cancel();
         }
     }
@@ -57,7 +60,8 @@ public class MixinGuiSelectWorld extends GuiScreen {
     private boolean modernWorldCreatingUI$hasNoSaves() {
         try {
             // 使用与原版代码相同的方法获取存档列表
-            ISaveFormat saveFormat = this.mc.getSaveLoader();
+            Minecraft mcInstance = FMLClientHandler.instance().getClient();
+            ISaveFormat saveFormat = mcInstance.getSaveLoader();
             List saveList = saveFormat.getSaveList();
 
             if (saveList == null) {
