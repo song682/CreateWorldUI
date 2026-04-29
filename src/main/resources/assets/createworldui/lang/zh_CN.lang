@@ -51,6 +51,8 @@ createworldui.hover.gameRuleEditor=编辑你的游戏规则。
 
 # 游戏规则编辑
 createworldui.gamerules.title=编辑游戏规则
+createworldui.gamerules.notification.changed=以下游戏规则已被修改：
+createworldui.gamerules.notification.noChanges=没有修改任何规则。
 gamerule.doFireTick.tooltip.description=控制火焰是否蔓延和自然熄灭
 gamerule.mobGriefing.tooltip.description=控制生物是否可以破坏方块
 gamerule.keepInventory.tooltip.description=死亡后保留物品栏
@@ -75,3 +77,25 @@ config.button.UIM=UI管理
 # 解释
 config.subtitle.GRE=游戏规则编辑器相关
 config.subtitle.UIM=UI元素，内容，等等……
+
+# 配置界面：游戏规则编辑器选项
+config.option.enableReloadButton=启用重载按钮
+config.option.enableReloadButton.tooltip=设置为 true 以启用重载按钮
+config.option.igGameruleEdit=游戏内游戏规则编辑器
+config.option.igGameruleEdit.tooltip=在游戏内启用游戏规则编辑器
+config.option.changedRulesInChatHighLighted=高亮聊天中更改的规则
+config.option.changedRulesInChatHighLighted.tooltip=设置为 true 以在聊天通知中用黄色高亮显示更改的规则名称
+config.option.highlightModifiedRulesInGUI=高亮 GUI 中修改的规则
+config.option.highlightModifiedRulesInGUI.tooltip=设置为 true 以在 GUI 中用黄色高亮显示修改的规则
+
+# 配置界面：UI管理选项
+config.option.topTabCharatorModernWhite=现代白色标签文本
+config.option.topTabCharatorModernWhite.tooltip=设置为 true 以启用顶部标签文本的白色
+config.option.gameruleEdit=启用游戏规则编辑器
+config.option.gameruleEdit.tooltip=启用游戏规则编辑器
+config.option.enableOtherMoreTabButton=启用其他更多标签按钮
+config.option.enableOtherMoreTabButton.tooltip=启用未使用的现代功能按钮
+config.option.showWorldNamePlaceHolder=显示世界名称占位符
+config.option.showWorldNamePlaceHolder.tooltip=显示占位符以温和地提醒玩家添加自己的世界名称
+config.option.disableCreateButtonWhenWNIsBlank=世界名称为空时禁用创建按钮
+config.option.disableCreateButtonWhenWNIsBlank.tooltip=设置为 true 以在世界名称为空时禁用创建按钮

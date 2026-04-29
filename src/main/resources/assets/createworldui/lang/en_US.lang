@@ -84,3 +84,29 @@ config.button.UIM=UI Management
 ## Config: Subtitile
 config.subtitle.GRE=Settings about gamerule editors.
 config.subtitle.UIM=Manage your UI paddings, tab buttons, etc.
+
+## Config: GameRule Editor Options
+config.option.enableReloadButton=Enable Reload Button
+config.option.enableReloadButton.tooltip=Set True to enable the Reload Button
+config.option.igGameruleEdit=In-Game Gamerule Editor
+config.option.igGameruleEdit.tooltip=Enable gamerule editor but in-game
+config.option.changedRulesInChatHighLighted=Highlight Changed Rules in Chat
+config.option.changedRulesInChatHighLighted.tooltip=Set True to highlight changed rules name in yellow color in chat notification
+config.option.highlightModifiedRulesInGUI=Highlight Modified Rules in GUI
+config.option.highlightModifiedRulesInGUI.tooltip=Set True to highlight modified rules with yellow color in GUI
+
+## Config: UI Management Options
+config.option.topTabCharatorModernWhite=Modern White Tab Text
+config.option.topTabCharatorModernWhite.tooltip=Set True to enable the white color for the top tab text
+config.option.gameruleEdit=Enable Gamerule Editor
+config.option.gameruleEdit.tooltip=Enable the Gamerule Editor
+config.option.enableOtherMoreTabButton=Enable Other More Tab Button
+config.option.enableOtherMoreTabButton.tooltip=Enable unused modern feature button.
+config.option.showWorldNamePlaceHolder=Show World Name Placeholder
+config.option.showWorldNamePlaceHolder.tooltip=Show a place-holder to gently reminds player to add a own world name
+config.option.disableCreateButtonWhenWNIsBlank=Disable Create Button When World Name Is Blank
+config.option.disableCreateButtonWhenWNIsBlank.tooltip=Set True to disable the Create Button when world name is blank
+
+# GameRule Editor Notifications
+createworldui.gamerules.notification.changed=The following game rules have been changed:
+createworldui.gamerules.notification.noChanges=No rules were changed.
