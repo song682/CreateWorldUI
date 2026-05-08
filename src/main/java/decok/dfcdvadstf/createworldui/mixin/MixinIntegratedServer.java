@@ -1,6 +1,6 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
-import decok.dfcdvadstf.createworldui.api.gamerule.DifficultyApplier;
+import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.world.EnumDifficulty;
@@ -12,6 +12,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import cpw.mods.fml.client.FMLClientHandler;
 
 /**
  * <p>
@@ -74,7 +76,7 @@ public abstract class MixinIntegratedServer {
 
         // Update client game settings
         // 更新客户端游戏设置
-        Minecraft mc = Minecraft.getMinecraft();
+        Minecraft mc = FMLClientHandler.instance().getClient();
         if (mc != null && mc.gameSettings != null) {
             mc.gameSettings.difficulty = difficulty;
             mc.gameSettings.saveOptions();

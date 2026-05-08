@@ -2,7 +2,7 @@ package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.createworldui.api.ContentPanelRenderer;
 import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
-import decok.dfcdvadstf.createworldui.api.gamerule.DifficultyApplier;
+import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.tab.TabManager;
@@ -15,7 +15,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,7 +31,12 @@ import java.util.*;
 
 /**
  * <p>Transforms the vanilla world creation screen via Mixin to implement a tabbed layout.</p>
- * <p>通过Mixin技术改造原版创建世界界面，实现标签页式布局</p>
+ * <p>Note: vanilla's private fields are exposed via the separate
+ * {@code IGuiCreateWorldAccess} accessor mixin — this class focuses purely on injecting
+ * tab-related logic, while field access lives in its own place.</p>
+ * <p>通过Mixin技术改造原版创建世界界面，实现标签页式布局。</p>
+ * <p>注：原版私有字段的外部访问由独立的 {@code IGuiCreateWorldAccess} accessor mixin 提供——
+ * 本类专注于注入 tab 相关逻辑，字段访问的责任排到另一处了。</p>
  */
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)
@@ -79,10 +83,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     private static final Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
 
     /**
-     * 检查是否按下了Shift键
-     */
-    @Unique
-    /**
      * 初始化
      */
     @Inject(method = "initGui", at = @At("HEAD"))
@@ -120,9 +120,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             modernWorldCreatingUI$tabManager = new TabManager(
                     (GuiCreateWorld)(Object)this, this.buttonList, this.width, this.height
             );
-            // Pass vanilla state to TabManager
-            // 将原版状态传递给 TabManager
-            modernWorldCreatingUI$sendStateToTabManager();
+            // No need to push vanilla state anymore — TabManager now reads/writes vanilla
+            // fields directly via IGuiCreateWorldAccess. The only thing it still caches locally
+            // is difficulty, which it pulls from mc.gameSettings in its own constructor.
+            // 不再需要把原版状态“推”过去——TabManager 现在通过 IGuiCreateWorldAccess
+            // 直接读写原版字段。它唯一本地缓的是难度，那个在它自己的构造器里
+            // 从 mc.gameSettings 拿。
         }
 
         // Create tab buttons (need to recreate on resize as button positions may change)
@@ -138,55 +141,9 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * Synchronize vanilla state to TabManager
-     * 同步原版状态到 TabManager
+     * <p>Initialize hover texts for vanilla buttons.</p>
+     * <p>为原版按钮初始化悬停提示文本。</p>
      */
-    @Unique
-    private void modernWorldCreatingUI$sendStateToTabManager() {
-        if (modernWorldCreatingUI$tabManager == null) {
-            return;
-        }
-
-        modernWorldCreatingUI$logger.info("MixinModernCreateWorld: Passing state to TabManager");
-
-        // 获取当前游戏设置中的难度
-        EnumDifficulty currentDifficulty = mc.gameSettings.difficulty;
-        if (currentDifficulty == null) {
-            currentDifficulty = EnumDifficulty.NORMAL;
-        }
-
-        modernWorldCreatingUI$tabManager.setInitialState(
-                field_146330_J,      // 世界名称
-                field_146342_r,      // 游戏模式
-                field_146329_I,      // 种子
-                field_146331_K,      // 世界类型索引
-                field_146341_s,      // 生成建筑
-                field_146338_v,      // 奖励箱
-                field_146340_t,      // 允许作弊
-                field_146337_w,      // 硬核模式
-                currentDifficulty    // 难度
-        );
-    }
-
-    /**
-     * Synchronize TabManager state back to vanilla fields
-     * 同步 TabManager 状态到原版字段
-     */
-    @Unique
-    private void modernWorldCreatingUI$getStateFromTabManager() {
-        if (modernWorldCreatingUI$tabManager != null) {
-            field_146330_J = modernWorldCreatingUI$tabManager.getWorldName();
-            field_146342_r = modernWorldCreatingUI$tabManager.getGameMode();
-            field_146329_I = modernWorldCreatingUI$tabManager.getSeed();
-            field_146331_K = modernWorldCreatingUI$tabManager.getWorldTypeIndex();
-            field_146341_s = modernWorldCreatingUI$tabManager.getGenerateStructures();
-            field_146338_v = modernWorldCreatingUI$tabManager.getBonusChest();
-            field_146340_t = modernWorldCreatingUI$tabManager.getAllowCheats();
-            field_146337_w = modernWorldCreatingUI$tabManager.getHardcore();
-            field_146330_J = modernWorldCreatingUI$tabManager.getWorldName();
-        }
-    }
-
     @Unique
     private void modernWorldCreatingUI$initHoverTexts() {
         modernWorldCreatingUI$hoverTexts.put(2, I18n.format("createworldui.hover.gameMode"));
@@ -391,10 +348,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        // Handle Create button - sync state before creating world
-        // 处理创建按钮 - 在创建前同步状态
+        // Handle Create button — nothing to sync here anymore, Tab inputs already wrote
+        // through to vanilla fields in real time via IGuiCreateWorldAccess.
+        // 处理创建按钮——不再需要同步状态，Tab 输入已通过 IGuiCreateWorldAccess
+        // 实时写到原版字段。
         if (button.id == 0) {
-            modernWorldCreatingUI$getStateFromTabManager();
             // 让原版继续处理创建逻辑
             return;
         }
@@ -466,9 +424,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             )
     )
     private void modernWorldCreatingUI$afterLaunchWorld(GuiButton button, CallbackInfo ci) {
-        // 同步TabManager状态到原版字段
-        modernWorldCreatingUI$getStateFromTabManager();
-
         if (modernWorldCreatingUI$tabManager == null) {
             return;
         }
@@ -482,13 +437,16 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * Handles keyboard input
-     * 处理按键输入
-     */    @Override
-    protected void keyTyped(char typedChar, int keyCode) {
+     * <p>Handles keyboard input via @Inject — intercepts Ctrl+Tab / Ctrl+Number for tab switching,
+     * then delegates char input to TabManager, and finally cancels the vanilla method to prevent
+     * the original keyTyped from feeding keys into its hardcoded text fields.</p>
+     * <p>通过 @Inject 处理按键输入——拦截 Ctrl+Tab / Ctrl+数字进行 Tab 切换，
+     * 随后把字符输入交给 TabManager，最后取消原版方法，防止按键被送进原版硬编码位置的输入框。</p>
+     */
+    @Inject(method = "keyTyped", at = @At("HEAD"), cancellable = true)
+    private void modernWorldCreatingUI$onKeyTyped(char typedChar, int keyCode, CallbackInfo ci) {
         if (!modernWorldCreatingUI$isInitialized) {
-            super.keyTyped(typedChar, keyCode);
-            return;
+            return; // Not initialized — let vanilla handle it / 未初始化，让原版自己处理
         }
 
         // Handle Control + Tab and Control + Shift + Tab to switch tabs
@@ -518,7 +476,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                     modernWorldCreatingUI$tabManager.switchToTab(targetTabId);
                 }
             }
-            return; // 拦截按键，不继续处理
+            ci.cancel(); // 拦截按键，阻止原版处理 / Intercept, prevent vanilla
+            return;
         }
 
         // Handle Control/Command + number keys to switch tabs
@@ -545,7 +504,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                         modernWorldCreatingUI$tabManager.switchToTab(targetTabId);
                     }
                 }
-                return; // 拦截按键，不继续处理
+                ci.cancel(); // 拦截按键，阻止原版处理 / Intercept, prevent vanilla
+                return;
             }
         }
 
@@ -560,23 +520,29 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                     !modernWorldCreatingUI$tabManager.getWorldName().trim().isEmpty();
         }
 
+        // Manually handle ESC since we are about to cancel vanilla keyTyped
+        // 手动处理 ESC，因为下面要取消原版 keyTyped
         if (keyCode == 1) {
             this.mc.displayGuiScreen(field_146332_f);
         }
+
+        // Always cancel vanilla — otherwise keys would flow into vanilla's hardcoded text fields
+        // 始终取消原版——否则按键会流进原版硬编码位置的输入框
+        ci.cancel();
     }
 
     /**
-     * Handles mouse clicks
-     * 处理鼠标点击
+     * <p>Handles mouse clicks via @Inject TAIL — runs after vanilla's own mouseClicked
+     * (which dispatches to vanilla button list via super.mouseClicked internally),
+     * then hands off to TabManager for tab-content click handling.</p>
+     * <p>通过 @Inject TAIL 处理鼠标点击——在原版自己的 mouseClicked 执行完之后
+     * （它内部会调 super.mouseClicked 派发给按钮列表），再把事件交给 TabManager 处理 tab 内容。</p>
      */
-    @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+    @Inject(method = "mouseClicked", at = @At("TAIL"))
+    private void modernWorldCreatingUI$onMouseClicked(int mouseX, int mouseY, int mouseButton, CallbackInfo ci) {
         if (!modernWorldCreatingUI$isInitialized) {
-            super.mouseClicked(mouseX, mouseY, mouseButton);
             return;
         }
-
-        super.mouseClicked(mouseX, mouseY, mouseButton);
 
         if (modernWorldCreatingUI$tabManager != null) {
             modernWorldCreatingUI$tabManager.mouseClicked(mouseX, mouseY, mouseButton);
@@ -584,8 +550,14 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * Handles mouse scroll
-     * 处理鼠标滚动
+     * <p>Handles mouse scroll.</p>
+     * <p>NOTE: This is kept as a plain @Override rather than a Mixin @Inject because
+     * vanilla GuiCreateWorld does not override handleMouseInput — it inherits from GuiScreen.
+     * Mixin cannot reliably inject into inherited methods, so @Override is the pragmatic choice.</p>
+     * <p>处理鼠标滚动。</p>
+     * <p>注意：这里保留普通 @Override 而不是 Mixin @Inject——因为原版 GuiCreateWorld
+     * 没有重写 handleMouseInput，它是从 GuiScreen 继承的。Mixin 无法稳定注入继承方法，
+     * 所以 @Override 是更务实的选择。</p>
      */
     @Override
     public void handleMouseInput() {
@@ -704,10 +676,4 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         tessellator.draw();
     }
-
-    // 保留原版方法
-    @Shadow
-    private void func_146314_g() {}
-    @Shadow
-    private void func_146319_h() {}
 }

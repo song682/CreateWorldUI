@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.api.tab;
 
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -17,24 +18,37 @@ public class TabManager {
     private final Map<Integer, Tab> tabs = new HashMap<>();
     private final List<GuiButton> buttonList;
     private final GuiCreateWorld parent;
+    /**
+     * <p>Accessor handle on the parent {@code GuiCreateWorld}. All state that vanilla already
+     * stores on the screen (world name, seed, gamemode, etc.) is read/written straight through
+     * this — no local copy, no bridge, no drift.</p>
+     * <p>指向 parent {@code GuiCreateWorld} 的 accessor 句柄。原版已经在屏幕上存的状态
+     * （世界名、种子、游戏模式等）——直接走这里读写，不再本地缓存、不再桥接、不会脱同步。</p>
+     */
+    private final IGuiCreateWorldAccess access;
     private int currentTabId = 100;
     private Tab currentTab;
 
-    // 从原版界面共享的状态字段
-    private String worldName = "";
-    private String gameMode = "survival";
-    private String seed = "";
-    private int worldTypeIndex = 0;
-    private boolean generateStructures = true;
-    private boolean bonusChest = false;
-    private boolean allowCheats = false;
-    private boolean hardcore = false;
+    /**
+     * <p>Difficulty is the odd one out — vanilla {@code GuiCreateWorld} has no difficulty field,
+     * so we cache it locally and sync to {@code mc.gameSettings.difficulty} on every write.</p>
+     * <p>难度是个特例——原版 {@code GuiCreateWorld} 根本没有难度字段，所以我们本地缓一份，
+     * 每次写的时候同步到 {@code mc.gameSettings.difficulty}。</p>
+     */
     private EnumDifficulty difficulty = EnumDifficulty.NORMAL;
-    private static final String DEFAULT_WORLD_NAME = "New World";
 
     public TabManager(GuiCreateWorld parent, List<GuiButton> buttonList, int width, int height) {
         this.parent = parent;
         this.buttonList = buttonList;
+        // Cast once and keep the handle — GuiCreateWorld implements this at runtime thanks to
+        // the IGuiCreateWorldAccess mixin. All vanilla fields are read/written through this.
+        // 一次 cast 拿到句柄——运行时 GuiCreateWorld 靠 IGuiCreateWorldAccess mixin 自动
+        // implements 了这个接口。原版字段全部通过这个句柄读写。
+        this.access = (IGuiCreateWorldAccess) (Object) parent;
+        // Pull initial difficulty from game settings — vanilla doesn't store it on GuiCreateWorld.
+        // 从游戏设置里拿初始难度——原版不把它存在 GuiCreateWorld 上。
+        EnumDifficulty d = Minecraft.getMinecraft().gameSettings.difficulty;
+        this.difficulty = d != null ? d : EnumDifficulty.NORMAL;
 
         // Freeze registry to prevent further registration
         // 冻结注册表，阻止后续注册
@@ -64,56 +78,15 @@ public class TabManager {
         switchToTab(currentTabId);
     }
 
-    // Set initial state directly from Mixin / 从 Mixin 直接设置初始状态的方法
-    public void setInitialState(String worldName, String gameMode, String seed,
-                                int worldTypeIndex, boolean generateStructures,
-                                boolean bonusChest, boolean allowCheats,
-                                boolean hardcore, EnumDifficulty difficulty) {
-        System.out.println("TabManager: Setting initial state from Mixin");
-        System.out.println("  World name: " + worldName);
-        System.out.println("  Game mode: " + gameMode);
-        System.out.println("  Seed: " + seed);
-
-        this.worldName = worldName != null ? worldName : "";
-        this.gameMode = gameMode != null ? gameMode : "survival";
-        this.seed = seed != null ? seed : "";
-        this.worldTypeIndex = worldTypeIndex;
-        this.generateStructures = generateStructures;
-        this.bonusChest = bonusChest;
-        this.allowCheats = allowCheats;
-        this.hardcore = hardcore;
-        this.difficulty = difficulty != null ? difficulty : EnumDifficulty.NORMAL;
-
-        // Update game settings
-        // 更新游戏设置
-        Minecraft.getMinecraft().gameSettings.difficulty = this.difficulty;
-        Minecraft.getMinecraft().gameSettings.saveOptions();
-    }
-
     // New method: Get the actual name used for world creation
     // 新增方法：获取用于创建世界的实际名称
     public String getWorldNameForCreation() {
-        String trimmedName = worldName != null ? worldName.trim() : "";
+        String current = access.createWorldUI$getWorldName();
+        String trimmedName = current != null ? current.trim() : "";
         if (trimmedName.isEmpty() && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             return I18n.format("selectWorld.newWorld"); // Return default name / 返回默认名称
         }
         return trimmedName;
-    }
-
-    // Get state back from TabManager to Mixin / 从 TabManager 获取状态回传给 Mixin
-    public void getCurrentState(String[] worldName, String[] gameMode, String[] seed,
-                                int[] worldTypeIndex, boolean[] generateStructures,
-                                boolean[] bonusChest, boolean[] allowCheats,
-                                boolean[] hardcore, EnumDifficulty[] difficulty) {
-        worldName[0] = this.worldName;
-        gameMode[0] = this.gameMode;
-        seed[0] = this.seed;
-        worldTypeIndex[0] = this.worldTypeIndex;
-        generateStructures[0] = this.generateStructures;
-        bonusChest[0] = this.bonusChest;
-        allowCheats[0] = this.allowCheats;
-        hardcore[0] = this.hardcore;
-        difficulty[0] = this.difficulty;
     }
 
     // Add a button to the Mixin's button list
@@ -223,52 +196,55 @@ public class TabManager {
         switchToTab(savedTabId);
     }
 
-    // Getters and setters for shared state
-    public String getWorldName() { return worldName; }
+    // Getters and setters for shared state — all 8 below proxy straight to the vanilla
+    // GuiCreateWorld fields via IGuiCreateWorldAccess. No local cache, no bridge.
+    // 8 对 getter/setter ——通过 IGuiCreateWorldAccess 直接代理到原版 GuiCreateWorld
+    // 的字段上。无本地缓存，无桥接。
+    public String getWorldName() { return access.createWorldUI$getWorldName(); }
     public void setWorldName(String worldName) {
-        this.worldName = worldName;
+        access.createWorldUI$setWorldName(worldName);
         System.out.println("TabManager: World name set to: " + worldName);
     }
 
-    public String getGameMode() { return gameMode; }
+    public String getGameMode() { return access.createWorldUI$getGameMode(); }
     public void setGameMode(String gameMode) {
-        this.gameMode = gameMode;
+        access.createWorldUI$setGameMode(gameMode);
         System.out.println("TabManager: Game mode set to: " + gameMode);
     }
 
-    public String getSeed() { return seed; }
+    public String getSeed() { return access.createWorldUI$getSeed(); }
     public void setSeed(String seed) {
-        this.seed = seed;
+        access.createWorldUI$setSeed(seed);
         System.out.println("TabManager: Seed set to: " + seed);
     }
 
-    public int getWorldTypeIndex() { return worldTypeIndex; }
+    public int getWorldTypeIndex() { return access.createWorldUI$getWorldTypeIndex(); }
     public void setWorldTypeIndex(int index) {
-        this.worldTypeIndex = index;
+        access.createWorldUI$setWorldTypeIndex(index);
         System.out.println("TabManager: World type index set to: " + index);
     }
 
-    public boolean getGenerateStructures() { return generateStructures; }
+    public boolean getGenerateStructures() { return access.createWorldUI$getGenerateStructures(); }
     public void setGenerateStructures(boolean value) {
-        this.generateStructures = value;
+        access.createWorldUI$setGenerateStructures(value);
         System.out.println("TabManager: Generate structures set to: " + value);
     }
 
-    public boolean getBonusChest() { return bonusChest; }
+    public boolean getBonusChest() { return access.createWorldUI$getBonusChest(); }
     public void setBonusChest(boolean value) {
-        this.bonusChest = value;
+        access.createWorldUI$setBonusChest(value);
         System.out.println("TabManager: Bonus chest set to: " + value);
     }
 
-    public boolean getAllowCheats() { return allowCheats; }
+    public boolean getAllowCheats() { return access.createWorldUI$getAllowCheats(); }
     public void setAllowCheats(boolean value) {
-        this.allowCheats = value;
+        access.createWorldUI$setAllowCheats(value);
         System.out.println("TabManager: Allow cheats set to: " + value);
     }
 
-    public boolean getHardcore() { return hardcore; }
+    public boolean getHardcore() { return access.createWorldUI$getHardcore(); }
     public void setHardcore(boolean value) {
-        this.hardcore = value;
+        access.createWorldUI$setHardcore(value);
         System.out.println("TabManager: Hardcore set to: " + value);
     }
 

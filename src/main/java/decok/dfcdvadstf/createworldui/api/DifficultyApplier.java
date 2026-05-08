@@ -4,6 +4,7 @@ import decok.dfcdvadstf.createworldui.Tags;
 import net.minecraft.world.EnumDifficulty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import decok.dfcdvadstf.createworldui.mixin.MixinIntegratedServer;
 
 /**
  * <p>

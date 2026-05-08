@@ -5,6 +5,9 @@ import decok.dfcdvadstf.createworldui.api.ContentPanelRenderer;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter.GameruleValue;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleTooltipRegistry;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleNameRegistry;
+import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleCategoryRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -85,7 +88,6 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     private GuiButton saveButton;// 保存按钮 / Save button
     private GuiButton cancelButton; // 取消按钮 / Cancel button
     private GuiButton resetButton; // 重置按钮 / Reset button
-    private static final Map<String, String> hardcodeToolTip = new HashMap<>();// 允许外部模组自己添加自己的描述 / Allow developers to add their own tooltips from external.
 
     // ===== 平滑滚动相关字段 / Smooth scroll related fields =====
 
@@ -112,6 +114,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     private static final float SCROLL_LERP_SPEED = 0.2f;
 
     private static final int ROW_HEIGHT = 25; // 行高 / Row height
+    private static final int CATEGORY_HEADER_HEIGHT = 20; // 分类标题高度 / Category header height
     private int visibleRows = 8; // 可见行数 / Number of visible rows
     private boolean isScrolling = false; // 是否正在滚动 / Whether scrolling is in progress
     private GuiScreen parentScreen; // 父界面 / Parent screen
@@ -261,7 +264,19 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
 
         int panelBottom = this.height - 50;
         this.visibleRows = Math.max(1, (panelBottom - CONTENT_TOP) / ROW_HEIGHT);
-        this.maxScrollPosition = Math.max(0, (defaultRules.size() - this.visibleRows) * ROW_HEIGHT);
+        
+        // 计算总内容高度（包括分类标题）
+        List<String> categoryOrderedList = buildCategoryOrderedList();
+        int totalContentHeight = 0;
+        for (String item : categoryOrderedList) {
+            if (item.startsWith("category:")) {
+                totalContentHeight += CATEGORY_HEADER_HEIGHT;
+            } else {
+                totalContentHeight += ROW_HEIGHT;
+            }
+        }
+        
+        this.maxScrollPosition = Math.max(0, totalContentHeight - (this.visibleRows * ROW_HEIGHT));
 
         // Clamp scroll position after resize
         // resize后夹紧滚动位置
@@ -324,6 +339,59 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     }
 
     /**
+     * 构建按分类组织的规则列表
+     * Build a category-organized rule list
+     * 
+     * @return 有序的列表，包含分类标题（null表示分类标题）和规则名
+     *         Ordered list containing category headers (null means category header) and rule names
+     */
+    private List<String> buildCategoryOrderedList() {
+        List<String> orderedList = new ArrayList<>();
+        Set<String> allRules = defaultRules.keySet();
+        
+        // 获取所有分类
+        List<String> categories = GameRuleCategoryRegistry.getAllCategories();
+        
+        // 按分类添加规则
+        for (String categoryKey : categories) {
+            List<String> rulesInCategory = GameRuleCategoryRegistry.getRulesInCategory(categoryKey);
+            
+            // 只添加实际存在的规则
+            List<String> validRules = new ArrayList<>();
+            for (String rule : rulesInCategory) {
+                if (allRules.contains(rule)) {
+                    validRules.add(rule);
+                }
+            }
+            
+            // 如果分类下有规则，添加分类标题和规则
+            if (!validRules.isEmpty()) {
+                orderedList.add("category:" + categoryKey); // 分类标记
+                orderedList.addAll(validRules);
+            }
+        }
+        
+        // 添加未分类的规则
+        Set<String> categorizedRules = new HashSet<>();
+        for (String categoryKey : categories) {
+            categorizedRules.addAll(GameRuleCategoryRegistry.getRulesInCategory(categoryKey));
+        }
+        
+        boolean hasUncategorized = false;
+        for (String rule : allRules) {
+            if (!categorizedRules.contains(rule)) {
+                if (!hasUncategorized) {
+                    orderedList.add("category:uncategorized"); // 未分类标记
+                    hasUncategorized = true;
+                }
+                orderedList.add(rule);
+            }
+        }
+        
+        return orderedList;
+    }
+
+    /**
      * 创建并布局规则组件（布尔值使用按钮，其他类型使用文本框）<br>
      * 支持平滑滚动：包含额外一行以处理底部部分可见行，保存/恢复文本框焦点。
      *
@@ -366,28 +434,57 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         int index = 0;
         int visibleUIRowIndex = 0;
 
+        // 构建分类列表
+        List<String> categoryOrderedList = buildCategoryOrderedList();
+        
+        // 计算总高度（用于滚动）
+        int totalHeight = 0;
+        for (String item : categoryOrderedList) {
+            if (item.startsWith("category:")) {
+                totalHeight += CATEGORY_HEADER_HEIGHT;
+            } else {
+                totalHeight += ROW_HEIGHT;
+            }
+        }
+        
+        // 更新最大滚动位置
+        maxScrollPosition = Math.max(0, totalHeight - (visibleRows * ROW_HEIGHT));
+        
         // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
-        int maxVisibleIndex = scrollOffset + visibleRows + 1;
+        int maxVisibleHeight = (visibleRows + 1) * ROW_HEIGHT;
+        int currentY = 0; // 当前项的Y坐标（像素）
 
-        for (Map.Entry<String, GameruleValue> entry : defaultRules.entrySet()) {
-            String ruleName = entry.getKey();
-            GameruleValue value = entry.getValue();
+        for (String item : categoryOrderedList) {
+            // 分类标题（跳过，不在这里处理）
+            if (item.startsWith("category:")) {
+                currentY += CATEGORY_HEADER_HEIGHT;
+                index++;
+                continue;
+            }
+            
+            // 规则名
+            String ruleName = item;
+            GameruleValue value = defaultRules.get(ruleName);
 
             // 确保 value 不为 null
             if (value == null) {
                 LOGGER.warn("GameruleValue for {} is null, skipping", ruleName);
+                currentY += ROW_HEIGHT;
                 index++;
                 continue;
             }
 
             // Skip rows not in visible range (including extra row at bottom)
             // 不在可见行中则跳过（包含底部额外行）
-            if (index < scrollOffset || index >= maxVisibleIndex) {
+            // 使用 scrollPosition（像素）而不是 scrollOffset（行索引）
+            if (currentY < scrollPosition || currentY >= scrollPosition + maxVisibleHeight) {
+                currentY += ROW_HEIGHT;
                 index++;
                 continue;
             }
 
-            int yPos = 60 + (index - scrollOffset) * ROW_HEIGHT;
+            // 计算屏幕Y坐标（相对于内容区顶部）
+            int yPos = 60 + (currentY - (int)scrollPosition);
 
             // Calculate display value
             // 计算显示値
@@ -414,6 +511,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             }
 
             visibleUIRowIndex++;
+            currentY += ROW_HEIGHT;
             index++;
         }
 
@@ -895,49 +993,96 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     private void drawRuleList(int mouseX, int mouseY) {
         int index = 0;
         int yPos = 60;
-
-        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
-        int maxVisibleIndex = scrollOffset + visibleRows + 1;
-
-        for (Map.Entry<String, GameruleValue> entry : defaultRules.entrySet()) {
-            if (index >= scrollOffset && index < maxVisibleIndex) {
-                String ruleName = entry.getKey();
-                GameruleValue originalValue = entry.getValue();
-
-                // 当前显示值（优先 modified -> editable -> default）
-                String curStr;
-                if (modifiedRules.containsKey(ruleName)) {
-                    curStr = modifiedRules.get(ruleName);
-                } else if (editableRules.containsKey(ruleName)) {
-                    curStr = editableRules.get(ruleName);
-                } else {
-                    curStr = String.valueOf(originalValue.getOptimalValue());
-                }
-
-                int rowY = yPos + (index - scrollOffset) * ROW_HEIGHT;
-
-                // Try to get localized rule name, fallback to original ruleName
-                // 尝试获取本地化的规则名称，失败则使用原始规则名
-                String localizedRuleName = I18n.format("gamerule." + ruleName + ".name");
-                if (localizedRuleName == null || localizedRuleName.isEmpty() || localizedRuleName.equals("gamerule." + ruleName + ".name")) {
-                    localizedRuleName = ruleName;
-                }
-                
-                // 检查规则是否被修改过，如果是则用不同颜色显示
-                // Check if rule was modified, if so display with different color
-                boolean isModified = isRuleModified(ruleName);
-                int textColor;
-                
-                // 根据配置项决定是否高亮
-                // Check config to decide whether to highlight
-                if (isModified && CreateWorldUI.config != null && CreateWorldUI.config.highlightModifiedRulesInGUI) {
-                    textColor = 0xFFFF55; // 黄色表示已修改 / Yellow for modified
-                } else {
-                    textColor = 0xFFFFFF; // 白色 / White
-                }
-                
-                this.drawString(this.fontRendererObj, localizedRuleName, this.width / 2 - 155, rowY + 6, textColor);
+        
+        // 构建分类列表
+        List<String> categoryOrderedList = buildCategoryOrderedList();
+        
+        // 计算总高度
+        int totalHeight = 0;
+        for (String item : categoryOrderedList) {
+            if (item.startsWith("category:")) {
+                totalHeight += CATEGORY_HEADER_HEIGHT;
+            } else {
+                totalHeight += ROW_HEIGHT;
             }
+        }
+        
+        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
+        int maxVisibleHeight = (visibleRows + 1) * ROW_HEIGHT;
+        int currentY = 0; // 当前项的Y坐标（像素）
+
+        for (String item : categoryOrderedList) {
+            // 分类标题
+            if (item.startsWith("category:")) {
+                String categoryKey = item.substring(9); // 去掉 "category:" 前缀
+                
+                // 检查是否在可见范围内
+                if (currentY >= scrollPosition && currentY < scrollPosition + maxVisibleHeight) {
+                    int rowY = yPos + (currentY - (int)scrollPosition);
+                    
+                    // 获取分类显示名称
+                    String categoryName = GameRuleCategoryRegistry.getCategoryDisplayName(categoryKey);
+                    
+                    // 居中绘制分类标题
+                    int textWidth = this.fontRendererObj.getStringWidth(categoryName);
+                    int centerX = this.width / 2 - textWidth / 2;
+                    this.drawString(this.fontRendererObj, categoryName, centerX, rowY + 4, 0xFFFF55);
+                }
+                
+                currentY += CATEGORY_HEADER_HEIGHT;
+                index++;
+                continue;
+            }
+            
+            // 规则名
+            String ruleName = item;
+            GameruleValue originalValue = defaultRules.get(ruleName);
+            
+            if (originalValue == null) {
+                currentY += ROW_HEIGHT;
+                index++;
+                continue;
+            }
+
+            // 检查是否在可见范围内
+            if (currentY < scrollPosition || currentY >= scrollPosition + maxVisibleHeight) {
+                currentY += ROW_HEIGHT;
+                index++;
+                continue;
+            }
+
+            int rowY = yPos + (currentY - (int)scrollPosition);
+
+            // 当前显示值（优先 modified -> editable -> default）
+            String curStr;
+            if (modifiedRules.containsKey(ruleName)) {
+                curStr = modifiedRules.get(ruleName);
+            } else if (editableRules.containsKey(ruleName)) {
+                curStr = editableRules.get(ruleName);
+            } else {
+                curStr = String.valueOf(originalValue.getOptimalValue());
+            }
+
+            // 获取显示名称（优先 本地化 > 注册名称 > 原始规则名）
+            // Get display name (priority: localization > registered name > raw rule name)
+            String localizedRuleName = GameRuleNameRegistry.getName(ruleName);
+            
+            // 检查规则是否被修改过，如果是则用不同颜色显示
+            // Check if rule was modified, if so display with different color
+            boolean isModified = isRuleModified(ruleName);
+            int textColor;
+            
+            // 根据配置项决定是否高亮
+            // Check config to decide whether to highlight
+            if (isModified && CreateWorldUI.config != null && CreateWorldUI.config.highlightModifiedRulesInGUI) {
+                textColor = 0xFFFF55; // 黄色表示已修改 / Yellow for modified
+            } else {
+                textColor = 0xFFFFFF; // 白色 / White
+            }
+            
+            this.drawString(this.fontRendererObj, localizedRuleName, this.width / 2 - 155, rowY + 6, textColor);
+            
+            currentY += ROW_HEIGHT;
             index++;
         }
     }
@@ -956,7 +1101,12 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             drawRect(scrollBarX + 1, scrollBarY + 1, scrollBarX + 9, scrollBarY + scrollBarHeight - 1, 0xAA555555);
 
             float scrollPercentage = maxScrollPosition > 0 ? (float) scrollPosition / maxScrollPosition : 0;
-            int sliderHeight = Math.max(20, scrollBarHeight * visibleRows / (defaultRules.size()));
+            
+            // 计算总项目数（包括分类标题）
+            List<String> categoryOrderedList = buildCategoryOrderedList();
+            int totalItems = categoryOrderedList.size();
+            
+            int sliderHeight = Math.max(20, scrollBarHeight * visibleRows / totalItems);
             int sliderY = scrollBarY + (int) (scrollPercentage * (scrollBarHeight - sliderHeight));
 
             drawRect(scrollBarX + 2, sliderY, scrollBarX + 8, sliderY + sliderHeight, 0xFF888888);
@@ -977,37 +1127,58 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         int yPos = 60;
         // 补偿GL Translate偏移用于悬停检测 / Compensate GL Translate offset for hover detection
         int adjustedMouseY = mouseY + Math.round(scrollSubOffset);
-
+        
+        // 构建分类列表
+        List<String> categoryOrderedList = buildCategoryOrderedList();
+        
         // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
-        int maxVisibleIndex = scrollOffset + visibleRows + 1;
+        int maxVisibleHeight = (visibleRows + 1) * ROW_HEIGHT;
+        int currentY = 0; // 当前项的Y坐标（像素）
 
-        for (String ruleName : defaultRules.keySet()) {
-            if (index >= scrollOffset && index < maxVisibleIndex) {
-                int rowY = yPos + (index - scrollOffset) * ROW_HEIGHT;
-
-                if (isMouseOverRuleName(mouseX, adjustedMouseY, rowY)) {
-                    List<String> tooltipList = new ArrayList<>();
-
-                    // First line: rule name (yellow)
-                    // 第一行显示规则名（黄色）
-                    tooltipList.add(EnumChatFormatting.YELLOW + ruleName);
-
-                    // Add default value
-                    // 添加默认値
-                    GameruleValue defVal = defaultRules.get(ruleName);
-                    if (defVal != null) {
-                        tooltipList.add(EnumChatFormatting.GRAY + I18n.format("createworldui.customize.custom.default") + " " + defVal.getOptimalValue());
-                    }
-
-                    // Add description (if any)
-                    // 添加描述（若有）
-                    String tooltip = getRuleTooltip(ruleName);
-                    if (tooltip != null) {
-                        tooltipList.add(EnumChatFormatting.WHITE + tooltip);
-                    }
-                    this.func_146283_a(tooltipList, mouseX, mouseY);
-                }
+        for (String item : categoryOrderedList) {
+            // 分类标题（跳过）
+            if (item.startsWith("category:")) {
+                currentY += CATEGORY_HEADER_HEIGHT;
+                index++;
+                continue;
             }
+            
+            // 规则名
+            String ruleName = item;
+            
+            // 检查是否在可见范围内
+            if (currentY < scrollPosition || currentY >= scrollPosition + maxVisibleHeight) {
+                currentY += ROW_HEIGHT;
+                index++;
+                continue;
+            }
+            
+            int rowY = yPos + (currentY - (int)scrollPosition);
+
+            if (isMouseOverRuleName(mouseX, adjustedMouseY, rowY)) {
+                List<String> tooltipList = new ArrayList<>();
+
+                // First line: rule name (yellow)
+                // 第一行显示规则名（黄色）
+                tooltipList.add(EnumChatFormatting.YELLOW + ruleName);
+
+                // Add default value
+                // 添加默认値
+                GameruleValue defVal = defaultRules.get(ruleName);
+                if (defVal != null) {
+                    tooltipList.add(EnumChatFormatting.GRAY + I18n.format("createworldui.customize.custom.default") + " " + defVal.getOptimalValue());
+                }
+
+                // Add description (if any)
+                // 添加描述（若有）
+                String tooltip = getRuleTooltip(ruleName);
+                if (tooltip != null) {
+                    tooltipList.add(EnumChatFormatting.WHITE + tooltip);
+                }
+                this.func_146283_a(tooltipList, mouseX, mouseY);
+            }
+            
+            currentY += ROW_HEIGHT;
             index++;
         }
     }
@@ -1039,51 +1210,36 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
 
     /**
      * <p>
-     *     两个硬编码注册tooltip的方式。<br>
+     *     两个硬编码注册tooltip的方式（已废弃，请使用 GameRuleTooltipRegistry API）。<br>
      *     {@code registerTooltip} 适合放一个tooltip。<br>
      *     {@code registerTooltips} 适合一次放很多个tooltips。
      * </p>
      * <p>
-     *     Two ways to register tooltips.<br>
-     *     {@code registerTooltip} is for adding a single tooltip at once
+     *     Two ways to register tooltips (deprecated, please use GameRuleTooltipRegistry API instead).<br>
+     *     {@code registerTooltip} is for adding a single tooltip at once<br>
      *     {@code registerToolTips} is for adding multitooltips
      * </p>
+     * @deprecated 请使用 {@link GameRuleTooltipRegistry#registerTooltip(String, String)} 代替
+     * @deprecated Please use {@link GameRuleTooltipRegistry#registerTooltip(String, String)} instead
      */
+    @Deprecated
     public static void registerTooltip(String ruleName, String tooltip) {
-        hardcodeToolTip.put(ruleName, tooltip);
+        GameRuleTooltipRegistry.registerTooltip(ruleName, tooltip);
     }
 
+    /**
+     * @deprecated 请使用 {@link GameRuleTooltipRegistry#registerTooltips(Map)} 代替
+     * @deprecated Please use {@link GameRuleTooltipRegistry#registerTooltips(Map)} instead
+     */
+    @Deprecated
     public static void registerTooltips(Map<String, String> tooltips) {
-        if (tooltips != null) hardcodeToolTip.putAll(tooltips);
+        GameRuleTooltipRegistry.registerTooltips(tooltips);
     }
 
     private String getRuleTooltip(String ruleName) {
-        String translationKey = "gamerule." + ruleName + ".tooltip.description";
-        String translated = I18n.format(translationKey);
-        
-        // Check if localization exists (not null and not empty)
-        // 检查本地化是否存在（不为 null 且不为空字符串）
-        if (translated != null && !translated.isEmpty() && !translated.equals(translationKey)) {
-            return translated;
-        }
-
-        // Then check mod-registered tooltips (allow external override)
-        // 其次查 mod 自己注册的 tooltip（允许外部覆盖）
-        if (hardcodeToolTip.containsKey(ruleName)) return hardcodeToolTip.get(ruleName);
-
-        // Fallback: return default descriptions for vanilla gamerules
-        // 回退：返回原版游戏规则的默认描述
-        Map<String, String> defaultDescriptions = new HashMap<>();
-        defaultDescriptions.put("doFireTick", "Controls whether fire spreads and naturally extinguishes");
-        defaultDescriptions.put("mobGriefing", "Controls whether mobs can destroy blocks");
-        defaultDescriptions.put("keepInventory", "Keep inventory after death");
-        defaultDescriptions.put("doMobSpawning", "Natural mob spawning");
-        defaultDescriptions.put("doMobLoot", "Mobs drop loot");
-        defaultDescriptions.put("doTileDrops", "Blocks drop items when destroyed");
-        defaultDescriptions.put("commandBlockOutput", "Command blocks output to chat");
-        defaultDescriptions.put("naturalRegeneration", "Natural health regeneration");
-        defaultDescriptions.put("doDaylightCycle", "Day/night cycle");
-        return defaultDescriptions.get(ruleName);
+        // 使用新的 API 获取 tooltip（自动处理优先级：本地化 > 注册 > 默认）
+        // Use new API to get tooltip (automatically handles priority: localization > registered > default)
+        return GameRuleTooltipRegistry.getTooltip(ruleName);
     }
 
     /**
