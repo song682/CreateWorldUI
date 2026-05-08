@@ -68,6 +68,14 @@ gamerule.doMobLoot.tooltip.description=Mobs drop loot
 gamerule.commandBlockOutput.tooltip.description=Command blocks output to chat
 gamerule.naturalRegeneration.tooltip.description=Natural health regeneration
 gamerule.doDaylightCycle.tooltip.description=Day/night cycle
+
+# GameRule Category Headers
+gamerule.category.world=World
+gamerule.category.mobs=Mobs
+gamerule.category.player=Player
+gamerule.category.chat=Chat
+gamerule.category.uncategorized=Other
+
 createworldui.customize.custom.default=Default:
 
 ## Unused Nut
