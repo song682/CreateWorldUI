@@ -1,7 +1,7 @@
 # 不要移除
 selectWorld.bonusItems=
 selectWorld.mapFeatures=
-generator.default_1_1=Beta World Generation
+generator.default_1_1=Beta 版世界生成
 
 # 设置开启或馆内语言控件
 options.on=开启
@@ -61,6 +61,13 @@ gamerule.doMobLoot.tooltip.description=生物掉落战利品
 gamerule.commandBlockOutput.tooltip.description=命令方块输出到聊天
 gamerule.naturalRegeneration.tooltip.description=自然生命值恢复
 gamerule.doDaylightCycle.tooltip.description=昼夜循环
+
+# 游戏规则分类标题
+gamerule.category.world=世界
+gamerule.category.mobs=生物
+gamerule.category.player=玩家
+gamerule.category.chat=聊天
+gamerule.category.uncategorized=其他
 
 # 文本框悬停文本
 createworldui.hover.worldName.empty=请输入世界名称

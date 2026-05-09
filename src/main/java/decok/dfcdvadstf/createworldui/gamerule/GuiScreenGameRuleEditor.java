@@ -105,6 +105,9 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     // 上次组件创建时的scrollOffset，用于判断是否需要重建组件
     // scrollOffset at last component creation, used to determine if components need rebuilding
     private int lastComponentScrollOffset = -1;
+    // 上次组件创建时的scrollPosition，用于在scrollOffset不变时检测scrollPosition增量变化
+    // scrollPosition at last component creation, used to detect scrollPosition delta changes within same scrollOffset
+    private float lastComponentCreationScrollPosition = -1;
 
     // 焦点保存：滚动导致组件重建时保存/恢复文本框焦点
     // Focus preservation: save/restore text field focus when components are rebuilt due to scrolling
@@ -134,7 +137,6 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
      */
     public GuiScreenGameRuleEditor(GuiScreen parentScreen, Map<String, String> editableRules) {
         this.parentScreen = parentScreen;
-        LOGGER.error("GameRuleEditor CONSTRUCTOR CALLED");
 
         // 过滤掉 null 值，确保 editableRules 不包含 null
         this.editableRules = new HashMap<>();
@@ -257,7 +259,6 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
      */
     @Override
     public void initGui() {
-        LOGGER.error("GameRuleEditor initGui()");
         Keyboard.enableRepeatEvents(true);
 
         this.buttonList.clear();
@@ -282,7 +283,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         // resize后夹紧滚动位置
         this.targetScrollPosition = Math.max(0, Math.min(this.targetScrollPosition, this.maxScrollPosition));
         this.scrollPosition = Math.max(0, Math.min(this.scrollPosition, this.maxScrollPosition));
-        updateScrollDerivedValues();
+        updateScrollDerivedValues(buildCategoryOrderedList().size());
 
         // Button layout
         // 按钮布局
@@ -302,7 +303,6 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         if (this.resetButton != null) this.buttonList.add(this.resetButton);
 
         createRuleComponents();
-        LOGGER.error("initGui() called");
     }
 
     /**
@@ -327,10 +327,11 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
      *     These values are used for component creation (scrollOffset) and GL render offset (scrollSubOffset).
      * </p>
      */
-    private void updateScrollDerivedValues() {
+    private void updateScrollDerivedValues(int totalItems) {
         int newScrollOffset = (int)(scrollPosition / ROW_HEIGHT);
-        // 限制scrollOffset不超过最大行偏移 / Clamp scrollOffset to max row offset
-        int maxRowOffset = Math.max(0, defaultRules.size() - visibleRows);
+        // 限制scrollOffset不超过总项数，确保能滚动到最后一项
+        // Clamp scrollOffset to total item count, ensuring last item is reachable
+        int maxRowOffset = Math.max(0, totalItems - visibleRows);
         newScrollOffset = Math.max(0, Math.min(newScrollOffset, maxRowOffset));
         this.scrollOffset = newScrollOffset;
         this.scrollSubOffset = scrollPosition - this.scrollOffset * ROW_HEIGHT;
@@ -399,7 +400,6 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
      * Smooth scroll support: includes one extra row for bottom partial visibility, saves/restores text field focus.
      */
     private void createRuleComponents() {
-        LOGGER.info("createRuleComponents() START, total rules = {}, scrollOffset = {}", defaultRules.size(), scrollOffset);
 
         // 安全检查：确保 buttonList 不为 null
         if (this.buttonList == null) {
@@ -447,12 +447,14 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             }
         }
         
-        // 更新最大滚动位置
-        maxScrollPosition = Math.max(0, totalHeight - (visibleRows * ROW_HEIGHT));
+        // 更新最大滚动位置（在 drawScreen 中统一计算，这里保留兼容性）
+        // maxScrollPosition is now calculated in drawScreen, kept here for compatibility
         
-        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
-        int maxVisibleHeight = (visibleRows + 1) * ROW_HEIGHT;
-        int currentY = 0; // 当前项的Y坐标（像素）
+        // 计算可见区域高度（像素）- 使用面板实际高度而不是 visibleRows * ROW_HEIGHT
+        // Calculate visible area height (pixels) - use actual panel height instead of visibleRows * ROW_HEIGHT
+        int panelBottom = this.height - 50;
+        int visibleHeight = panelBottom - CONTENT_TOP;
+        int currentY = 0; // 当前项的Y坐标（像素，相对于列表顶部）
 
         for (String item : categoryOrderedList) {
             // 分类标题（跳过，不在这里处理）
@@ -474,17 +476,19 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 continue;
             }
 
-            // Skip rows not in visible range (including extra row at bottom)
-            // 不在可见行中则跳过（包含底部额外行）
-            // 使用 scrollPosition（像素）而不是 scrollOffset（行索引）
-            if (currentY < scrollPosition || currentY >= scrollPosition + maxVisibleHeight) {
+            // 检查规则行是否与可见区域重叠（考虑项的高度）
+            // Check if rule row overlaps with visible area (considering item height)
+            int itemBottom = currentY + ROW_HEIGHT;
+            if (itemBottom <= scrollPosition || currentY >= scrollPosition + visibleHeight) {
                 currentY += ROW_HEIGHT;
                 index++;
                 continue;
             }
 
             // 计算屏幕Y坐标（相对于内容区顶部）
-            int yPos = 60 + (currentY - (int)scrollPosition);
+            // 使用 scrollOffset * ROW_HEIGHT 而不是 (int)scrollPosition，确保与 GL Translate 的 scrollSubOffset 计算一致
+            // Use scrollOffset * ROW_HEIGHT instead of (int)scrollPosition to ensure consistency with GL Translate's scrollSubOffset calculation
+            int yPos = CONTENT_TOP + (currentY - scrollOffset * ROW_HEIGHT);
 
             // Calculate display value
             // 计算显示値
@@ -507,6 +511,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             GuiComponentWrapper wrapper = createComponentForRule(ruleName, displayObj, yPos, 100 + visibleUIRowIndex);
             if (wrapper != null) {
                 wrapper.globalIndex = index;
+                wrapper.ruleName = ruleName; // 存储规则名，用于 actionPerformed 中查找
                 ruleComponents.put(ruleName, wrapper);
             }
 
@@ -516,6 +521,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         }
 
         lastComponentScrollOffset = scrollOffset;
+        lastComponentCreationScrollPosition = scrollPosition;
 
         // ===== 恢复焦点 / Restore focus =====
         if (focusedRuleName != null && ruleComponents.containsKey(focusedRuleName)) {
@@ -540,8 +546,6 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     private GuiComponentWrapper createComponentForRule(String ruleName, Object value, int yPos, int id) {
         int componentX = this.width / 2 + 90;
         int componentWidth = 44;
-
-        LOGGER.error("Add rule component: {}, value = {}", ruleName, value);
 
         // Boolean button
         // 布尔按钮
@@ -613,12 +617,22 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         // 处理布尔值按钮（ID >= 100）
         // Handle boolean buttons (ID >= 100)
         if (id >= 100) {
-            int visibleUIRowIndex =  id - 100;
-            int globalIndex = scrollOffset + visibleUIRowIndex;
-
-            // Find rule by sequential index
-            // 按顺序找第 ruleIndex 个键
-            String ruleName = getRuleNameByIndex(globalIndex);
+            // 通过按钮ID找到对应的控件，然后获取规则名
+            // Find component by button ID, then get rule name
+            String ruleName = null;
+            for (Map.Entry<String, GuiComponentWrapper> entry : ruleComponents.entrySet()) {
+                if (entry.getValue().component instanceof GuiButton) {
+                    GuiButton btn = (GuiButton) entry.getValue().component;
+                    if (btn.id == id) {
+                        ruleName = entry.getValue().ruleName;
+                        break;
+                    }
+                }
+            }
+            
+            if (ruleName == null || !defaultRules.containsKey(ruleName)) {
+                return;
+            }
 
             GuiComponentWrapper wrapper = ruleComponents.get(ruleName);
             if (wrapper != null && wrapper.type == ComponentType.BOOLEAN_BUTTON) {
@@ -798,7 +812,9 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             int scrollBarY = 60;
             int scrollBarHeight = visibleRows * ROW_HEIGHT;
             // 滑块高度计算（与drawScrollBar一致）/ Slider height calc (consistent with drawScrollBar)
-            int sliderHeight = Math.max(20, scrollBarHeight * visibleRows / defaultRules.size());
+            List<String> categoryOrderedList = buildCategoryOrderedList();
+            int totalItems = categoryOrderedList.size();
+            int sliderHeight = Math.max(20, scrollBarHeight * visibleRows / totalItems);
 
             // 基于滑块中心位置计算滚动比例，使拖动时滑块跟随鼠标
             // Calculate scroll ratio based on slider center, so slider follows mouse during drag
@@ -808,15 +824,32 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             // 滚动条拖动：即时响应，不使用lerp
             // Scrollbar drag: instant response, no lerp
             this.scrollPosition = this.targetScrollPosition = newPos;
-            updateScrollDerivedValues();
+            updateScrollDerivedValues(buildCategoryOrderedList().size());
 
-            if (scrollOffset != lastComponentScrollOffset) {
+            if (scrollOffset != lastComponentScrollOffset || 
+                Math.abs(scrollPosition - lastComponentCreationScrollPosition) > ROW_HEIGHT * 0.5f) {
                 createRuleComponents();
             }
         } else if (Mouse.getEventDWheel() != 0) {
             int scrollAmount = Mouse.getEventDWheel() > 0 ? -1 : 1;
-            // 滚轮：设置目标位置，由drawScreen中lerp平滑过渡
-            // Wheel: set target position, smoothly interpolated in drawScreen
+            
+            // 滚轮：先重新计算maxScrollPosition，再限制targetScrollPosition
+            // Wheel: recalculate maxScrollPosition first, then clamp targetScrollPosition
+            int panelBottom = this.height - 50;
+            List<String> categoryOrderedList = buildCategoryOrderedList();
+            int totalHeight = 0;
+            for (String item : categoryOrderedList) {
+                if (item.startsWith("category:")) {
+                    totalHeight += CATEGORY_HEADER_HEIGHT;
+                } else {
+                    totalHeight += ROW_HEIGHT;
+                }
+            }
+            int actualVisibleHeight = panelBottom - CONTENT_TOP;
+            this.maxScrollPosition = Math.max(0, totalHeight - actualVisibleHeight);
+
+            // 设置目标位置，由drawScreen中lerp平滑过渡
+            // Set target position, smoothly interpolated in drawScreen
             this.targetScrollPosition += scrollAmount * ROW_HEIGHT;
             this.targetScrollPosition = Math.max(0, Math.min(this.targetScrollPosition, this.maxScrollPosition));
             // 不在此处调用createRuleComponents，由drawScreen中的lerp逻辑处理
@@ -865,7 +898,22 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         // Calculate dynamic visible rows and max scroll position (before lerp, to ensure derived values use latest parameters)
         int panelBottom = this.height - 50;
         this.visibleRows = Math.max(1, (panelBottom - CONTENT_TOP) / ROW_HEIGHT);
-        this.maxScrollPosition = Math.max(0, (defaultRules.size() - this.visibleRows) * ROW_HEIGHT);
+        
+        // 构建分类列表以计算总高度
+        List<String> categoryOrderedList = buildCategoryOrderedList();
+        int totalHeight = 0;
+        for (String item : categoryOrderedList) {
+            if (item.startsWith("category:")) {
+                totalHeight += CATEGORY_HEADER_HEIGHT;
+            } else {
+                totalHeight += ROW_HEIGHT;
+            }
+        }
+        
+        // 最大滚动位置 = 总高度 - 可见区域高度（使用面板实际高度）
+        // Max scroll position = total height - visible area height (use actual panel height)
+        int actualVisibleHeight = panelBottom - CONTENT_TOP;
+        this.maxScrollPosition = Math.max(0, totalHeight - actualVisibleHeight);
 
         // ===== 平滑滚动插值 / Smooth scroll lerp =====
         if (Math.abs(scrollPosition - targetScrollPosition) > 0.5f) {
@@ -875,10 +923,12 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         }
 
         // 更新派生值 / Update derived values
-        updateScrollDerivedValues();
+        updateScrollDerivedValues(buildCategoryOrderedList().size());
 
-        // 当scrollOffset改变时重建组件 / Rebuild components when scrollOffset changes
-        if (scrollOffset != lastComponentScrollOffset) {
+        // 当scrollOffset改变或scrollPosition变化超过半行时重建组件
+        // Rebuild components when scrollOffset changes or scrollPosition moves more than half a row
+        if (scrollOffset != lastComponentScrollOffset || 
+            Math.abs(scrollPosition - lastComponentCreationScrollPosition) > ROW_HEIGHT * 0.5f) {
             createRuleComponents();
         }
 
@@ -984,32 +1034,24 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     }
 
     /**
-     * 绘制规则列表。在GL Translate上下文中调用，文本位置使用scrollOffset（整数），
+     * 绘制规则列表。在GL Translate上下文中调用，文本位置使用scrollPosition（像素），
      * GL Translate负责亚像素偏移。
      *
-     * Draw rule list. Called within GL Translate context, text positions use scrollOffset (integer),
+     * Draw rule list. Called within GL Translate context, text positions use scrollPosition (pixels),
      * GL Translate handles sub-pixel offset.
      */
     private void drawRuleList(int mouseX, int mouseY) {
         int index = 0;
-        int yPos = 60;
+        int yPos = 60; // 内容区起始Y坐标
         
         // 构建分类列表
         List<String> categoryOrderedList = buildCategoryOrderedList();
         
-        // 计算总高度
-        int totalHeight = 0;
-        for (String item : categoryOrderedList) {
-            if (item.startsWith("category:")) {
-                totalHeight += CATEGORY_HEADER_HEIGHT;
-            } else {
-                totalHeight += ROW_HEIGHT;
-            }
-        }
-        
-        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
-        int maxVisibleHeight = (visibleRows + 1) * ROW_HEIGHT;
-        int currentY = 0; // 当前项的Y坐标（像素）
+        // 计算可见区域高度（像素）- 使用面板实际高度而不是 visibleRows * ROW_HEIGHT
+        // Calculate visible area height (pixels) - use actual panel height instead of visibleRows * ROW_HEIGHT
+        int panelBottom = this.height - 50;
+        int visibleHeight = panelBottom - CONTENT_TOP;
+        int currentY = 0; // 当前项的Y坐标（像素，相对于列表顶部）
 
         for (String item : categoryOrderedList) {
             // 分类标题
@@ -1017,8 +1059,10 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 String categoryKey = item.substring(9); // 去掉 "category:" 前缀
                 
                 // 检查是否在可见范围内
-                if (currentY >= scrollPosition && currentY < scrollPosition + maxVisibleHeight) {
-                    int rowY = yPos + (currentY - (int)scrollPosition);
+                if (currentY >= scrollPosition && currentY < scrollPosition + visibleHeight) {
+                    // 计算屏幕Y坐标（相对于内容区顶部）
+                    // 使用 scrollOffset * ROW_HEIGHT 而不是 (int)scrollPosition，确保与 GL Translate 的 scrollSubOffset 计算一致
+                    int rowY = yPos + (currentY - scrollOffset * ROW_HEIGHT);
                     
                     // 获取分类显示名称
                     String categoryName = GameRuleCategoryRegistry.getCategoryDisplayName(categoryKey);
@@ -1044,14 +1088,18 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 continue;
             }
 
-            // 检查是否在可见范围内
-            if (currentY < scrollPosition || currentY >= scrollPosition + maxVisibleHeight) {
+            // 检查规则行是否与可见区域重叠（考虑项的高度）
+            // Check if rule row overlaps with visible area (considering item height)
+            int itemBottom = currentY + ROW_HEIGHT;
+            if (itemBottom <= scrollPosition || currentY >= scrollPosition + visibleHeight) {
                 currentY += ROW_HEIGHT;
                 index++;
                 continue;
             }
 
-            int rowY = yPos + (currentY - (int)scrollPosition);
+            // 计算屏幕Y坐标（相对于内容区顶部）
+            // 使用 scrollOffset * ROW_HEIGHT 而不是 (int)scrollPosition，确保与 GL Translate 的 scrollSubOffset 计算一致
+            int rowY = yPos + (currentY - scrollOffset * ROW_HEIGHT);
 
             // 当前显示值（优先 modified -> editable -> default）
             String curStr;
@@ -1122,19 +1170,20 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         int panelBottom = this.height - 50;
         // 仅在内容区域内显示tooltip / Only show tooltip within content area
         if (mouseY < CONTENT_TOP || mouseY > panelBottom) return;
-
+    
         int index = 0;
-        int yPos = 60;
+        int yPos = 60; // 内容区起始Y坐标
         // 补偿GL Translate偏移用于悬停检测 / Compensate GL Translate offset for hover detection
         int adjustedMouseY = mouseY + Math.round(scrollSubOffset);
-        
+            
         // 构建分类列表
         List<String> categoryOrderedList = buildCategoryOrderedList();
-        
-        // 额外包含1行以处理底部部分可见 / Include 1 extra row for bottom partial visibility
-        int maxVisibleHeight = (visibleRows + 1) * ROW_HEIGHT;
-        int currentY = 0; // 当前项的Y坐标（像素）
-
+            
+        // 计算可见区域高度（像素）- 使用面板实际高度而不是 visibleRows * ROW_HEIGHT
+        // Calculate visible area height (pixels) - use actual panel height instead of visibleRows * ROW_HEIGHT
+        int visibleHeight = panelBottom - CONTENT_TOP;
+        int currentY = 0; // 当前项的Y坐标（像素，相对于列表顶部）
+    
         for (String item : categoryOrderedList) {
             // 分类标题（跳过）
             if (item.startsWith("category:")) {
@@ -1142,18 +1191,22 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
                 index++;
                 continue;
             }
-            
+                
             // 规则名
             String ruleName = item;
-            
-            // 检查是否在可见范围内
-            if (currentY < scrollPosition || currentY >= scrollPosition + maxVisibleHeight) {
+                
+            // 检查规则行是否与可见区域重叠（考虑项的高度）
+            // Check if rule row overlaps with visible area (considering item height)
+            int itemBottom = currentY + ROW_HEIGHT;
+            if (itemBottom <= scrollPosition || currentY >= scrollPosition + visibleHeight) {
                 currentY += ROW_HEIGHT;
                 index++;
                 continue;
             }
-            
-            int rowY = yPos + (currentY - (int)scrollPosition);
+    
+            // 计算屏幕Y坐标（相对于内容区顶部）
+            // 使用 scrollOffset * ROW_HEIGHT 而不是 (int)scrollPosition，确保与 GL Translate 的 scrollSubOffset 计算一致
+            int rowY = yPos + (currentY - scrollOffset * ROW_HEIGHT);
 
             if (isMouseOverRuleName(mouseX, adjustedMouseY, rowY)) {
                 List<String> tooltipList = new ArrayList<>();
@@ -1387,6 +1440,8 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
         public boolean currentBooleanValue;
         // 全局索引（用于平滑滚动时定位）/ Global index (for positioning during smooth scroll)
         public int globalIndex = 0;
+        // 规则名（用于 actionPerformed 中查找）/ Rule name (for lookup in actionPerformed)
+        public String ruleName = null;
 
         public GuiComponentWrapper(Object component, ComponentType type) {
             this.component = component;

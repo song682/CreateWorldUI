@@ -45,28 +45,36 @@ public class GameRuleCategoryRegistry {
 
     // 原版游戏规则的默认分类
     // Default categories for vanilla game rules
-    private static final Map<String, String> VANILLA_DEFAULT_CATEGORIES = new LinkedHashMap<>();
+    private static final Map<String, List<String>> VANILLA_DEFAULT_CATEGORIES = new LinkedHashMap<>();
 
     static {
         // 初始化原版游戏规则的默认分类
         // Initialize default categories for vanilla game rules
         
         // 世界相关 / World related
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.world", "doFireTick");
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.world", "doTileDrops");
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.world", "doDaylightCycle");
+        List<String> worldRules = new ArrayList<>();
+        worldRules.add("doFireTick");
+        worldRules.add("doTileDrops");
+        worldRules.add("doDaylightCycle");
+        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.world", worldRules);
         
         // 生物相关 / Mobs related
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.mobs", "doMobSpawning");
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.mobs", "doMobLoot");
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.mobs", "mobGriefing");
+        List<String> mobsRules = new ArrayList<>();
+        mobsRules.add("doMobSpawning");
+        mobsRules.add("doMobLoot");
+        mobsRules.add("mobGriefing");
+        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.mobs", mobsRules);
         
         // 玩家相关 / Player related
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.player", "naturalRegeneration");
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.player", "keepInventory");
+        List<String> playerRules = new ArrayList<>();
+        playerRules.add("naturalRegeneration");
+        playerRules.add("keepInventory");
+        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.player", playerRules);
         
         // 聊天/命令相关 / Chat/Command related
-        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.chat", "commandBlockOutput");
+        List<String> chatRules = new ArrayList<>();
+        chatRules.add("commandBlockOutput");
+        VANILLA_DEFAULT_CATEGORIES.put("gamerule.category.chat", chatRules);
     }
 
     // 标记是否已初始化默认分类
@@ -86,15 +94,19 @@ public class GameRuleCategoryRegistry {
 
         // 将默认分类添加到主映射中
         // Add default categories to main map
-        for (Map.Entry<String, String> entry : VANILLA_DEFAULT_CATEGORIES.entrySet()) {
+        for (Map.Entry<String, List<String>> entry : VANILLA_DEFAULT_CATEGORIES.entrySet()) {
             String categoryKey = entry.getKey();
-            String ruleName = entry.getValue();
+            List<String> ruleNames = entry.getValue();
 
             if (!categoryMap.containsKey(categoryKey)) {
                 categoryMap.put(categoryKey, new ArrayList<>());
             }
-            categoryMap.get(categoryKey).add(ruleName);
-            ruleToCategory.put(ruleName, categoryKey);
+            
+            // 添加规则列表
+            for (String ruleName : ruleNames) {
+                categoryMap.get(categoryKey).add(ruleName);
+                ruleToCategory.put(ruleName, categoryKey);
+            }
         }
 
         defaultsInitialized = true;

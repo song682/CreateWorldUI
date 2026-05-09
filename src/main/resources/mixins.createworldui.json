@@ -5,12 +5,14 @@
   "mixins": [
     "MixinModernCreateWorld",
     "MixinGuiSelectWorld",
-    "MixinIntegratedServer"
+    "MixinIntegratedServer",
+    "access.IGuiCreateWorldAccess"
   ],
   "client": [
     "MixinModernCreateWorld",
     "MixinGuiSelectWorld",
-    "MixinIntegratedServer"
+    "MixinIntegratedServer",
+    "access.IGuiCreateWorldAccess"
   ],
   "required": true,
   "minVersion": "0.8.5"
