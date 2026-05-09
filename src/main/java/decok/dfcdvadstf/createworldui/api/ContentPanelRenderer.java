@@ -107,6 +107,8 @@ public final class ContentPanelRenderer {
      * <p>把当前绑定的纹理按 (tileWidth x tileHeight) 平铺到区域内。</p>
      */
     private static void drawTiledTexture(int x, int y, int width, int height, int tileWidth, int tileHeight) {
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         Tessellator tessellator = Tessellator.instance;
         tessellator.startDrawingQuads();
 
