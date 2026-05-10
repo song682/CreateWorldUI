@@ -1,0 +1,10 @@
+name: Build mod jar
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    uses: song682/workflows/.github/workflows/build.yml@main
