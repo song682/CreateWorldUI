@@ -1,35 +1,136 @@
-name: Build mod jar
+name: Build JNI DragDrop Libraries
 
 on:
-  [workflow_dispatch, push]
-
-permissions:
-  contents: read
+  workflow_dispatch:  # Mannual Trigger Only
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+  build-windows:
+    name: Build Windows DLL
+    runs-on: windows-latest
+    
     steps:
-    - uses: actions/checkout@v6
-    - name: Set up JDK 8
-      uses: actions/setup-java@v5
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
       with:
-        java-version: '8'
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-toolchain
+          
+    - name: Setup JDK 8
+      uses: actions/setup-java@v4
+      with:
         distribution: 'temurin'
-    - uses: gradle/actions/setup-gradle@v5
-      with:
-        gradle-version: 7.4
-      name: Set up Gradle
-    - name: Fix line endings
-      run: sed -i 's/\r$//' gradlew
-    - name: Add permission
-      run: chmod +x ./gradlew
-    - name: Execute Gradle build
-      run: ./gradlew build
+        java-version: '8'
         
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v5
+    - name: Compile Windows DLL
+      shell: msys2 {0}
+      run: |
+        export JAVA_HOME=$(cygpath -u "$JAVA_HOME")
+        echo "JAVA_HOME: $JAVA_HOME"
+        
+        mkdir -p src/main/resources/natives/windows
+        
+        gcc -shared -o src/main/resources/natives/windows/dragdrop.dll \
+            source/Windows/dragdrop.c \
+            -I"$JAVA_HOME/include" \
+            -I"$JAVA_HOME/include/win32" \
+            -lshell32 -luser32
+            
+        # Mirror to repo root
+        cp -f src/main/resources/natives/windows/dragdrop.dll Windows/dragdrop.dll
+        
+        echo "[✓] Built Windows DLL"
+        ls -la src/main/resources/natives/windows/dragdrop.dll
+        
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v4
       with:
-        path: build/libs
+        name: windows-dragdrop-dll
+        path: |
+          src/main/resources/natives/windows/dragdrop.dll
+          Windows/dragdrop.dll
+        retention-days: 30
+
+  build-linux:
+    name: Build Linux SO
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libx11-dev
+        
+    - name: Setup JDK 8
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '8'
+        
+    - name: Compile Linux SO
+      run: |
+        echo "JAVA_HOME: $JAVA_HOME"
+        
+        # Use the provided compile script
+        bash source/Linux/compile.sh
+        
+        echo "[✓] Built Linux SO"
+        ls -la src/main/resources/natives/linux/libdragdrop.so
+        
+    - name: Upload Linux artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-libdragdrop-so
+        path: |
+          src/main/resources/natives/linux/libdragdrop.so
+          Linux/libdragdrop.so
+        retention-days: 30
+
+  build-macos:
+    name: Build macOS dylib
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup JDK 8
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '8'
+        
+    - name: Compile macOS dylib
+      run: |
+        echo "JAVA_HOME: $JAVA_HOME"
+        
+        mkdir -p src/main/resources/natives/macos
+        
+        clang -dynamiclib -o src/main/resources/natives/macos/libdragdrop.dylib \
+            source/Mac/dragdrop.m \
+            -I"$JAVA_HOME/include" \
+            -I"$JAVA_HOME/include/darwin" \
+            -framework Cocoa -lobjc
+        
+        # Mirror to repo root
+        cp -f src/main/resources/natives/macos/libdragdrop.dylib Mac/libdragdrop.dylib
+        
+        echo "[✓] Built macOS dylib"
+        ls -la src/main/resources/natives/macos/libdragdrop.dylib
+        
+    - name: Upload macOS artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-libdragdrop-dylib
+        path: |
+          src/main/resources/natives/macos/libdragdrop.dylib
+          Mac/libdragdrop.dylib
+        retention-days: 30
