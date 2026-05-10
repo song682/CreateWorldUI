@@ -1,20 +1,21 @@
-name: Release Tags
+name: Auto Release
 
 on:
+  workflow_dispatch:
   push:
-    tags:
-      - '*'
-
-permissions:
-  contents: write
+    branches: [main]
+    paths:
+      - 'src/main/java/**/Tags.java'
 
 jobs:
-  release-tags:
-    uses: song682/workflows/.github/workflows/release-710.yml@main
+  release:
+    uses: song682/workflows/.github/workflows/release-template.yml@main
     with:
-      workspace: "setupCIWorkspace"
+      tags_file_path: 'src/main/java/decok/dfcdvadstf/createworldui/Tags.java'
+      mod_archives_name: 'CreateWorldUI'
+      mc_version: '1.7.10'
     secrets:
-      MAVEN_DEPLOY_USER: ${{ secrets.MAVEN_DEPLOY_USER }}
-      MAVEN_DEPLOY_PASSWORD: ${{ secrets.MAVEN_DEPLOY_PASSWORD }}
-      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
       CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+      CURSEFORGE_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
+      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+      MODRINTH_PROJECT_ID: ${{ secrets.MODRINTH_PROJECT_ID }}
