@@ -131,6 +131,10 @@ public class WorldTab extends AbstractScreenTab {
                 // Open the customize screen
                 // 打开自定义界面
                 System.out.println("WorldTab: Customize button clicked");
+                if (WorldType.worldTypes != null && getWorldTypeIndex() < WorldType.worldTypes.length &&
+                        WorldType.worldTypes[getWorldTypeIndex()] != null) {
+                    WorldType.worldTypes[getWorldTypeIndex()].onCustomizeButton(mc, tabManager.getParent());
+                }
                 break;
         }
     }
