@@ -4,7 +4,7 @@ repositories {
     }
 }
 
-def unimixinsVersion = "0.1.15"
+def unimixinsVersion = project.findProperty('unimixinsVersion')
 
 dependencies {
     implementation("com.github.LegacyModdingMC.UniMixins:unimixins-all-1.7.10:$unimixinsVersion:dev")

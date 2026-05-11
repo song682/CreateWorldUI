@@ -1,21 +1,16 @@
-{
-	"modListVersion": 2,
-	"modList": [{
-		"modid": "${modid}",
-		"name": "${modname}",
-		"description": "${moddescription}",
-		"version": "${modversion}",
-		"mcversion": "${mcversion}",
-		"url": "${url}",
-		"updateUrl": "",
-		"authorList": ${authorList},
-		"credits": "",
-		"logoFile": "${logo}",
-		"screenshots": [],
-		"parent": "",
-		"requiredMods": [],
-		"dependencies": ${dependencies},
-		"dependants": [],
-		"useDependencyInformation": false
-	}]
-}
+[
+    {
+      "modid": "${modid}",
+      "name": "${modname}",
+      "description": "${moddescription}",
+      "version": "${modversion}",
+      "mcversion": "${mcversion}",
+      "url": "${url}",
+      "updateUrl": "${url}",
+      "authorList": ${authorList},
+      "credits": "${credits}",
+      "logoFile": "${logo}",
+      "screenshots": [],
+      "dependencies": ${dependencies}
+    }
+]

@@ -81,14 +81,17 @@ public class GameTab extends AbstractScreenTab {
         if (!visible) return;
 
         // 绘制标签文本
+        // Draw label text
         mc.fontRenderer.drawString(I18n.format("selectWorld.enterName"),
                 tabManager.getParent().width / 2 - 104,
                 tabManager.getParent().height / 5 - 13, 0xA0A0A0);
 
         // 绘制输入框
+        // Draw text field (including placeholder)
         worldNameField.drawTextBox();
 
         // 如果输入框为空且没有焦点，显示提示文本
+        // If text field is empty and not focused, display placeholder text
         if (CreateWorldUI.config.showWorldNamePlaceHolder && worldNameField.getText().isEmpty() && !worldNameField.isFocused()) {
             String placeholder = I18n.format("createworldui.placeholder.worldName");
             int x = worldNameField.xPosition + 4;
@@ -97,12 +100,14 @@ public class GameTab extends AbstractScreenTab {
         }
 
         // 更新按钮文本
+        // Update button text
         if (gameModeButton != null) gameModeButton.updateText();
         if (difficultyButton != null) difficultyButton.updateText();
         if (allowCheatsButton != null) allowCheatsButton.updateText();
 
         // 根据硬核模式更新允许作弊按钮以及难度状态
-        if (allowCheatsButton != null) allowCheatsButton.enabled = !getHardcore();
+        // Update allow cheats button and difficulty status based on hardcore mode
+        // 根据硬核模式更新允许作弊按钮
         if (difficultyButton != null) difficultyButton.enabled = !getHardcore();
     }
 
@@ -110,6 +115,8 @@ public class GameTab extends AbstractScreenTab {
     public void actionPerformed(GuiButton button) {
         // 循环按钮的逻辑已在创建时定义，无需在此处理
         // 此方法保留用于处理其他类型的按钮事件
+        // Cycling buttons' logic is handled in the creation, no need to process here
+        // This method is reserved for processing other types of button events
     }
 
     private String getGameModeText() {

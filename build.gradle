@@ -97,34 +97,63 @@ def dependenciesList = []
 if (!project.modDependencies.isEmpty()) dependenciesList.add(project.modDependencies)
 if (project.enableUsingMysteriumLib.toBoolean()) dependenciesList.add("\"required-after:MysteriumLib\"")
 
-// === === === 自动版本管理逻辑 === === ===
-
-def extractVersionFromTags() {
+def extractTagsFromJava() {
+    // 优先使用 gradle.properties 中手动指定的路径，未指定则自动扫描 src/
     def tagsFilePath = project.hasProperty("tags_file_path") ? project.tags_file_path : null
-    if (tagsFilePath == null) {
-        throw new GradleException("tags_file_path not found in gradle.properties ")
-    }
+    def tagsFile
 
-
-    def tagsFile = file(tagsFilePath)
-    if (!tagsFile.exists()) {
-        throw new GradleException("Tags.java not find in ${tagsFile}")
-    }
-
-
-    def versionPattern = ~/VERSION\s*=\s*"([^"]+)"/
-    def match = versionPattern.matcher(tagsFile.text)
-    if (match.find()) {
-        return match.group(1)
+    if (tagsFilePath != null) {
+        tagsFile = file(tagsFilePath)
+        if (!tagsFile.exists()) {
+            throw new GradleException("Tags.java not found at specified path: ${tagsFile}")
+        }
     } else {
-        throw new GradleException("Definition VERSION not find in Tags.java ")
+        def tagsFiles = fileTree("src") {
+            include "**/Tags.java"
+        }.files
+
+        if (tagsFiles.isEmpty()) {
+            throw new GradleException("Tags.java not found under src/ directory")
+        }
+        if (tagsFiles.size() > 1) {
+            throw new GradleException("Multiple Tags.java found under src/: ${tagsFiles*.path}")
+        }
+        tagsFile = tagsFiles.first()
     }
+
+    def tagsText = tagsFile.text
+    def nameMatcher = (tagsText =~ /NAME\s*=\s*"([^"]+)"/)
+    def modidMatcher = (tagsText =~ /MODID\s*=\s*"([^"]+)"/)
+    def versionMatcher = (tagsText =~ /VERSION\s*=\s*"([^"]+)"/)
+
+    if (!versionMatcher.find()) {
+        throw new GradleException("VERSION not found in ${tagsFile.path}")
+    }
+
+    return [
+        version: versionMatcher.group(1),
+        name   : nameMatcher.find() ? nameMatcher.group(1) : null,
+        modid  : modidMatcher.find() ? modidMatcher.group(1) : null,
+        path   : tagsFile.path
+    ]
 }
 
-ext.modVersion = extractVersionFromTags()
-project.version = modVersion
+def needTags = project.hasProperty("needTagsToIdentify") ? project.needTagsToIdentify.toBoolean() : true
 
-println ">>> Automativally read ${modVersion} from ${project.tags_file_path} "
+if (needTags) {
+    def tags = extractTagsFromJava()
+    ext.modVersion = tags.version
+    project.version = tags.version
+    if (tags.name)  { ext.modName = tags.name }
+    if (tags.modid) { ext.modId  = tags.modid }
+
+    println ">>> Auto-read from ${tags.path}:"
+    println ">>>   VERSION = ${tags.version}"
+    if (tags.name)  println ">>>   NAME    = ${tags.name}"
+    if (tags.modid) println ">>>   MODID   = ${tags.modid}"
+} else {
+    println ">>> needTagsToIdentify=false, using values from gradle.properties"
+}
 
 processResources {
     inputs.property "modversion", project.version
@@ -135,6 +164,7 @@ processResources {
 
     inputs.property "url", project.url
     inputs.property "authorList", [project.authorList]
+    inputs.property "credits", project.credits
     inputs.property "logo", project.logo
     inputs.property "dependencies", dependenciesList
 
@@ -146,6 +176,7 @@ processResources {
                 'modid': project.modId,
                 'url': project.url,
                 'authorList': [project.authorList],
+                'credits': project.credits,
                 'logo': project.logo,
                 'dependencies': dependenciesList
     }
@@ -218,7 +249,6 @@ tasks.register('sourcesJar', Jar) {
     classifier 'deobf-sources'
 
     from sourceSets.main.allSource
-    exclude "assets"
     exclude "methods.bin"
     exclude "McpToSrg.csv"
 }
@@ -245,4 +275,16 @@ tasks.named("build").configure {
 artifacts {
     archives deobfJar
     archives sourcesJar
+}
+
+if (project.include_license.toBoolean()){
+    jar {
+        from file("./LICENSE")
+    }
+    deobfJar {
+        from file("./LICENSE")
+    }
+    sourcesJar {
+        from file("./LICENSE")
+    }
 }
