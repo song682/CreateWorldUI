@@ -1,19 +1,16 @@
-name: Auto Release
+name: Build and Release
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
-    paths:
-      - 'src/main/java/**/Tags.java'
+    tags:
+      - 'v*'
 
 jobs:
-  release:
-    uses: song682/workflows/.github/workflows/release-template.yml@main
+  call-release-template:
+    uses: yourname/yourrepo/.github/workflows/release-template.yml@main
     with:
-      tags_file_path: 'src/main/java/decok/dfcdvadstf/createworldui/Tags.java'
-      mod_archives_name: 'CreateWorldUI'
-      mc_version: '1.7.10'
+      mod_archives_name: CreateWorldUI
+      mc_version: 1.7.10
     secrets:
       CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
       CURSEFORGE_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
