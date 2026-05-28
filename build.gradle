@@ -74,6 +74,11 @@ repositories {
         name "Modrinth Maven"
         url "https://api.modrinth.com/maven"
     }
+
+    maven {
+        name "JitPack"
+        url "https://jitpack.io"
+    }
 }
 
 dependencies {
@@ -89,7 +94,10 @@ dependencies {
     implementation "maven.modrinth:notenoughitems-unofficial:${project.nei_version}-GTNH"
     implementation "maven.modrinth:codechickencore-unofficial:${project.cc_version}"
     implementation "maven.modrinth:codechickenlib-unofficial:${project.cc_version}"
-
+    implementation "com.github.song682:CatFrame:v0.0.3-hotfix"
+    inplementation "com.github.song682:ModernDifficultyLocker:1.0.3"
+    implementation "com.github.RuiXuqi:Catalogue-Vintage:1.0.3-1.7.10"
+    
     implementation fileTree(dir: 'lib', includes: ['*.jar'])
 }
 
