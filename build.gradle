@@ -95,7 +95,7 @@ dependencies {
     implementation "maven.modrinth:codechickencore-unofficial:${project.cc_version}"
     implementation "maven.modrinth:codechickenlib-unofficial:${project.cc_version}"
     implementation "com.github.song682:CatFrame:v0.0.3-hotfix"
-    inplementation "com.github.song682:ModernDifficultyLocker:v1.0.4"
+    implementation "com.github.song682:ModernDifficultyLocker:v1.0.4"
     implementation "com.github.RuiXuqi:Catalogue-Vintage:1.0.3-1.7.10"
     
     implementation fileTree(dir: 'lib', includes: ['*.jar'])
