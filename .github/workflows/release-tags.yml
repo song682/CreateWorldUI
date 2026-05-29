@@ -1,16 +1,18 @@
-name: Build and Release
+name: Auto Release
 
 on:
+  workflow_dispatch:   # 手动触发
   push:
-    tags:
-      - 'v*'
+    branches: [main]
+    paths:
+      - 'src/main/java/**/Tags.java'   # 当 Tags.java 改动时自动触发
 
 jobs:
-  call-release-template:
-    uses: yourname/yourrepo/.github/workflows/release-template.yml@main
+  release:
+    uses: song682/workflows/.github/workflows/release-template.yml@main
     with:
-      mod_archives_name: CreateWorldUI
-      mc_version: 1.7.10
+      mod_archives_name: 'CreateWorldUI'
+      mc_version: '1.7.10'
     secrets:
       CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
       CURSEFORGE_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
