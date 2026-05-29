@@ -1,21 +1,26 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
-import decok.dfcdvadstf.createworldui.api.ContentPanelRenderer;
-import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.catframe.ui.tab.Tab;
+import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
+import decok.dfcdvadstf.catframe.ui.GuiCyclableButton;
+import decok.dfcdvadstf.catframe.ui.tab.TabBar;
+import decok.dfcdvadstf.catframe.ui.tab.TabManager;
+import decok.dfcdvadstf.catframe.ui.tab.TabState;
+import decok.dfcdvadstf.createworldui.tab.CreateWorldUITabBar;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
-import decok.dfcdvadstf.createworldui.api.tab.TabManager;
-import decok.dfcdvadstf.createworldui.api.tab.TabState;
 import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
+import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
+import cpw.mods.fml.common.Loader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
@@ -46,19 +51,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Shadow
     private GuiScreen field_146332_f;
     @Shadow
-    private boolean field_146337_w;
-    @Shadow
     private String field_146330_J;
     @Shadow
     private String field_146342_r;
     @Shadow
     private String field_146329_I;
-    @Shadow
-    private boolean field_146341_s;
-    @Shadow
-    private boolean field_146338_v;
-    @Shadow
-    private boolean field_146340_t;
     @Shadow
     private int field_146331_K;
 
@@ -66,9 +63,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private TabManager modernWorldCreatingUI$tabManager;
     @Unique
-    private static final ResourceLocation OPTIONS_BG_DARK = new ResourceLocation("createworldui","textures/gui/options_background_dark.png");
-    @Unique
-    private static final ResourceLocation TABS_TEXTURE = new ResourceLocation("createworldui","textures/gui/tabs.png");
+    private TabBar modernWorldCreatingUI$tabBar;
     @Unique
     private static final int TAB_WIDTH = 130;
     @Unique
@@ -81,6 +76,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     private int modernWorldCreatingUI$tabButtonWidth = TAB_WIDTH;
     @Unique
     private static final Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
+    @Unique
+    private final IGuiCreateWorldAccess modernWorldCreatingUI$accessor = (IGuiCreateWorldAccess) this;
 
     /**
      * 初始化
@@ -115,10 +112,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             modernWorldCreatingUI$tabManager.reinitializeTabs(this.width, this.height);
             modernWorldCreatingUI$logger.info("Reinitialized tabs after resize");
         } else {
-            // First initialization: create a new TabManager
-            // 首次初始化：创建新的 TabManager
+            // First initialization: create the TabBar and a new TabManager
+            // 首次初始化：创建 TabBar 与新的 TabManager
+            modernWorldCreatingUI$tabBar = new CreateWorldUITabBar();
             modernWorldCreatingUI$tabManager = new TabManager(
-                    (GuiCreateWorld)(Object)this, this.buttonList, this.width, this.height
+                    this, this.buttonList, this.width, this.height,
+                    modernWorldCreatingUI$tabBar
             );
             // No need to push vanilla state anymore — TabManager now reads/writes vanilla
             // fields directly via IGuiCreateWorldAccess. The only thing it still caches locally
@@ -219,15 +218,18 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             java.util.List<Integer> sortedIds = modernWorldCreatingUI$tabManager.getSortedTabIds();
             for (int i = 0; i < sortedIds.size(); i++) {
                 int tabId = sortedIds.get(i);
-                decok.dfcdvadstf.createworldui.api.tab.Tab tab = modernWorldCreatingUI$tabManager.getAllTabs().get(tabId);
+                Tab tab = modernWorldCreatingUI$tabManager.getAllTabs().get(tabId);
                 String tabName = tab != null ? tab.getTabName() : "";
                 int xPos = startX + i * modernWorldCreatingUI$tabButtonWidth;
 
+                final ResourceLocation tabsTex = modernWorldCreatingUI$tabBar != null
+                        ? modernWorldCreatingUI$tabBar.getTabTexture()
+                        : new ResourceLocation("createworldui", "textures/gui/tabs.png");
                 GuiButton tabButton = new GuiButton(tabId, xPos, 0, modernWorldCreatingUI$tabButtonWidth, TAB_HEIGHT, tabName) {
                     @Override
                     public void drawButton(Minecraft mc, int mouseX, int mouseY) {
                         if (this.visible) {
-                            mc.getTextureManager().bindTexture(TABS_TEXTURE);
+                            mc.getTextureManager().bindTexture(tabsTex);
                             // Reset OpenGL color state to white to prevent texture tinting
                             // 重置OpenGL颜色状态为白色，防止纹理被着色
                             GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -241,9 +243,23 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                                     (isHovered ? TabState.HOVER : TabState.NORMAL);
 
                             drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, this.width, TAB_HEIGHT);
+                            
+                            // 计算文本颜色 / Calculate text color
+                            int textColor = state.baseTextColor;
+                            if (state == TabState.HOVER || state == TabState.SELECTED_HOVER) {
+                                // 高亮状态：检查ArchaicFix配置 / Highlight state: check ArchaicFix config
+                                if (Loader.isModLoaded("archaicfix")
+                                        && CreateWorldUI.config != null
+                                        && CreateWorldUI.config.topTabCharatorModernWhite) {
+                                    textColor = 0xFFFFFF; // 白色 / White
+                                } else {
+                                    textColor = 0xFFFF55; // 黄色 / Yellow
+                                }
+                            }
+                            
                             drawCenteredString(mc.fontRenderer, this.displayString,
                                     this.xPosition + this.width / 2,
-                                    this.yPosition + (this.height - 8) / 2, state.getTextColor());
+                                    this.yPosition + (this.height - 8) / 2, textColor);
                         }
                     }
                 };
@@ -268,9 +284,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         // 绘制主背景
         this.drawBackground(0);
 
-        // 绘制顶部背景
-        this.mc.getTextureManager().bindTexture(OPTIONS_BG_DARK);
-        this.modernWorldCreatingUI$drawTiledTexture(0, 0, this.width, TAB_HEIGHT - 2, 16, 16);
+        // 绘制顶部背景 —— 交给 TabBar 统一处理（纯色填充 + 平铺贴图）
+        // Draw top bar background — delegated to TabBar (solid fill + tiled texture)
+        if (modernWorldCreatingUI$tabBar != null) {
+            modernWorldCreatingUI$tabBar.drawBackground(0, 0, this.width, TAB_HEIGHT - 2);
+        }
 
         // 绘制分隔线（选中Tab下方隐藏）
         // Draw separator lines (hidden under selected tab)
@@ -424,16 +442,10 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             )
     )
     private void modernWorldCreatingUI$afterLaunchWorld(GuiButton button, CallbackInfo ci) {
-        if (modernWorldCreatingUI$tabManager == null) {
-            return;
-        }
-
-        // Set pending difficulty, which will be applied by MixinIntegratedServer.loadAllWorlds TAIL
-        // No reflection needed - MixinIntegratedServer directly accesses worldServers after initialization
-        //
-        // 设置待应用的难度，将由MixinIntegratedServer.loadAllWorlds TAIL处应用
-        // 无需反射 - MixinIntegratedServer在worldServers初始化后直接访问
-        DifficultyApplier.setPendingDifficulty(modernWorldCreatingUI$tabManager.getDifficulty());
+        // Set pending difficulty from the UI-selected value, which will be applied by
+        // MixinIntegratedServer.loadAllWorlds TAIL
+        // 从 UI 选中的难度设置待应用难度，将由 MixinIntegratedServer.loadAllWorlds TAIL 应用
+        DifficultyApplier.setPendingDifficulty(DifficultyApplier.getSelectedDifficulty());
     }
 
     /**
@@ -517,7 +529,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         GuiButton createButton = modernWorldCreatingUI$getButtonById(0);
         if (createButton != null) {
             createButton.enabled = modernWorldCreatingUI$tabManager != null &&
-                    !modernWorldCreatingUI$tabManager.getWorldName().trim().isEmpty();
+                    !modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName().trim().isEmpty();
         }
 
         // Manually handle ESC since we are about to cancel vanilla keyTyped
@@ -574,7 +586,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             // 遍历当前标签页的按钮，查找是否有GuiCyclableButton需要处理滚动事件
             for (Object obj : this.buttonList) {
                 if (obj instanceof GuiCyclableButton) {
-                    GuiCyclableButton button = (GuiCyclableButton) obj;
+                    GuiCyclableButton<?> button = (GuiCyclableButton<?>) obj;
                     if (button.visible && button.enabled &&
                             mouseX >= button.xPosition && mouseX < button.xPosition + button.width &&
                             mouseY >= button.yPosition && mouseY < button.yPosition + button.height) {
@@ -617,7 +629,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         // 检查世界名称输入框的悬停提示
         if (modernWorldCreatingUI$tabManager != null &&
                 modernWorldCreatingUI$tabManager.getCurrentTabId() == 100) {
-            String worldName = modernWorldCreatingUI$tabManager.getWorldName();
+            String worldName = modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName();
             String hoverText;
             if (worldName == null || worldName.isEmpty()) {
                 hoverText = I18n.format("createworldui.hover.worldName.empty");
@@ -646,36 +658,5 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             }
         }
         return null;
-    }
-
-    /**
-     * Draws a tiled texture
-     * 绘制平铺纹理
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawTiledTexture(int x, int y, int width, int height, int textureWidth, int textureHeight) {
-        GL11.glEnable(GL11.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        Tessellator tessellator = Tessellator.instance;
-        tessellator.startDrawingQuads();
-
-        for (int tileX = 0; tileX < width; tileX += textureWidth) {
-            for (int tileY = 0; tileY < height; tileY += textureHeight) {
-                int tileW = Math.min(textureWidth, width - tileX);
-                int tileH = Math.min(textureHeight, height - tileY);
-
-                double u1 = 0.0;
-                double u2 = (double)tileW / (double)textureWidth;
-                double v1 = 0.0;
-                double v2 = (double)tileH / (double)textureHeight;
-
-                tessellator.addVertexWithUV(x + tileX, y + tileY + tileH, 0.0D, u1, v2);
-                tessellator.addVertexWithUV(x + tileX + tileW, y + tileY + tileH, 0.0D, u2, v2);
-                tessellator.addVertexWithUV(x + tileX + tileW, y + tileY, 0.0D, u2, v1);
-                tessellator.addVertexWithUV(x + tileX, y + tileY, 0.0D, u1, v1);
-            }
-        }
-
-        tessellator.draw();
     }
 }

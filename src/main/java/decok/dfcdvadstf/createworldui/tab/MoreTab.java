@@ -2,10 +2,12 @@ package decok.dfcdvadstf.createworldui.tab;
 
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
-import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
-import decok.dfcdvadstf.createworldui.api.tab.TabManager;
 import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
+import decok.dfcdvadstf.catframe.ui.tab.TabManager;
+import decok.dfcdvadstf.catframe.ui.tab.AbstractScreenTab;
+import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
 
 import java.util.HashMap;
@@ -16,6 +18,8 @@ public class MoreTab extends AbstractScreenTab {
     private GuiButton gameRuleEditorButton;
     private GuiButton experimentsButton;
     private GuiButton dataPacksButton;
+    private IGuiCreateWorldAccess access;
+    private GuiCreateWorld guiCreateWorld;
 
     public MoreTab() {
         super(102, "createworldui.tab.more");
@@ -81,7 +85,7 @@ public class MoreTab extends AbstractScreenTab {
                 }
             }
 
-            mc.displayGuiScreen(new GuiScreenGameRuleEditor(tabManager.getParent(), cleanPending));
+            mc.displayGuiScreen(new GuiScreenGameRuleEditor(guiCreateWorld, cleanPending));
         } else if (button.id == 201) {
             // Open experiments screen
             // 打开实验性功能界面

@@ -38,6 +38,9 @@ createworldui.selectWorld.mapFeatures=Generate Structures
 
 ## Tooltips
 createworldui.hover.difficulty=Set the difficulty of the world
+createworldui.hover.difficulty.locked=This difficulty is locked
+createworldui.hover.difficulty.lockButton=Click to lock this difficulty
+createworldui.hover.difficulty.unlockButton=Click to unlock this difficulty
 createworldui.hover.gameMode=Game Mode
 createworldui.hover.gameMode.survival=Survival Mode: Explore the world, gather resources, craft tools, and fight monsters.
 createworldui.hover.gameMode.creative=Creative Mode: Unlimited resources, ability to fly, and break and build anything.
@@ -114,6 +117,8 @@ config.option.showWorldNamePlaceHolder=Show World Name Placeholder
 config.option.showWorldNamePlaceHolder.tooltip=Show a place-holder to gently reminds player to add a own world name
 config.option.disableCreateButtonWhenWNIsBlank=Disable Create Button When World Name Is Blank
 config.option.disableCreateButtonWhenWNIsBlank.tooltip=Set True to disable the Create Button when world name is blank
+config.option.lockDifficultyButton=Enable the Difficulty Lock button in the world creation
+config.option.lockDifficultyButton.tooltip=Set True to enable the difficulty lock button, in the world creation.ModernDifficultyLocker Required
 
 # GameRule Editor Notifications
 createworldui.gamerules.notification.changed=The following game rules have been changed:

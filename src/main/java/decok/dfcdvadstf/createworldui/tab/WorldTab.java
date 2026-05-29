@@ -1,19 +1,26 @@
 package decok.dfcdvadstf.createworldui.tab;
 
-import decok.dfcdvadstf.createworldui.api.GuiCyclableButton;
-import decok.dfcdvadstf.createworldui.api.tab.AbstractScreenTab;
-import decok.dfcdvadstf.createworldui.api.tab.TabManager;
+import decok.dfcdvadstf.catframe.ui.GuiCyclableButton;
+import decok.dfcdvadstf.catframe.ui.tab.AbstractScreenTab;
+import decok.dfcdvadstf.catframe.ui.tab.TabManager;
+import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.world.WorldType;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WorldTab extends AbstractScreenTab {
     private GuiTextField seedField;
-    private GuiCyclableButton worldTypeButton;
+    private GuiCyclableButton<WorldType> worldTypeButton;
     private GuiButton generateStructuresButton;
     private GuiButton bonusChestButton;
     private GuiButton customizeButton;
+    private IGuiCreateWorldAccess access;
+    private GuiCreateWorld guiCreateWorld;
 
     public WorldTab() {
         super(101, "createworldui.tab.world");
@@ -41,12 +48,32 @@ public class WorldTab extends AbstractScreenTab {
                 }
             }
         };
-        seedField.setText(getSeed());
+        seedField.setText(access.modernWorldCreatingUI$getSeed());
 
         // Create world type button
         // 创建世界类型按钮
-        worldTypeButton = new GuiCyclableButton(5, width / 2 - 154, height / 8 + 10,
-                150, 20, this::getWorldTypeText, direction -> cycleWorldType());
+        List<WorldType> validWorldTypes = new ArrayList<>();
+        for (WorldType wt : WorldType.worldTypes) {
+            if (wt != null) validWorldTypes.add(wt);
+        }
+
+        int currentIdx = access.modernWorldCreatingUI$getWorldTypeIndex();
+        WorldType currentType = (currentIdx < WorldType.worldTypes.length && WorldType.worldTypes[currentIdx] != null)
+                ? WorldType.worldTypes[currentIdx] : validWorldTypes.get(0);
+
+        worldTypeButton = GuiCyclableButton.<WorldType>builder(
+                        wt -> I18n.format("selectWorld.mapType") + " " + I18n.format(wt.getTranslateName()))
+                .values(validWorldTypes)
+                .initially(currentType)
+                .build(5, width / 2 - 154, height / 8 + 10, 150, 20, (button, worldType) -> {
+                    // Find the original array index for the selected world type
+                    for (int i = 0; i < WorldType.worldTypes.length; i++) {
+                        if (WorldType.worldTypes[i] == worldType) {
+                            access.modernWorldCreatingUI$setWorldTypeIndex(i);
+                            break;
+                        }
+                    }
+                });
         addButton(worldTypeButton);
 
         // Create customize button
@@ -79,8 +106,8 @@ public class WorldTab extends AbstractScreenTab {
         // Draw seed label
         // 绘制种子标签
         mc.fontRenderer.drawString(I18n.format("selectWorld.enterSeed"),
-                tabManager.getParent().width / 2 - 154,
-                tabManager.getParent().height / 3 - 2 - 13, 0xA0A0A0);
+                guiCreateWorld.width / 2 - 154,
+                guiCreateWorld.height / 3 - 2 - 13, 0xA0A0A0);
 
         // Draw text field (including placeholder)
         // 绘制输入框（包括占位符）
@@ -89,19 +116,19 @@ public class WorldTab extends AbstractScreenTab {
         // Draw button labels
         // 绘制按钮标签
         mc.fontRenderer.drawString(I18n.format("createworldui.selectWorld.mapFeatures"),
-                tabManager.getParent().width / 2 - 154,
-                tabManager.getParent().height / 2 + 15 + 6, 0xFFFFFF);
+                guiCreateWorld.width / 2 - 154,
+                guiCreateWorld.height / 2 + 15 + 6, 0xFFFFFF);
         mc.fontRenderer.drawString(I18n.format("createworldui.selectWorld.bonusItems"),
-                tabManager.getParent().width / 2 - 154,
-                tabManager.getParent().height / 2 - 15 + 6, 0xFFFFFF);
+                guiCreateWorld.width / 2 - 154,
+                guiCreateWorld.height / 2 - 15 + 6, 0xFFFFFF);
 
         // Update button text and state
         // 更新按钮文本和状态
         if (worldTypeButton != null) worldTypeButton.updateText();
 
-        if (WorldType.worldTypes != null && getWorldTypeIndex() < WorldType.worldTypes.length &&
-                WorldType.worldTypes[getWorldTypeIndex()] != null) {
-            customizeButton.enabled = WorldType.worldTypes[getWorldTypeIndex()].isCustomizable();
+        if (WorldType.worldTypes != null && access.modernWorldCreatingUI$getWorldTypeIndex() < WorldType.worldTypes.length &&
+                WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()] != null) {
+            customizeButton.enabled = WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()].isCustomizable();
         } else {
             customizeButton.enabled = false;
         }
@@ -111,7 +138,7 @@ public class WorldTab extends AbstractScreenTab {
 
         // Update bonus chest button state based on hardcore mode
         // 根据硬核模式更新奖励筱按钮状态
-        bonusChestButton.enabled = !getHardcore();
+        bonusChestButton.enabled = !access.modernWorldCreatingUI$getHardcore();
     }
 
     @Override
@@ -120,63 +147,37 @@ public class WorldTab extends AbstractScreenTab {
 
         switch (button.id) {
             case 4: // generate structures / 生成建筑
-                tabManager.setGenerateStructures(!getGenerateStructures());
+                access.modernWorldCreatingUI$setGenerateStructures(!access.modernWorldCreatingUI$getGenerateStructures());
                 break;
             case 7: // bonus chest / 奖励筱
-                if (!getHardcore()) {
-                    tabManager.setBonusChest(!getBonusChest());
+                if (!access.modernWorldCreatingUI$getHardcore()) {
+                    access.modernWorldCreatingUI$setBonusChest(!access.modernWorldCreatingUI$getBonusChest());
                 }
                 break;
             case 8: // customize / 自定义
                 // Open the customize screen
                 // 打开自定义界面
                 System.out.println("WorldTab: Customize button clicked");
-                if (WorldType.worldTypes != null && getWorldTypeIndex() < WorldType.worldTypes.length &&
-                        WorldType.worldTypes[getWorldTypeIndex()] != null) {
-                    WorldType.worldTypes[getWorldTypeIndex()].onCustomizeButton(mc, tabManager.getParent());
+                if (WorldType.worldTypes != null && access.modernWorldCreatingUI$getWorldTypeIndex() < WorldType.worldTypes.length &&
+                        WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()] != null) {
+                    WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()].onCustomizeButton(mc, guiCreateWorld);
                 }
                 break;
         }
     }
 
-    private String getWorldTypeText() {
-        int index = getWorldTypeIndex();
-        if (WorldType.worldTypes == null || index >= WorldType.worldTypes.length ||
-                WorldType.worldTypes[index] == null) {
-            return I18n.format("selectWorld.mapType") + " " + I18n.format("selectWorld.mapType.normal");
-        }
-        return I18n.format("selectWorld.mapType") + " " +
-                I18n.format(WorldType.worldTypes[index].getTranslateName());
-    }
 
     private String getGenerateStructuresText() {
-        return getGenerateStructures() ? I18n.format("options.on") : I18n.format("options.off");
+        return access.modernWorldCreatingUI$getGenerateStructures() ? I18n.format("options.on") : I18n.format("options.off");
     }
 
     private String getBonusChestText() {
-        boolean bonusChest = getBonusChest();
-        boolean hardcore = getHardcore();
+        boolean bonusChest = access.modernWorldCreatingUI$getBonusChest();
+        boolean hardcore = access.modernWorldCreatingUI$getHardcore();
         boolean isOn = bonusChest && !hardcore;
         return isOn ? I18n.format("options.on") : I18n.format("options.off");
     }
 
-    private void cycleWorldType() {
-        if (WorldType.worldTypes == null) return;
-
-        int currentIndex = getWorldTypeIndex();
-        int newIndex = currentIndex;
-
-        do {
-            newIndex = (newIndex + 1) % WorldType.worldTypes.length;
-        } while (WorldType.worldTypes[newIndex] == null && newIndex != currentIndex);
-
-        if (WorldType.worldTypes[newIndex] != null) {
-            tabManager.setWorldTypeIndex(newIndex);
-            if (worldTypeButton != null) {
-                worldTypeButton.updateText();
-            }
-        }
-    }
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
@@ -186,6 +187,6 @@ public class WorldTab extends AbstractScreenTab {
     @Override
     public void keyTyped(char typedChar, int keyCode) {
         seedField.textboxKeyTyped(typedChar, keyCode);
-        tabManager.setSeed(seedField.getText());
+        access.modernWorldCreatingUI$setSeed(seedField.getText());
     }
 }

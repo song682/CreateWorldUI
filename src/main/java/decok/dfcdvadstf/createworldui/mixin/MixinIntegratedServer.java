@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
+import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.world.EnumDifficulty;
@@ -80,6 +81,17 @@ public abstract class MixinIntegratedServer {
         if (mc != null && mc.gameSettings != null) {
             mc.gameSettings.difficulty = difficulty;
             mc.gameSettings.saveOptions();
+        }
+        
+        // Also apply to WorldDifficultyData if ModernDifficultyLocker is loaded
+        // 如果ModernDifficultyLocker已加载，也同步到WorldDifficultyData
+        if (DifficultyLocker.isLoaded() && DifficultyLocker.hasLockedDifficulty()) {
+            EnumDifficulty lockedDiff = DifficultyLocker.getLockedDifficulty();
+            if (lockedDiff != null) {
+                DifficultyLocker.applyToWorldData(lockedDiff);
+                DifficultyLocker.resetAllLocks(); // Reset after applying
+                createWorldUI$logger.info("Locked difficulty '{}' also applied to WorldDifficultyData", lockedDiff.getDifficultyId());
+            }
         }
     }
 }

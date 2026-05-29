@@ -5,7 +5,7 @@ import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import decok.dfcdvadstf.createworldui.api.tab.TabRegistry;
+import decok.dfcdvadstf.catframe.ui.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
 import decok.dfcdvadstf.createworldui.tab.GameTab;
@@ -21,7 +21,14 @@ import org.apache.logging.log4j.Logger;
     acceptedMinecraftVersions = "1.7.10",
     acceptableRemoteVersions = "1.7.10",
     guiFactory = "decok.dfcdvadstf.createworldui.config.CreateWorldConfigUI",
-    useMetadata = true
+    useMetadata = true,
+    dependencies = "required-after:catframe",
+    customProperties = {
+        @Mod.CustomProperty(k = "license", v = "MIT"),
+        @Mod.CustomProperty(k = "issueTrackerUrl", v = "https://github.com/song682/CreateWorldUI/issues"),
+        @Mod.CustomProperty(k = "iconFile", v = "assets/createworldui/logo.png"),
+        @Mod.CustomProperty(k = "backgroundFile", v = "assets/catalogue/background.png")
+    }
 )
 public class CreateWorldUI {
 
@@ -36,9 +43,9 @@ public class CreateWorldUI {
 
         // Register built-in tabs
         // 注册内置标签页
-        TabRegistry.registerTab(GameTab::new, 100, "createworldui.tab.game", 0);
-        TabRegistry.registerTab(WorldTab::new, 101, "createworldui.tab.world", 1);
-        TabRegistry.registerTab(MoreTab::new, 102, "createworldui.tab.more", 2);
+        TabRegistry.registerTab(GameTab::new, 100, "createworldui.tab.game");
+        TabRegistry.registerTab(WorldTab::new, 101, "createworldui.tab.world");
+        TabRegistry.registerTab(MoreTab::new, 102, "createworldui.tab.more");
         logger.info("Registered built-in tabs: Game, World, More");
     }
 

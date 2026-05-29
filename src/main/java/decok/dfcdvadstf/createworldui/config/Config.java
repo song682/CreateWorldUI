@@ -16,6 +16,7 @@ public class Config {
     public boolean enableOtherMoreTabButton;
     public boolean showWorldNamePlaceHolder;
     public boolean disableCreateButtonWhenWNIsBlank;
+    public boolean lockDifficultyButton;
 
     public Config(File file) {
         configFile = new Configuration(file);
@@ -52,6 +53,10 @@ public class Config {
         disableCreateButtonWhenWNIsBlank = configFile.getBoolean("disableCreateButtonWhenWNIsBlank", "UI Management", false, 
             "Set True to disable the Create Button when world name is blank");
         configFile.getCategory("ui management").get("disableCreateButtonWhenWNIsBlank").setLanguageKey("config.option.disableCreateButtonWhenWNIsBlank");
+        
+        lockDifficultyButton = configFile.getBoolean("lockDifficultyButton", "UI Management", false, 
+            "Set True to lock the difficulty button");
+        configFile.getCategory("ui management").get("lockDifficultyButton").setLanguageKey("config.option.lockDifficultyButton");
         
         // GameRule Editor category options
         // 游戏规则编辑器分类配置项

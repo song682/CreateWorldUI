@@ -44,56 +44,56 @@ import org.spongepowered.asm.mixin.gen.Accessor;
  * <pre>{@code
  * GuiCreateWorld gui = ...;
  * IGuiCreateWorldAccess access = (IGuiCreateWorldAccess)(Object) gui;
- * String name = access.createWorldUI$getWorldName();
- * access.createWorldUI$setWorldName("My Shiny New World");
+ * String name = access.modernWorldCreatingUI$getWorldName();
+ * access.modernWorldCreatingUI$setWorldName("My Shiny New World");
  * }</pre>
  *
  * <h3>Notes / 注意</h3>
  * <ul>
  *   <li>Field names are MCP/SRG-style ({@code field_146330_J} etc.) because this is
  *       Minecraft 1.7.10. Mixin's refmap handles the remap automatically.</li>
- *   <li>All accessor methods carry the {@code createWorldUI$} prefix to avoid name clashes
+ *   <li>All accessor methods carry the {@code modernWorldCreatingUI$} prefix to avoid name clashes
  *       with other mods that might define their own accessor interfaces.</li>
  *   <li>字段名是 MCP/SRG 风格（{@code field_146330_J} 这种）——因为这是 1.7.10，Mixin
  *       的 refmap 会自动处理重映射。</li>
- *   <li>所有 accessor 方法都带 {@code createWorldUI$} 前缀，避免跟其他模组自定义的接口撞名。</li>
+ *   <li>所有 accessor 方法都带 {@code modernWorldCreatingUI$} 前缀，避免跟其他模组自定义的接口撞名。</li>
  * </ul>
  */
 @Mixin(GuiCreateWorld.class)
 public interface IGuiCreateWorldAccess {
 
     // === World name / 世界名称 ===
-    @Accessor("field_146330_J") String createWorldUI$getWorldName();
-    @Accessor("field_146330_J") void   createWorldUI$setWorldName(String value);
+    @Accessor("field_146330_J") String modernWorldCreatingUI$getWorldName();
+    @Accessor("field_146330_J") void   modernWorldCreatingUI$setWorldName(String value);
 
     // === Game mode / 游戏模式 ===
-    @Accessor("field_146342_r") String createWorldUI$getGameMode();
-    @Accessor("field_146342_r") void   createWorldUI$setGameMode(String value);
+    @Accessor("field_146342_r") String modernWorldCreatingUI$getGameMode();
+    @Accessor("field_146342_r") void   modernWorldCreatingUI$setGameMode(String value);
 
     // === Seed / 种子 ===
-    @Accessor("field_146329_I") String createWorldUI$getSeed();
-    @Accessor("field_146329_I") void   createWorldUI$setSeed(String value);
+    @Accessor("field_146329_I") String modernWorldCreatingUI$getSeed();
+    @Accessor("field_146329_I") void   modernWorldCreatingUI$setSeed(String value);
 
     // === World type index / 世界类型索引 ===
-    @Accessor("field_146331_K") int  createWorldUI$getWorldTypeIndex();
-    @Accessor("field_146331_K") void createWorldUI$setWorldTypeIndex(int value);
+    @Accessor("field_146331_K") int  modernWorldCreatingUI$getWorldTypeIndex();
+    @Accessor("field_146331_K") void modernWorldCreatingUI$setWorldTypeIndex(int value);
 
     // === Generate structures / 生成建筑 ===
-    @Accessor("field_146341_s") boolean createWorldUI$getGenerateStructures();
-    @Accessor("field_146341_s") void    createWorldUI$setGenerateStructures(boolean value);
+    @Accessor("field_146341_s") boolean modernWorldCreatingUI$getGenerateStructures();
+    @Accessor("field_146341_s") void    modernWorldCreatingUI$setGenerateStructures(boolean value);
 
     // === Bonus chest / 奖励箱 ===
-    @Accessor("field_146338_v") boolean createWorldUI$getBonusChest();
-    @Accessor("field_146338_v") void    createWorldUI$setBonusChest(boolean value);
+    @Accessor("field_146338_v") boolean modernWorldCreatingUI$getBonusChest();
+    @Accessor("field_146338_v") void    modernWorldCreatingUI$setBonusChest(boolean value);
 
     // === Allow cheats / 允许作弊 ===
-    @Accessor("field_146340_t") boolean createWorldUI$getAllowCheats();
-    @Accessor("field_146340_t") void    createWorldUI$setAllowCheats(boolean value);
+    @Accessor("field_146340_t") boolean modernWorldCreatingUI$getAllowCheats();
+    @Accessor("field_146340_t") void    modernWorldCreatingUI$setAllowCheats(boolean value);
 
     // === Hardcore / 硬核模式 ===
-    @Accessor("field_146337_w") boolean createWorldUI$getHardcore();
-    @Accessor("field_146337_w") void    createWorldUI$setHardcore(boolean value);
+    @Accessor("field_146337_w") boolean modernWorldCreatingUI$getHardcore();
+    @Accessor("field_146337_w") void    modernWorldCreatingUI$setHardcore(boolean value);
 
     // === Parent screen (read-only) / 父界面（只读） ===
-    @Accessor("field_146332_f") GuiScreen createWorldUI$getParentScreen();
+    @Accessor("field_146332_f") GuiScreen modernWorldCreatingUI$getParentScreen();
 }

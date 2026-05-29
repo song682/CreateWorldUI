@@ -23,11 +23,67 @@ public class DifficultyApplier {
 
     /**
      * <p>
+     *     UI 上当前选中的难度（用户在 GameTab 里选的）<br>
+     *     Currently selected difficulty in the UI (picked by the user in GameTab)
+     * </p>
+     */
+    private static EnumDifficulty selectedDifficulty = null;
+
+    /**
+     * <p>
      *     待应用的难度（世界加载时生效）<br>
      *     Pending difficulty (takes effect when the world loads)
      * </p>
      */
     private static EnumDifficulty pendingDifficulty = null;
+
+    // ===== Selected (UI state) / 选中状态（UI 层） =====
+
+    /**
+     * <p>
+     *     Get the currently selected difficulty in the create-world UI.<br>
+     *     If never set, falls back to {@code mc.gameSettings.difficulty}.
+     * </p>
+     * <p>
+     *     获取创建世界 UI 中当前选中的难度。<br>
+     *     如果从未设置，回退到 {@code mc.gameSettings.difficulty}。
+     * </p>
+     */
+    public static EnumDifficulty getSelectedDifficulty() {
+        if (selectedDifficulty == null) {
+            EnumDifficulty d = net.minecraft.client.Minecraft.getMinecraft().gameSettings.difficulty;
+            selectedDifficulty = d != null ? d : EnumDifficulty.NORMAL;
+        }
+        return selectedDifficulty;
+    }
+
+    /**
+     * <p>
+     *     Set the selected difficulty from the UI.<br>
+     *     Also syncs to {@code mc.gameSettings} immediately.
+     * </p>
+     * <p>
+     *     从 UI 设置选中的难度。<br>
+     *     同时立即同步到 {@code mc.gameSettings}。
+     * </p>
+     */
+    public static void setSelectedDifficulty(EnumDifficulty difficulty) {
+        selectedDifficulty = difficulty;
+        net.minecraft.client.Minecraft.getMinecraft().gameSettings.difficulty = difficulty;
+        net.minecraft.client.Minecraft.getMinecraft().gameSettings.saveOptions();
+    }
+
+    /**
+     * <p>
+     *     Reset selected difficulty (call when UI closes or world is created).<br>
+     *     重置选中难度（UI 关闭或世界创建时调用）。
+     * </p>
+     */
+    public static void resetSelectedDifficulty() {
+        selectedDifficulty = null;
+    }
+
+    // ===== Pending (world-load state) / 待应用状态（世界加载层） =====
 
     /**
      * <p>

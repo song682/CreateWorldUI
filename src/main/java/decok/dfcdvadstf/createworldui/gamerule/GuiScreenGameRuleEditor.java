@@ -1,7 +1,7 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.api.ContentPanelRenderer;
+import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter.GameruleValue;
