@@ -74,6 +74,11 @@ repositories {
         name "Modrinth Maven"
         url "https://api.modrinth.com/maven"
     }
+
+    maven {
+        name "JitPack"
+        url "https://jitpack.io"
+    }
 }
 
 dependencies {
@@ -89,7 +94,7 @@ dependencies {
     implementation "maven.modrinth:notenoughitems-unofficial:${project.nei_version}-GTNH"
     implementation "maven.modrinth:codechickencore-unofficial:${project.cc_version}"
     implementation "maven.modrinth:codechickenlib-unofficial:${project.cc_version}"
-    
+
     implementation fileTree(dir: 'lib', includes: ['*.jar'])
 }
 
@@ -286,5 +291,17 @@ if (project.include_license.toBoolean()){
     }
     sourcesJar {
         from file("./LICENSE")
+    }
+}
+
+apply plugin: 'maven-publish'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact deobfJar
+        }
     }
 }
