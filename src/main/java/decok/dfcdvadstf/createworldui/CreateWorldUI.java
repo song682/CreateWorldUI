@@ -6,6 +6,7 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import decok.dfcdvadstf.catframe.ui.tab.TabRegistry;
+import decok.dfcdvadstf.createworldui.tab.CreateWorldUITabBar;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
 import decok.dfcdvadstf.createworldui.tab.GameTab;
@@ -41,11 +42,11 @@ public class CreateWorldUI {
         logger = event.getModLog();
         logger.info("Initializing CreateWorldUI Mod");
 
-        // Register built-in tabs
-        // 注册内置标签页
-        TabRegistry.registerTab(GameTab::new, 100, "createworldui.tab.game");
-        TabRegistry.registerTab(WorldTab::new, 101, "createworldui.tab.world");
-        TabRegistry.registerTab(MoreTab::new, 102, "createworldui.tab.more");
+        // Register built-in tabs to the CreateWorldUI bar
+        // 注册内置标签页到 CreateWorldUI 的 bar 下
+        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, GameTab::new, 100, "createworldui.tab.game");
+        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, WorldTab::new, 101, "createworldui.tab.world");
+        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, MoreTab::new, 102, "createworldui.tab.more");
         logger.info("Registered built-in tabs: Game, World, More");
     }
 
