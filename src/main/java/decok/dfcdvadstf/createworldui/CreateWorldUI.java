@@ -23,7 +23,7 @@ import org.apache.logging.log4j.Logger;
     acceptableRemoteVersions = "1.7.10",
     guiFactory = "decok.dfcdvadstf.createworldui.config.CreateWorldConfigUI",
     useMetadata = true,
-    dependencies = "required-after:catframe",
+    dependencies = "required-after:dfdvdsfsAPI",
     customProperties = {
         @Mod.CustomProperty(k = "license", v = "MIT"),
         @Mod.CustomProperty(k = "issueTrackerUrl", v = "https://github.com/song682/CreateWorldUI/issues"),
