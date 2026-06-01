@@ -296,6 +296,10 @@ if (project.include_license.toBoolean()){
     }
 }
 
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
