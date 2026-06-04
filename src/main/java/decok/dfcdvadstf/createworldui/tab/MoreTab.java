@@ -29,6 +29,11 @@ public class MoreTab extends AbstractScreenTab {
     public void initGui(TabManager tabManager, int width, int height) {
         super.initGui(tabManager, width, height);
 
+        // Initialize screen and access references
+        // 初始化屏幕和Accessor引用
+        guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
+        access = (IGuiCreateWorldAccess) guiCreateWorld;
+
         if (CreateWorldUI.config.gameruleEdit){
             // Create game rule editor button
             // 创建游戏规则编辑器按钮

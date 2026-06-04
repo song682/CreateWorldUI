@@ -97,7 +97,7 @@ dependencies {
 
     implementation fileTree(dir: 'lib', includes: ['*.jar'])
     implementation "com.github.song682:ModernDifficultyLocker:v1.0.6"
-    implementation "com.github.song682:CatFrame:v0.0.5"
+    implementation "com.github.song682:CatFrame:v0.0.6"
 }
 
 def dependenciesList = []

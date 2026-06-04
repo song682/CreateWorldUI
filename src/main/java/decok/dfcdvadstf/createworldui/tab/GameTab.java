@@ -30,6 +30,11 @@ public class GameTab extends AbstractScreenTab {
     public void initGui(TabManager tabManager, int width, int height) {
         super.initGui(tabManager, width, height);
 
+        // Initialize screen and access references
+        // 初始化屏幕和Accessor引用
+        guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
+        access = (IGuiCreateWorldAccess) guiCreateWorld;
+
         // Create world name text field
         // 创建世界名称输入框
         worldNameField = new GuiTextField(mc.fontRenderer,
