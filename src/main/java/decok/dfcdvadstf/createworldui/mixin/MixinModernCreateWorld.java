@@ -160,8 +160,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$ensureFieldsNotNull() {
-        this.field_146330_J = I18n.format("selectWorld.newWorld");
-        modernWorldCreatingUI$logger.info("Set default world name: " + this.field_146330_J);
+        // Only set default world name if it's null or empty
+        // 只在世界名称为 null 或空时设置默认值,避免覆盖外部模组设置的值
+        if (this.field_146330_J == null || this.field_146330_J.isEmpty()) {
+            this.field_146330_J = I18n.format("selectWorld.newWorld");
+            modernWorldCreatingUI$logger.info("Set default world name: " + this.field_146330_J);
+        }
 
         if (this.field_146329_I == null) {
             this.field_146329_I = "";
@@ -169,8 +173,18 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         if (this.field_146342_r == null) {
             this.field_146342_r = "survival";
         }
-        if (WorldType.worldTypes == null || this.field_146331_K >= WorldType.worldTypes.length ||
+        
+        // Validate world type index — only reset if truly invalid
+        // 验证世界类型索引——只在真正无效时才重置
+        // This preserves indices set by DefaultWorldGenerator or other mods
+        // 这样能保留 DefaultWorldGenerator 或其他模组设置的索引
+        if (WorldType.worldTypes == null || this.field_146331_K < 0) {
+            this.field_146331_K = 0;
+        } else if (this.field_146331_K >= WorldType.worldTypes.length ||
                 WorldType.worldTypes[this.field_146331_K] == null) {
+            // Index out of range or points to null — find a valid default
+            // 索引超出范围或指向 null——找一个有效的默认值
+            modernWorldCreatingUI$logger.warn("Invalid world type index: " + this.field_146331_K + ", resetting to 0");
             this.field_146331_K = 0;
         }
     }

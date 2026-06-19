@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.tab;
 
+import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
@@ -9,6 +10,7 @@ import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,21 +20,21 @@ public class MoreTab extends AbstractScreenTab {
     private GuiButton gameRuleEditorButton;
     private GuiButton experimentsButton;
     private GuiButton dataPacksButton;
-    private IGuiCreateWorldAccess access;
     private GuiCreateWorld guiCreateWorld;
+    private IGuiCreateWorldAccess access;
 
     public MoreTab() {
         super(102, "createworldui.tab.more");
+        
+        // Set tab texture in constructor to fix the texture path issue
+        setTabTexture(new ResourceLocation("catframe", "textures/gui/tab/tabs.png"));
     }
 
     @Override
     public void initGui(TabManager tabManager, int width, int height) {
-        super.initGui(tabManager, width, height);
-
-        // Initialize screen and access references
-        // 初始化屏幕和Accessor引用
         guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
         access = (IGuiCreateWorldAccess) guiCreateWorld;
+        super.initGui(tabManager, width, height);
 
         if (CreateWorldUI.config.gameruleEdit){
             // Create game rule editor button

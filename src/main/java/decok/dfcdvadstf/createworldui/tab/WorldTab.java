@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.tab;
 
+import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.catframe.ui.GuiCyclableButton;
 import decok.dfcdvadstf.catframe.ui.tab.AbstractScreenTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
@@ -8,6 +9,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
 
 import java.util.ArrayList;
@@ -19,21 +21,23 @@ public class WorldTab extends AbstractScreenTab {
     private GuiButton generateStructuresButton;
     private GuiButton bonusChestButton;
     private GuiButton customizeButton;
-    private IGuiCreateWorldAccess access;
     private GuiCreateWorld guiCreateWorld;
+    private IGuiCreateWorldAccess access;
 
     public WorldTab() {
         super(101, "createworldui.tab.world");
+        
+        // Set tab texture in constructor to fix the texture path issue
+        setTabTexture(new ResourceLocation("catframe", "textures/gui/tab/tabs.png"));
     }
 
     @Override
     public void initGui(TabManager tabManager, int width, int height) {
-        super.initGui(tabManager, width, height);
 
-        // Initialize screen and access references
-        // 初始化屏幕和Accessor引用
         guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
         access = (IGuiCreateWorldAccess) guiCreateWorld;
+        
+        super.initGui(tabManager, width, height);
 
         // Create seed text field
         // 创建种子输入框
@@ -62,9 +66,26 @@ public class WorldTab extends AbstractScreenTab {
             if (wt != null) validWorldTypes.add(wt);
         }
 
+        // Read the world type index from vanilla field (set by DefaultWorldGenerator or vanilla)
+        // 从原版字段读取世界类型索引（由 DefaultWorldGenerator 或原版设置）
         int currentIdx = access.modernWorldCreatingUI$getWorldTypeIndex();
-        WorldType currentType = (currentIdx < WorldType.worldTypes.length && WorldType.worldTypes[currentIdx] != null)
-                ? WorldType.worldTypes[currentIdx] : validWorldTypes.get(0);
+        
+        // Debug: log the current index
+        // 调试：记录当前索引
+        System.out.println("WorldTab: Current world type index from vanilla field: " + currentIdx);
+        if (currentIdx >= 0 && currentIdx < WorldType.worldTypes.length && WorldType.worldTypes[currentIdx] != null) {
+            System.out.println("WorldTab: World type name: " + WorldType.worldTypes[currentIdx].getWorldTypeName());
+        }
+        
+        // Validate index and fallback to default if invalid
+        // 验证索引，如果无效则回退到默认值
+        WorldType currentType;
+        if (currentIdx >= 0 && currentIdx < WorldType.worldTypes.length && WorldType.worldTypes[currentIdx] != null) {
+            currentType = WorldType.worldTypes[currentIdx];
+        } else {
+            currentType = validWorldTypes.get(0);
+            System.out.println("WorldTab: Invalid world type index, falling back to: " + currentType.getWorldTypeName());
+        }
 
         worldTypeButton = GuiCyclableButton.<WorldType>builder(
                         wt -> I18n.format("selectWorld.mapType") + " " + I18n.format(wt.getTranslateName()))

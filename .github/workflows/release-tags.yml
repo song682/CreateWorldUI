@@ -16,8 +16,3 @@ jobs:
     with:
       mod_archives_name: 'CreateWorldUI'
       mc_version: '1.7.10'
-    secrets:
-      CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-      CURSEFORGE_PROJECT_ID: ${{ secrets.CURSEFORGE_PROJECT_ID }}
-      MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-      MODRINTH_PROJECT_ID: ${{ secrets.MODRINTH_PROJECT_ID }}

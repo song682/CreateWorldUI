@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.tab;
 
+import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.catframe.ui.GuiCyclableButton;
 import decok.dfcdvadstf.catframe.ui.tab.AbstractScreenTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
@@ -11,6 +12,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiTextField;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.EnumDifficulty;
 
 public class GameTab extends AbstractScreenTab {
@@ -28,12 +30,9 @@ public class GameTab extends AbstractScreenTab {
 
     @Override
     public void initGui(TabManager tabManager, int width, int height) {
-        super.initGui(tabManager, width, height);
-
-        // Initialize screen and access references
-        // 初始化屏幕和Accessor引用
         guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
         access = (IGuiCreateWorldAccess) guiCreateWorld;
+        super.initGui(tabManager, width, height);
 
         // Create world name text field
         // 创建世界名称输入框
