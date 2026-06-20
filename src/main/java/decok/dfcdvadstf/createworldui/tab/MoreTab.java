@@ -1,116 +1,95 @@
 package decok.dfcdvadstf.createworldui.tab;
 
 import cpw.mods.fml.common.Loader;
+import decok.dfcdvadstf.catframe.ui.Text;
+import decok.dfcdvadstf.catframe.ui.components.Button;
+import decok.dfcdvadstf.catframe.ui.layouts.GridLayout;
+import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
+import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
-import decok.dfcdvadstf.catframe.ui.tab.TabManager;
-import decok.dfcdvadstf.catframe.ui.tab.AbstractScreenTab;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Map;
 
-
-public class MoreTab extends AbstractScreenTab {
-    private GuiButton gameRuleEditorButton;
-    private GuiButton experimentsButton;
-    private GuiButton dataPacksButton;
+/**
+ * More Options Tab with GridLayout-based layout.
+ * <p>使用 GridLayout 布局的更多选项标签页。</p>
+ */
+public class MoreTab extends GridLayoutTab {
+    private Button gameRuleEditorButton;
+    private Button experimentsButton;
+    private Button dataPacksButton;
     private GuiCreateWorld guiCreateWorld;
     private IGuiCreateWorldAccess access;
 
     public MoreTab() {
         super(102, "createworldui.tab.more");
-        
-        // Set tab texture in constructor to fix the texture path issue
-        setTabTexture(new ResourceLocation("catframe", "textures/gui/tab/tabs.png"));
     }
 
     @Override
     public void initGui(TabManager tabManager, int width, int height) {
         guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
         access = (IGuiCreateWorldAccess) guiCreateWorld;
+
+        int row = 0;
+
+        if (CreateWorldUI.config.gameruleEdit) {
+            gameRuleEditorButton = Button.builder(
+                    Text.literal(I18n.format("createworldui.button.gameRuleEditor")),
+                    btn -> {
+                        Map<String, String> pending = GameRuleApplier.getPendingGameRules();
+                        if (pending == null) pending = new HashMap<>();
+                        Map<String, String> cleanPending = new HashMap<>();
+                        for (Map.Entry<String, String> entry : pending.entrySet()) {
+                            if (entry.getKey() != null && entry.getValue() != null) {
+                                cleanPending.put(entry.getKey(), entry.getValue());
+                            }
+                        }
+                        mc.displayGuiScreen(new GuiScreenGameRuleEditor(guiCreateWorld, cleanPending));
+                    })
+                .width(210).height(20).build();
+            layout.addChild(gameRuleEditorButton, row++, 0);
+        }
+
+        if (CreateWorldUI.config.enableOtherMoreTabButton) {
+            experimentsButton = Button.builder(
+                    Text.literal(I18n.format("selectWorld.experiments")),
+                    btn -> {})
+                .width(210).height(20).build();
+            layout.addChild(experimentsButton, row++, 0);
+
+            dataPacksButton = Button.builder(
+                    Text.literal(I18n.format("selectWorld.dataPacks")),
+                    btn -> {})
+                .width(210).height(20).build();
+            layout.addChild(dataPacksButton, row++, 0);
+        }
+
         super.initGui(tabManager, width, height);
-
-        if (CreateWorldUI.config.gameruleEdit){
-            // Create game rule editor button
-            // 创建游戏规则编辑器按钮
-            gameRuleEditorButton = new GuiButton(200, width / 2 - 105,
-                    height / 6 + 40, 210, 20,
-                    I18n.format("createworldui.button.gameRuleEditor"));
-            addButton(gameRuleEditorButton);
-        }
-
-        if (CreateWorldUI.config.enableOtherMoreTabButton){
-            // Create experiments button
-            // 创建实验性功能按钮
-            experimentsButton = new GuiButton(201, width / 2 - 105,
-                    height / 6 + 65, 210, 20,
-                    I18n.format("selectWorld.experiments"));
-            addButton(experimentsButton);
-
-            // Create data packs button
-            // 创建数据包按钮
-            dataPacksButton = new GuiButton(202, width / 2 - 105,
-                    height / 6 + 90, 210, 20,
-                    I18n.format("selectWorld.dataPacks"));
-            addButton(dataPacksButton);
-        }
-
-        // Initially hide all buttons
-        // 初始隐藏所有按钮
-        setVisible(false);
     }
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         if (!visible) return;
-        // More tab may not need extra drawing
-        // 更多标签页可能不需要额外绘制内容
+        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
     @Override
     public void actionPerformed(GuiButton button) {
-        System.out.println("MoreTab: Button clicked: " + button.id);
-
-        if (button.id == 200) {
-            // Open game rule editor
-            // 打开游戏规则编辑器
-            Map<String, String> pending = GameRuleApplier.getPendingGameRules();
-            if (pending == null) pending = new HashMap<>();
-
-            // Filter out null values
-            // 过滤掉 null 値
-            Map<String, String> cleanPending = new HashMap<>();
-            for (Map.Entry<String, String> entry : pending.entrySet()) {
-                if (entry.getKey() != null && entry.getValue() != null) {
-                    cleanPending.put(entry.getKey(), entry.getValue());
-                }
-            }
-
-            mc.displayGuiScreen(new GuiScreenGameRuleEditor(guiCreateWorld, cleanPending));
-        } else if (button.id == 201) {
-            // Open experiments screen
-            // 打开实验性功能界面
-            System.out.println("MoreTab: Experiments button clicked");
-        } else if (button.id == 202) {
-            // Open data packs screen
-            // 打开数据包界面
-            System.out.println("MoreTab: Data packs button clicked");
-        }
+        // All actions handled via OnPress callbacks
     }
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        // No handling needed / 无需处理
     }
 
     @Override
     public void keyTyped(char typedChar, int keyCode) {
-        // No handling needed / 无需处理
     }
 }
