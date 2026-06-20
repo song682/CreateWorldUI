@@ -1,10 +1,10 @@
 package decok.dfcdvadstf.createworldui.api;
 
 import decok.dfcdvadstf.createworldui.Tags;
+import decok.dfcdvadstf.createworldui.mixin.MixinIntegratedServer;
 import net.minecraft.world.EnumDifficulty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import decok.dfcdvadstf.createworldui.mixin.MixinIntegratedServer;
 
 /**
  * <p>

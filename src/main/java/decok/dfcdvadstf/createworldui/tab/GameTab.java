@@ -1,8 +1,5 @@
 package decok.dfcdvadstf.createworldui.tab;
 
-import cpw.mods.fml.common.Loader;
-import decok.dfcdvadstf.catframe.ui.Text;
-import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.EditBox;
 import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
@@ -17,9 +14,6 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.world.EnumDifficulty;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Game Settings Tab with GridLayout-based layout.

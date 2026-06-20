@@ -1,18 +1,19 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
-import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.catframe.ui.tab.Tab;
+import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
-import decok.dfcdvadstf.catframe.ui.GuiCyclableButton;
+import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
+import decok.dfcdvadstf.catframe.ui.tab.Tab;
 import decok.dfcdvadstf.catframe.ui.tab.TabBar;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.catframe.ui.tab.TabState;
-import decok.dfcdvadstf.createworldui.tab.CreateWorldUITabBar;
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
+import decok.dfcdvadstf.createworldui.tab.CreateWorldUITabBar;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -20,7 +21,6 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
-import cpw.mods.fml.common.Loader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
@@ -173,7 +173,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         if (this.field_146342_r == null) {
             this.field_146342_r = "survival";
         }
-        
+
         // Validate world type index — only reset if truly invalid
         // 验证世界类型索引——只在真正无效时才重置
         // This preserves indices set by DefaultWorldGenerator or other mods
@@ -257,7 +257,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                                     (isHovered ? TabState.HOVER : TabState.NORMAL);
 
                             drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, this.width, TAB_HEIGHT);
-                            
+
                             // 计算文本颜色 / Calculate text color
                             int textColor = state.baseTextColor;
                             if (state == TabState.HOVER || state == TabState.SELECTED_HOVER) {
@@ -270,7 +270,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                                     textColor = 0xFFFF55; // 黄色 / Yellow
                                 }
                             }
-                            
+
                             drawCenteredString(mc.fontRenderer, this.displayString,
                                     this.xPosition + this.width / 2,
                                     this.yPosition + (this.height - 8) / 2, textColor);
@@ -597,19 +597,18 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
 
         if (modernWorldCreatingUI$tabManager != null) {
-            // 遍历当前标签页的按钮，查找是否有GuiCyclableButton需要处理滚动事件
-            for (Object obj : this.buttonList) {
-                if (obj instanceof GuiCyclableButton) {
-                    GuiCyclableButton<?> button = (GuiCyclableButton<?>) obj;
-                    if (button.visible && button.enabled &&
-                            mouseX >= button.xPosition && mouseX < button.xPosition + button.width &&
-                            mouseY >= button.yPosition && mouseY < button.yPosition + button.height) {
+            Tab currentTab = modernWorldCreatingUI$tabManager.getCurrentTab();
+            if (currentTab != null) {
+                currentTab.visitComponents(comp -> {
+                    // Handle scroll wheel for CyclingButton components
+                    if (comp instanceof CyclingButton && comp.isVisible() && comp.isActive()
+                            && comp.isMouseOver(mouseX, mouseY)) {
                         int delta = Mouse.getEventDWheel();
                         if (delta != 0) {
-                            button.mouseScrolled(delta);
+                            comp.mouseScrolled(delta);
                         }
                     }
-                }
+                });
             }
         }
     }

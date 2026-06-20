@@ -1,9 +1,7 @@
 package decok.dfcdvadstf.createworldui.tab;
 
-import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;
-import decok.dfcdvadstf.catframe.ui.layouts.GridLayout;
 import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;

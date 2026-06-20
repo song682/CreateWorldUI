@@ -1,13 +1,12 @@
 package decok.dfcdvadstf.createworldui.api.gamerule;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import decok.dfcdvadstf.createworldui.Tags;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;

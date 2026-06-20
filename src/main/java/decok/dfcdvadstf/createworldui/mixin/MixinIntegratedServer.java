@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
+import cpw.mods.fml.client.FMLClientHandler;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import net.minecraft.client.Minecraft;
@@ -13,8 +14,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import cpw.mods.fml.client.FMLClientHandler;
 
 /**
  * <p>

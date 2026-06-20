@@ -1,13 +1,12 @@
 package decok.dfcdvadstf.createworldui.gamerule;
 
-import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import cpw.mods.fml.common.Loader;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.api.gamerule.*;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter.GameruleValue;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleTooltipRegistry;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleNameRegistry;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleCategoryRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -22,10 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
-
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
 
 import java.util.*;
 
