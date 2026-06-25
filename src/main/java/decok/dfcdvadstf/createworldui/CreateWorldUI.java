@@ -5,16 +5,20 @@ import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
+import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
 import decok.dfcdvadstf.catframe.langguage.LanguageRegister;
 import decok.dfcdvadstf.catframe.langguage.LocalizationManager;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.tab.TabRegistry;
+import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
 import decok.dfcdvadstf.createworldui.tab.CreateWorldUITabBar;
 import decok.dfcdvadstf.createworldui.tab.GameTab;
 import decok.dfcdvadstf.createworldui.tab.MoreTab;
 import decok.dfcdvadstf.createworldui.tab.WorldTab;
+import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -57,6 +61,22 @@ public class CreateWorldUI {
     @EventHandler
     public void init(FMLInitializationEvent event) {
         logger.info("CreateWorldUI Mod loaded successfully");
+        MinecraftForge.EVENT_BUS.register(new IMCRuntimeHandler());
+    }
+    
+    @EventHandler
+    public void onIMC(IMCEvent event) {
+        for (IMCMessage msg : event.getMessages()) {
+            if ("difficultylocker".equals(msg.getSender())) {
+                switch (msg.key) {
+                    case "difficultylocker_config":
+                        DifficultyLocker.processIMCConfig(msg.getNBTValue());
+                        break;
+                    default:
+                        logger.warn("Unknown IMC key from difficultylocker: {}", msg.key);
+                }
+            }
+        }
     }
 
     @EventHandler

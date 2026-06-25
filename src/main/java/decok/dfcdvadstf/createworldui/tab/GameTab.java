@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.tab;
 
+import cpw.mods.fml.common.event.FMLInterModComms;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.EditBox;
@@ -15,6 +16,7 @@ import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.EnumDifficulty;
 
@@ -93,7 +95,9 @@ public class GameTab extends GridLayoutTab {
                 });
         layout.addChild(gameModeButton, row++, 0);
 
-        boolean showLock = DifficultyLocker.isLoaded() && CreateWorldUI.config.lockDifficultyButton;
+        boolean showLock = (DifficultyLocker.hasIMCConfig()
+            ? DifficultyLocker.getIMCShowLockButton()
+            : DifficultyLocker.isLoaded()) && CreateWorldUI.config.lockDifficultyButton;
         int difficultyWidth = showLock ? 188 : 208;
 
         difficultyButton = CyclingButton.<EnumDifficulty>builder(d -> {
@@ -132,6 +136,12 @@ public class GameTab extends GridLayoutTab {
 
                                 EnumDifficulty currentDifficulty = difficultyButton.getValue();
                                 DifficultyLocker.setDifficultyLocked(currentDifficulty, newLockedState);
+
+                                // IMC: 发送 runtime 消息通知 DifficultyLocker
+                                NBTTagCompound imcTag = new NBTTagCompound();
+                                imcTag.setInteger("difficultyId", currentDifficulty.getDifficultyId());
+                                imcTag.setBoolean("locked", newLockedState);
+                                FMLInterModComms.sendRuntimeMessage(CreateWorldUI.class, "difficultylocker", "lock_state_change", imcTag);
 
                                 if (newLockedState) {
                                     difficultyButton.setActive(false);

@@ -2,10 +2,18 @@ package decok.dfcdvadstf.createworldui.api;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Optional;
+import cpw.mods.fml.common.event.FMLInterModComms;
 import decok.dfcdvadstf.createworldui.Tags;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.EnumDifficulty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
+
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
 
 /**
  * <p>
@@ -29,6 +37,69 @@ public class DifficultyLocker {
      * </p>
      */
     private static final boolean[] difficultyLocked = new boolean[4]; // 0=peaceful, 1=easy, 2=normal, 3=hard
+    
+    // ===== IMC 配置存储（来自 DifficultyLocker 模组的 init-time 消息） =====
+    
+    private static boolean imcConfigReceived = false;
+    private static boolean imcShowLockButton = true;
+    private static boolean imcAllowUnlock = false;
+    private static int imcDefaultLockedDifficulty = 2;
+    
+    /**
+     * <p>
+     *     Process IMC config received from DifficultyLocker mod<br>
+     *     处理来自 DifficultyLocker 模组的 IMC 配置消息
+     * </p>
+     * @param tag The NBT data from IMC message / IMC 消息的 NBT 数据
+     */
+    public static void processIMCConfig(NBTTagCompound tag) {
+        imcConfigReceived = true;
+        imcShowLockButton = tag.getBoolean("showLockButton");
+        imcAllowUnlock = tag.getBoolean("allowUnlock");
+        imcDefaultLockedDifficulty = tag.getInteger("defaultLockedDifficulty");
+        logger.info("Received IMC config from DifficultyLocker: showLockButton={}, allowUnlock={}, defaultDiff={}",
+            imcShowLockButton, imcAllowUnlock, imcDefaultLockedDifficulty);
+    }
+    
+    /** Whether IMC config was received (more accurate than Loader.isModLoaded) */
+    public static boolean hasIMCConfig() { return imcConfigReceived; }
+    public static boolean getIMCShowLockButton() { return imcShowLockButton; }
+    public static boolean getIMCAllowUnlock() { return imcAllowUnlock; }
+    public static int getIMCDefaultLockedDifficulty() { return imcDefaultLockedDifficulty; }
+    
+    // ===== Runtime IMC 轮询 =====
+    
+    private static int pollCounter = 0;
+    
+    /**
+     * <p>
+     *     Poll runtime IMC messages from DifficultyLocker mod<br>
+     *     轮询处理来自 DifficultyLocker 的运行时 IMC 消息
+     * </p>
+     */
+    public static void pollRuntimeMessages() {
+        pollCounter++;
+        if (pollCounter % 20 != 0) return; // 每秒查一次
+        
+        ImmutableList<FMLInterModComms.IMCMessage> messages = FMLInterModComms.fetchRuntimeMessages(CreateWorldUI.class);
+        for (FMLInterModComms.IMCMessage msg : messages) {
+            if ("difficultylocker".equals(msg.getSender())) {
+                switch (msg.key) {
+                    case "world_lock_applied":
+                        NBTTagCompound nbt = msg.getNBTValue();
+                        int diffId = nbt.getInteger("difficultyId");
+                        EnumDifficulty diff = EnumDifficulty.getDifficultyEnum(diffId);
+                        if (diff != null) {
+                            setDifficultyLocked(diff, true);
+                            logger.info("IMC: World lock applied, difficulty {} locked", diffId);
+                        }
+                        break;
+                    default:
+                        logger.debug("Unknown runtime IMC key from difficultylocker: {}", msg.key);
+                }
+            }
+        }
+    }
     
     /**
      * <p>

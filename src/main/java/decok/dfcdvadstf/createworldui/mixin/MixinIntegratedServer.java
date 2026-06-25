@@ -1,9 +1,12 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
 import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.common.event.FMLInterModComms;
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldServer;
@@ -88,6 +91,15 @@ public abstract class MixinIntegratedServer {
             EnumDifficulty lockedDiff = DifficultyLocker.getLockedDifficulty();
             if (lockedDiff != null) {
                 DifficultyLocker.applyToWorldData(lockedDiff);
+                
+                // IMC: 通知 DifficultyLocker 世界已创建，携带 UI 侧的锁定状态
+                NBTTagCompound imcTag = new NBTTagCompound();
+                imcTag.setString("worldName", worldNameIn);
+                imcTag.setInteger("difficulty", lockedDiff.getDifficultyId());
+                imcTag.setBoolean("locked", true);
+                FMLInterModComms.sendRuntimeMessage(CreateWorldUI.class, "difficultylocker", "world_created", imcTag);
+                createWorldUI$logger.info("Sent runtime IMC: world_created, world='{}', diff={}", worldNameIn, lockedDiff.getDifficultyId());
+                
                 DifficultyLocker.resetAllLocks(); // Reset after applying
                 createWorldUI$logger.info("Locked difficulty '{}' also applied to WorldDifficultyData", lockedDiff.getDifficultyId());
             }
