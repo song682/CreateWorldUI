@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui.tab;
 
+import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.EditBox;
 import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
@@ -10,10 +11,15 @@ import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.EnumDifficulty;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * Game Settings Tab with GridLayout-based layout.
@@ -29,7 +35,7 @@ public class GameTab extends GridLayoutTab {
     private IGuiCreateWorldAccess access;
 
     public GameTab() {
-        super(100, "createworldui.tab.game");
+        super(100, Text.translatable("createworldui","createworldui.tab.game"));
     }
 
     @Override
@@ -37,10 +43,15 @@ public class GameTab extends GridLayoutTab {
         guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
         access = (IGuiCreateWorldAccess) guiCreateWorld;
 
+        // Match high-version GameTab: single column with row spacing
+        layout.rowSpacing(8);
+        // More top spacing from tab bar / 增大标签栏间距
+        verticalAlignment = 0.22F;
+
         int row = 0;
 
         // Create world name text field
-        worldNameField = new EditBox(0, 0, 208, 20);
+        worldNameField = new EditBox(0, 0, 208, 20).setUseVanillaTexture(true);
         String worldName = access.modernWorldCreatingUI$getWorldName();
         if ((worldName == null || worldName.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             worldName = I18n.format("selectWorld.newWorld");
@@ -60,6 +71,7 @@ public class GameTab extends GridLayoutTab {
                         mode -> I18n.format("selectWorld.gameMode") + ": " + I18n.format("selectWorld.gameMode." + mode))
                 .values("survival", "creative", "hardcore", "adventure")
                 .initially(currentMode)
+                .useVanillaTexture(true)
                 .build(0, 0, 208, 20, (button, mode) -> {
                     access.modernWorldCreatingUI$setGameMode(mode);
                     access.modernWorldCreatingUI$setHardcore("hardcore".equals(mode));
@@ -81,8 +93,8 @@ public class GameTab extends GridLayoutTab {
                 });
         layout.addChild(gameModeButton, row++, 0);
 
-        // Create difficulty button
-        int difficultyWidth = 188;
+        boolean showLock = DifficultyLocker.isLoaded() && CreateWorldUI.config.lockDifficultyButton;
+        int difficultyWidth = showLock ? 188 : 208;
 
         difficultyButton = CyclingButton.<EnumDifficulty>builder(d -> {
                     if (access.modernWorldCreatingUI$getHardcore()) {
@@ -92,6 +104,7 @@ public class GameTab extends GridLayoutTab {
                 })
                 .values(EnumDifficulty.values())
                 .initially(DifficultyApplier.getSelectedDifficulty())
+                .useVanillaTexture(true)
                 .build(0, 0, difficultyWidth, 20, (button, diff) -> {
                     if (!access.modernWorldCreatingUI$getHardcore() && !DifficultyLocker.isDifficultyLocked(diff)) {
                         DifficultyApplier.setSelectedDifficulty(diff);
@@ -100,21 +113,21 @@ public class GameTab extends GridLayoutTab {
         layout.addChild(difficultyButton, row, 0);
 
         // Create difficulty lock button (reflection-based, from external mod)
-        if (DifficultyLocker.isLoaded() && CreateWorldUI.config.lockDifficultyButton) {
+        if (showLock) {
             try {
                 Class<?> guiLockButtonClass = Class.forName("decok.dfcdvadstf.difficultyLocker.GuiLockButton");
-                java.lang.reflect.Constructor<?> constructor = guiLockButtonClass.getConstructor(int.class, int.class, int.class, boolean.class);
+                Constructor<?> constructor = guiLockButtonClass.getConstructor(int.class, int.class, int.class, boolean.class);
                 final GuiButton lockButton = (GuiButton) constructor.newInstance(10, 0, 0, false);
                 difficultyLockButton = new GuiButtonAdapter(lockButton) {
                     @Override
                     public void mouseClicked(int mx, int my, int mb) {
                         if (active && visible && getDelegate().mousePressed(Minecraft.getMinecraft(), mx, my)) {
                             try {
-                                java.lang.reflect.Method isLockedMethod = getDelegate().getClass().getMethod("isLocked");
+                                Method isLockedMethod = getDelegate().getClass().getMethod("isLocked");
                                 boolean isCurrentlyLocked = (boolean) isLockedMethod.invoke(getDelegate());
                                 boolean newLockedState = !isCurrentlyLocked;
 
-                                java.lang.reflect.Method setLockedMethod = getDelegate().getClass().getMethod("setLocked", boolean.class);
+                                Method setLockedMethod = getDelegate().getClass().getMethod("setLocked", boolean.class);
                                 setLockedMethod.invoke(getDelegate(), newLockedState);
 
                                 EnumDifficulty currentDifficulty = difficultyButton.getValue();
@@ -127,8 +140,8 @@ public class GameTab extends GridLayoutTab {
                                 }
 
                                 Minecraft.getMinecraft().getSoundHandler().playSound(
-                                    net.minecraft.client.audio.PositionedSoundRecord.func_147674_a(
-                                        new net.minecraft.util.ResourceLocation("gui.button.press"), 1.0F));
+                                    PositionedSoundRecord.func_147674_a(
+                                        new ResourceLocation("gui.button.press"), 1.0F));
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -153,6 +166,7 @@ public class GameTab extends GridLayoutTab {
                 })
                 .values(Boolean.TRUE, Boolean.FALSE)
                 .initially(access.modernWorldCreatingUI$getAllowCheats())
+                .useVanillaTexture(true)
                 .build(0, 0, 208, 20, (button, value) -> {
                     if (!access.modernWorldCreatingUI$getHardcore()) {
                         access.modernWorldCreatingUI$setAllowCheats(value);
@@ -186,10 +200,10 @@ public class GameTab extends GridLayoutTab {
         // Render all components
         super.drawScreen(mouseX, mouseY, partialTicks);
 
-        // Draw labels on top
+        // Draw labels on top - position relative to the component's layout position
+        // 在顶层绘制标签——相对于组件的布局位置
         mc.fontRenderer.drawString(I18n.format("selectWorld.enterName"),
-                guiCreateWorld.width / 2 - 104,
-                guiCreateWorld.height / 5 - 13, 0xA0A0A0);
+                worldNameField.getX(), worldNameField.getY() - mc.fontRenderer.FONT_HEIGHT - 3, 0xA0A0A0);
     }
 
     @Override
@@ -199,7 +213,9 @@ public class GameTab extends GridLayoutTab {
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        worldNameField.mouseClicked(mouseX, mouseY, mouseButton);
+        // Delegate to GridLayoutTab which forwards to all Components
+        // 委托给 GridLayoutTab，它会转发到所有 Component
+        super.mouseClicked(mouseX, mouseY, mouseButton);
         if (difficultyLockButton != null) {
             difficultyLockButton.mouseClicked(mouseX, mouseY, mouseButton);
         }
@@ -207,7 +223,9 @@ public class GameTab extends GridLayoutTab {
 
     @Override
     public void keyTyped(char typedChar, int keyCode) {
-        worldNameField.keyTyped(typedChar, keyCode);
+        // Forward key to all Components via GridLayoutTab, then sync world name
+        // 转发按键到所有 Component，然后同步世界名称
+        super.keyTyped(typedChar, keyCode);
         access.modernWorldCreatingUI$setWorldName(worldNameField.getText());
     }
 }

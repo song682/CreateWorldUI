@@ -5,6 +5,9 @@ import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import decok.dfcdvadstf.catframe.langguage.LanguageRegister;
+import decok.dfcdvadstf.catframe.langguage.LocalizationManager;
+import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
@@ -16,20 +19,20 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Mod(
-    modid = Tags.MODID,
-    name = Tags.NAME,
-    version = Tags.VERSION,
-    acceptedMinecraftVersions = "1.7.10",
-    acceptableRemoteVersions = "1.7.10",
-    guiFactory = "decok.dfcdvadstf.createworldui.config.CreateWorldConfigUI",
-    useMetadata = true,
-    dependencies = "required-after:dfdvdsfsAPI",
-    customProperties = {
-        @Mod.CustomProperty(k = "license", v = "MIT"),
-        @Mod.CustomProperty(k = "issueTrackerUrl", v = "https://github.com/song682/CreateWorldUI/issues"),
-        @Mod.CustomProperty(k = "iconFile", v = "assets/createworldui/logo.png"),
-        @Mod.CustomProperty(k = "backgroundFile", v = "assets/catalogue/background.png")
-    }
+        modid = Tags.MODID,
+        name = Tags.NAME,
+        version = Tags.VERSION,
+        acceptedMinecraftVersions = "1.7.10",
+        acceptableRemoteVersions = "1.7.10",
+        guiFactory = "decok.dfcdvadstf.createworldui.config.CreateWorldConfigUI",
+        useMetadata = true,
+        dependencies = "required-after:dfdvdsfsAPI",
+        customProperties = {
+                @Mod.CustomProperty(k = "license", v = "MIT"),
+                @Mod.CustomProperty(k = "issueTrackerUrl", v = "https://github.com/song682/CreateWorldUI/issues"),
+                @Mod.CustomProperty(k = "iconFile", v = "assets/createworldui/logo.png"),
+                @Mod.CustomProperty(k = "backgroundFile", v = "assets/catalogue/background.png")
+        }
 )
 public class CreateWorldUI {
 
@@ -41,12 +44,13 @@ public class CreateWorldUI {
         config = new Config(event.getSuggestedConfigurationFile());
         logger = event.getModLog();
         logger.info("Initializing CreateWorldUI Mod");
+        LanguageRegister.domain(Tags.MODID, "assets/createworldui/lang");
 
         // Register built-in tabs to the CreateWorldUI bar
         // 注册内置标签页到 CreateWorldUI 的 bar 下
-        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, GameTab::new, 100, "createworldui.tab.game");
-        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, WorldTab::new, 101, "createworldui.tab.world");
-        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, MoreTab::new, 102, "createworldui.tab.more");
+        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, GameTab::new, 100, Text.translatable("createworldui","createworldui.tab.game"));
+        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, WorldTab::new, 101, Text.translatable("createworldui","createworldui.tab.world"));
+        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, MoreTab::new, 102, Text.translatable("createworldui","createworldui.tab.more"));
         logger.info("Registered built-in tabs: Game, World, More");
     }
 

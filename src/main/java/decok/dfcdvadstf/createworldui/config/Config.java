@@ -17,6 +17,7 @@ public class Config {
     public boolean showWorldNamePlaceHolder;
     public boolean disableCreateButtonWhenWNIsBlank;
     public boolean lockDifficultyButton;
+    public boolean filterNonCreatableWorldTypes;
 
     public Config(File file) {
         configFile = new Configuration(file);
@@ -57,6 +58,10 @@ public class Config {
         lockDifficultyButton = configFile.getBoolean("lockDifficultyButton", "UI Management", false, 
             "Set True to lock the difficulty button");
         configFile.getCategory("ui management").get("lockDifficultyButton").setLanguageKey("config.option.lockDifficultyButton");
+        
+        filterNonCreatableWorldTypes = configFile.getBoolean("filterNonCreatableWorldTypes", "UI Management", true, 
+            "Set True to hide world types that cannot be created (e.g. Default_1_1)");
+        configFile.getCategory("ui management").get("filterNonCreatableWorldTypes").setLanguageKey("config.option.filterNonCreatableWorldTypes");
         
         // GameRule Editor category options
         // 游戏规则编辑器分类配置项

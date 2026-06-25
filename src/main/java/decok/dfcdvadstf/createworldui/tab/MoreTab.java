@@ -27,7 +27,7 @@ public class MoreTab extends GridLayoutTab {
     private IGuiCreateWorldAccess access;
 
     public MoreTab() {
-        super(102, "createworldui.tab.more");
+        super(102, Text.translatable("createworldui","createworldui.tab.more"));
     }
 
     @Override
@@ -35,11 +35,14 @@ public class MoreTab extends GridLayoutTab {
         guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
         access = (IGuiCreateWorldAccess) guiCreateWorld;
 
+        // Single column with row spacing
+        layout.rowSpacing(8);
+
         int row = 0;
 
         if (CreateWorldUI.config.gameruleEdit) {
             gameRuleEditorButton = Button.builder(
-                    Text.literal(I18n.format("createworldui.button.gameRuleEditor")),
+                    Text.translatable("createworldui", "createworldui.button.gamerule_editor"),
                     btn -> {
                         Map<String, String> pending = GameRuleApplier.getPendingGameRules();
                         if (pending == null) pending = new HashMap<>();
@@ -50,7 +53,7 @@ public class MoreTab extends GridLayoutTab {
                             }
                         }
                         mc.displayGuiScreen(new GuiScreenGameRuleEditor(guiCreateWorld, cleanPending));
-                    })
+                    }).useVanillaTexture(true)
                 .width(210).height(20).build();
             layout.addChild(gameRuleEditorButton, row++, 0);
         }
@@ -59,13 +62,13 @@ public class MoreTab extends GridLayoutTab {
             experimentsButton = Button.builder(
                     Text.literal(I18n.format("selectWorld.experiments")),
                     btn -> {})
-                .width(210).height(20).build();
+                .width(210).height(20).useVanillaTexture(true).build();
             layout.addChild(experimentsButton, row++, 0);
 
             dataPacksButton = Button.builder(
                     Text.literal(I18n.format("selectWorld.dataPacks")),
                     btn -> {})
-                .width(210).height(20).build();
+                .width(210).height(20).useVanillaTexture(true).build();
             layout.addChild(dataPacksButton, row++, 0);
         }
 
@@ -85,6 +88,9 @@ public class MoreTab extends GridLayoutTab {
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        // Delegate to GridLayoutTab which forwards to all Components
+        // 委托给 GridLayoutTab，它会转发到所有 Component
+        super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     @Override

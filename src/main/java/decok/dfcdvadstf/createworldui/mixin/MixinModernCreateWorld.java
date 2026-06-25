@@ -1,30 +1,27 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
-import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
+import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
+import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
+import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
+import decok.dfcdvadstf.catframe.ui.layouts.HorizontalLayout;
+import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
 import decok.dfcdvadstf.catframe.ui.tab.Tab;
 import decok.dfcdvadstf.catframe.ui.tab.TabBar;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
-import decok.dfcdvadstf.catframe.ui.tab.TabState;
-import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.Tags;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
-import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
-import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import decok.dfcdvadstf.createworldui.tab.CreateWorldUITabBar;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.WorldType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -65,19 +62,25 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private TabBar modernWorldCreatingUI$tabBar;
     @Unique
-    private static final int TAB_WIDTH = 130;
-    @Unique
     private static final int TAB_HEIGHT = 24;
     @Unique
     private final Map<Integer, String> modernWorldCreatingUI$hoverTexts = new HashMap<>();
     @Unique
     private boolean modernWorldCreatingUI$isInitialized = false;
     @Unique
-    private int modernWorldCreatingUI$tabButtonWidth = TAB_WIDTH;
-    @Unique
     private static final Logger modernWorldCreatingUI$logger = LogManager.getLogger("MixinGuiCreateWorld");
     @Unique
     private final IGuiCreateWorldAccess modernWorldCreatingUI$accessor = (IGuiCreateWorldAccess) this;
+    
+    // HeaderFooterLayout 主布局容器
+    @Unique
+    private HeaderFooterLayout modernWorldCreatingUI$mainLayout;
+    @Unique
+    private HorizontalLayout modernWorldCreatingUI$footerButtonLayout;
+    @Unique
+    private GuiButtonAdapter modernWorldCreatingUI$createButtonAdapter;
+    @Unique
+    private GuiButtonAdapter modernWorldCreatingUI$cancelButtonAdapter;
 
     /**
      * 初始化
@@ -95,14 +98,54 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         // Clear button list, but keep the Create and Cancel buttons
         // 首先清空按钮列表，但保留创建和取消按钮
         List<GuiButton> essentialButtons = new ArrayList<>();
+        GuiButton createButton = null;
+        GuiButton cancelButton = null;
+        
         for (GuiButton button : (List<GuiButton>)this.buttonList) {
-            if (button.id == 0 || button.id == 1) {
+            if (button.id == 0) {
+                createButton = button;
+                essentialButtons.add(button);
+            } else if (button.id == 1) {
+                cancelButton = button;
                 essentialButtons.add(button);
             }
         }
 
         this.buttonList.clear();
         this.buttonList.addAll(essentialButtons);
+
+        // ===== 使用 HeaderFooterLayout 作为主布局 =====
+        // ===== Use HeaderFooterLayout as main layout =====
+        modernWorldCreatingUI$mainLayout = new HeaderFooterLayout(true); // true = 绘制面板背景
+        
+        // Header 区域：TabBar (高度 = TAB_HEIGHT)
+        // Header zone: TabBar
+        modernWorldCreatingUI$mainLayout.setHeaderHeight(TAB_HEIGHT);
+        
+        // Footer 区域：底部按钮 (高度 30px)
+        // Footer zone: bottom buttons (height 30px)
+        modernWorldCreatingUI$mainLayout.setFooterHeight(30);
+        
+        // 创建 Footer 按钮布局
+        // Create Footer button layout
+        modernWorldCreatingUI$footerButtonLayout = new HorizontalLayout();
+        modernWorldCreatingUI$footerButtonLayout.setSpacing(10); // 按钮间距
+        
+        // 使用 GuiButtonAdapter 包装原版按钮
+        // Wrap vanilla buttons with GuiButtonAdapter
+        if (createButton != null) {
+            modernWorldCreatingUI$createButtonAdapter = new GuiButtonAdapter(createButton);
+            modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$createButtonAdapter);
+        }
+        
+        if (cancelButton != null) {
+            modernWorldCreatingUI$cancelButtonAdapter = new GuiButtonAdapter(cancelButton);
+            modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$cancelButtonAdapter);
+        }
+        
+        // 将按钮布局设置到 Footer 区域
+        // Set button layout to Footer zone
+        modernWorldCreatingUI$mainLayout.setFooter(modernWorldCreatingUI$footerButtonLayout);
 
         // Check whether this is a re-init triggered by resize (TabManager already exists)
         // 检查是否是 resize 导致的重新初始化（TabManager 已存在）
@@ -111,6 +154,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             // resize 情况：重新初始化 TabManager 中的 tabs，而不是创建新的 TabManager
             modernWorldCreatingUI$tabManager.reinitializeTabs(this.width, this.height);
             modernWorldCreatingUI$logger.info("Reinitialized tabs after resize");
+            modernWorldCreatingUI$mainLayout.recalculate(this.width, this.height);
         } else {
             // First initialization: create the TabBar and a new TabManager
             // 首次初始化：创建 TabBar 与新的 TabManager
@@ -119,24 +163,47 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                     this, this.buttonList, this.width, this.height,
                     modernWorldCreatingUI$tabBar
             );
-            // No need to push vanilla state anymore — TabManager now reads/writes vanilla
-            // fields directly via IGuiCreateWorldAccess. The only thing it still caches locally
-            // is difficulty, which it pulls from mc.gameSettings in its own constructor.
-            // 不再需要把原版状态“推”过去——TabManager 现在通过 IGuiCreateWorldAccess
-            // 直接读写原版字段。它唯一本地缓的是难度，那个在它自己的构造器里
-            // 从 mc.gameSettings 拿。
         }
 
-        // Create tab buttons (need to recreate on resize as button positions may change)
-        // 创建标签页按钮（resize 时需要重新创建，因为按钮位置可能改变）
-        modernWorldCreatingUI$createTabButtons();
-        modernWorldCreatingUI$repositionActionButtons();
+        // TabBar handles tab button creation and layout
+        // TabBar 负责标签页按钮的创建和布局
+        if (modernWorldCreatingUI$tabBar != null) {
+            if (modernWorldCreatingUI$tabBar.getTabCount() == 0) {
+                // First init: register all tabs into TabBar via Builder
+                // 首次初始化：通过 Builder 将全部 Tab 注册到 TabBar
+                TabBar.builder(modernWorldCreatingUI$tabManager, this.width)
+                    .addAllFromManager()
+                    .build(modernWorldCreatingUI$tabBar);
+            } else {
+                // Resize: recalculate nav element positions
+                // 窗口大小改变：重新计算导航元素位置
+                modernWorldCreatingUI$tabBar.setNavWidth(this.width);
+            }
+            
+            // 将 TabBar 设置到 Header 区域
+            // Set TabBar to Header zone
+            modernWorldCreatingUI$mainLayout.setHeader(modernWorldCreatingUI$tabBar);
+        }
+
+        // ===== 所有内容配置完成后，重新计算整体布局 =====
+        // ===== Recalculate layout after all content is configured =====
+        modernWorldCreatingUI$mainLayout.recalculate(this.width, this.height);
 
         // Initialize hover texts
         // 初始化悬停文本
         modernWorldCreatingUI$initHoverTexts();
 
         modernWorldCreatingUI$isInitialized = true;
+
+        // Set the tab content area so GridLayoutTab.doLayout positions correctly within the content panel.
+        // Tab area: below the tab bar (TAB_HEIGHT), above the footer (height - 35).
+        // 设置Tab内容区域，使 GridLayoutTab.doLayout 在内容面板内正确布局。
+        // Tab区域：Tab栏下方(TAB_HEIGHT)到脚部上方(height - 35)。
+        int tabAreaTop = TAB_HEIGHT;
+        int tabAreaBottom = this.height - 35;
+        modernWorldCreatingUI$tabManager.setTabArea(
+            new ScreenRectangle(0, tabAreaTop, this.width, tabAreaBottom - tabAreaTop)
+        );
     }
 
     /**
@@ -145,14 +212,14 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$initHoverTexts() {
-        modernWorldCreatingUI$hoverTexts.put(2, I18n.format("createworldui.hover.gameMode"));
-        modernWorldCreatingUI$hoverTexts.put(4, I18n.format("createworldui.hover.generateStructures"));
-        modernWorldCreatingUI$hoverTexts.put(5, I18n.format("createworldui.hover.worldType"));
-        modernWorldCreatingUI$hoverTexts.put(6, I18n.format("createworldui.hover.allowCheats"));
-        modernWorldCreatingUI$hoverTexts.put(7, I18n.format("createworldui.hover.bonusChest"));
-        modernWorldCreatingUI$hoverTexts.put(8, I18n.format("createworldui.hover.customize"));
-        modernWorldCreatingUI$hoverTexts.put(9, I18n.format("createworldui.hover.difficulty"));
-        modernWorldCreatingUI$hoverTexts.put(200, I18n.format("createworldui.hover.gameRuleEditor"));
+        modernWorldCreatingUI$hoverTexts.put(2, Text.translatableString(Tags.MODID,"createworldui.hover.gameMode.survival"));
+        modernWorldCreatingUI$hoverTexts.put(4, Text.translatableString(Tags.MODID,"createworldui.hover.generateStructures"));
+        modernWorldCreatingUI$hoverTexts.put(5, Text.translatableString(Tags.MODID,"createworldui.hover.worldType"));
+        modernWorldCreatingUI$hoverTexts.put(6, Text.translatableString(Tags.MODID,"createworldui.hover.allowCheats"));
+        modernWorldCreatingUI$hoverTexts.put(7, Text.translatableString(Tags.MODID,"createworldui.hover.bonusChest"));
+        modernWorldCreatingUI$hoverTexts.put(8, Text.translatableString(Tags.MODID,"createworldui.hover.customize"));
+        modernWorldCreatingUI$hoverTexts.put(9, Text.translatableString(Tags.MODID,"createworldui.hover.difficulty"));
+        modernWorldCreatingUI$hoverTexts.put(200, Text.translatableString(Tags.MODID,"createworldui.hover.gameRuleEditor"));
     }
 
     /**
@@ -190,178 +257,44 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * Repositions the action buttons (Create and Cancel)
-     * 重新定位操作按钮（创建和取消）
-     */
-    @Unique
-    private void modernWorldCreatingUI$repositionActionButtons() {
-        GuiButton createButton = modernWorldCreatingUI$getButtonById(0);
-        GuiButton cancelButton = modernWorldCreatingUI$getButtonById(1);
-
-        if (createButton != null) {
-            createButton.xPosition = this.width / 2 - 155;
-            createButton.yPosition = this.height - 28;
-            createButton.width = 150;
-            createButton.height = 20;
-            createButton.visible = true;
-        }
-
-        if (cancelButton != null) {
-            cancelButton.xPosition = this.width / 2 + 5;
-            cancelButton.yPosition = this.height - 28;
-            cancelButton.width = 150;
-            cancelButton.height = 20;
-            cancelButton.visible = true;
-        }
-    }
-
-    /**
-     * Creates the tab buttons dynamically based on registered tabs
-     * 根据已注册的标签页动态创建标签页按钮
-     */
-    @Unique
-    private void modernWorldCreatingUI$createTabButtons() {
-        int tabCount = modernWorldCreatingUI$tabManager != null ? modernWorldCreatingUI$tabManager.getTabCount() : 3;
-        if (tabCount <= 0) tabCount = 3;
-
-        modernWorldCreatingUI$tabButtonWidth = Math.min(TAB_WIDTH, this.width / tabCount);
-        int totalWidth = modernWorldCreatingUI$tabButtonWidth * tabCount;
-        int startX = this.width / 2 - totalWidth / 2;
-
-        if (modernWorldCreatingUI$tabManager != null) {
-            java.util.List<Integer> sortedIds = modernWorldCreatingUI$tabManager.getSortedTabIds();
-            for (int i = 0; i < sortedIds.size(); i++) {
-                int tabId = sortedIds.get(i);
-                Tab tab = modernWorldCreatingUI$tabManager.getAllTabs().get(tabId);
-                String tabName = tab != null ? tab.getTabName() : "";
-                int xPos = startX + i * modernWorldCreatingUI$tabButtonWidth;
-
-                final ResourceLocation tabsTex = modernWorldCreatingUI$tabBar != null
-                        ? modernWorldCreatingUI$tabBar.getTabTexture()
-                        : new ResourceLocation("createworldui", "textures/gui/tabs.png");
-                GuiButton tabButton = new GuiButton(tabId, xPos, 0, modernWorldCreatingUI$tabButtonWidth, TAB_HEIGHT, tabName) {
-                    @Override
-                    public void drawButton(Minecraft mc, int mouseX, int mouseY) {
-                        if (this.visible) {
-                            mc.getTextureManager().bindTexture(tabsTex);
-                            // Reset OpenGL color state to white to prevent texture tinting
-                            // 重置OpenGL颜色状态为白色，防止纹理被着色
-                            GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-                            boolean isHovered = mouseX >= this.xPosition && mouseY >= this.yPosition &&
-                                    mouseX < this.xPosition + this.width && mouseY < this.yPosition + this.height;
-                            boolean isSelected = modernWorldCreatingUI$tabManager != null &&
-                                    modernWorldCreatingUI$tabManager.getCurrentTabId() == this.id;
-
-                            TabState state = isSelected ?
-                                    (isHovered ? TabState.SELECTED_HOVER : TabState.SELECTED) :
-                                    (isHovered ? TabState.HOVER : TabState.NORMAL);
-
-                            drawTexturedModalRect(this.xPosition, this.yPosition, state.u, state.v, this.width, TAB_HEIGHT);
-
-                            // 计算文本颜色 / Calculate text color
-                            int textColor = state.baseTextColor;
-                            if (state == TabState.HOVER || state == TabState.SELECTED_HOVER) {
-                                // 高亮状态：检查ArchaicFix配置 / Highlight state: check ArchaicFix config
-                                if (Loader.isModLoaded("archaicfix")
-                                        && CreateWorldUI.config != null
-                                        && CreateWorldUI.config.topTabCharatorModernWhite) {
-                                    textColor = 0xFFFFFF; // 白色 / White
-                                } else {
-                                    textColor = 0xFFFF55; // 黄色 / Yellow
-                                }
-                            }
-
-                            drawCenteredString(mc.fontRenderer, this.displayString,
-                                    this.xPosition + this.width / 2,
-                                    this.yPosition + (this.height - 8) / 2, textColor);
-                        }
-                    }
-                };
-                tabButton.visible = true;
-                this.buttonList.add(tabButton);
-            }
-        }
-    }
-
-    /**
      * Draws the screen
      * 绘制屏幕
      */
     @Inject(method = {"drawScreen"}, at = @At("HEAD"), cancellable = true)
     public void onDrawScreen(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        if (!modernWorldCreatingUI$isInitialized) {
-            return;
-        }
 
         ci.cancel();
 
         // 绘制主背景
         this.drawBackground(0);
 
-        // 绘制顶部背景 —— 交给 TabBar 统一处理（纯色填充 + 平铺贴图）
-        // Draw top bar background — delegated to TabBar (solid fill + tiled texture)
-        if (modernWorldCreatingUI$tabBar != null) {
-            modernWorldCreatingUI$tabBar.drawBackground(0, 0, this.width, TAB_HEIGHT - 2);
+        // ===== Footer 分隔线 + Panel 背景 =====
+        // ===== Footer separator + Panel background =====
+        if (modernWorldCreatingUI$mainLayout != null) {
+            int footerY = this.height - modernWorldCreatingUI$mainLayout.getFooterHeight();
+            // 画 Footer 分隔线
+            ContentPanelRenderer.drawFooterSeparator(0, footerY, this.width);
+            // 画 Panel 背景（TabBar 下方到 Footer 上方）
+            ContentPanelRenderer.drawPanelBackground(0, TAB_HEIGHT, this.width, footerY - TAB_HEIGHT);
         }
 
-        // 绘制分隔线（选中Tab下方隐藏）
-        // Draw separator lines (hidden under selected tab)
-        int lineY = TAB_HEIGHT - 2; // 下移一格 / Move down one pixel
-        int currentTabId = modernWorldCreatingUI$tabManager != null ?
-                modernWorldCreatingUI$tabManager.getCurrentTabId() : -1;
-
-        // Dynamically calculate tab layout based on registered tab count
-        // 根据已注册标签页数量动态计算布局
-        int tabCount = modernWorldCreatingUI$tabManager != null ? modernWorldCreatingUI$tabManager.getTabCount() : 3;
-        if (tabCount <= 0) tabCount = 3;
-        int actualTabWidth = Math.min(TAB_WIDTH, this.width / tabCount);
-        int totalWidth = actualTabWidth * tabCount;
-        int startX = this.width / 2 - totalWidth / 2;
-        int tabIndex = modernWorldCreatingUI$tabManager != null ?
-                modernWorldCreatingUI$tabManager.getTabIndex(currentTabId) : -1;
-
-        // Draw panel background between the two separator lines
-        // 在两条分隔线之间绘制面板背景
-        int panelTop = TAB_HEIGHT;
-        int panelBottom = this.height - 35;
-        if (panelBottom > panelTop) {
-            ContentPanelRenderer.drawPanelBackground(0, panelTop, this.width, panelBottom - panelTop);
+        // 绘制 TabBar 导航按钮（Tab 按钮）
+        // Draw TabBar nav buttons (tab buttons)
+        if (modernWorldCreatingUI$tabBar != null && modernWorldCreatingUI$tabManager != null) {
+            modernWorldCreatingUI$tabBar.drawNavButtons(mouseX, mouseY, partialTicks, modernWorldCreatingUI$tabManager);
         }
-
-        if (tabIndex >= 0 && tabIndex < tabCount) {
-            // 选中的Tab位置
-            // Position of selected tab
-            int selectedTabX = startX + tabIndex * actualTabWidth;
-            int selectedTabEnd = selectedTabX + actualTabWidth;
-
-            // 绘制选中Tab左侧的分隔线
-            // Draw separator line left of selected tab
-            if (selectedTabX > 0) {
-                ContentPanelRenderer.drawHeaderSeparator(0, lineY, selectedTabX);
-            }
-            // 绘制选中Tab右侧的分隔线
-            // Draw separator line right of selected tab
-            if (selectedTabEnd < this.width) {
-                ContentPanelRenderer.drawHeaderSeparator(selectedTabEnd, lineY, this.width - selectedTabEnd);
-            }
-        } else {
-            // 没有选中的Tab，绘制完整分隔线
-            // No selected tab, draw full separator line
-            ContentPanelRenderer.drawHeaderSeparator(0, lineY, this.width);
-        }
-        ContentPanelRenderer.drawFooterSeparator(0, this.height - 35, this.width);
 
         // 绘制当前标签页内容
         if (modernWorldCreatingUI$tabManager != null) {
             modernWorldCreatingUI$tabManager.drawScreen(mouseX, mouseY, partialTicks);
         }
 
-        // 绘制所有按钮
-        for (Object obj : this.buttonList) {
-            if (obj instanceof GuiButton) {
-                GuiButton button = (GuiButton) obj;
-                if (button.visible) {
-                    button.drawButton(this.mc, mouseX, mouseY);
+        // ===== 绘制 Footer 区域的按钮 =====
+        // ===== Draw buttons in Footer zone =====
+        if (modernWorldCreatingUI$footerButtonLayout != null) {
+            for (decok.dfcdvadstf.catframe.ui.layouts.ILayout child : modernWorldCreatingUI$footerButtonLayout.getChildren()) {
+                if (child instanceof GuiButtonAdapter) {
+                    ((GuiButtonAdapter) child).render(mouseX, mouseY, partialTicks);
                 }
             }
         }
@@ -380,67 +313,15 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        // Handle Create button — nothing to sync here anymore, Tab inputs already wrote
-        // through to vanilla fields in real time via IGuiCreateWorldAccess.
-        // 处理创建按钮——不再需要同步状态，Tab 输入已通过 IGuiCreateWorldAccess
-        // 实时写到原版字段。
-        if (button.id == 0) {
-            // 让原版继续处理创建逻辑
+        // Only Create (0) and Cancel (1) are in buttonList; let vanilla handle them
+        // buttonList 中只有创建(0)和取消(1)按钮，交给原版处理
+        if (button.id == 0 || button.id == 1) {
             return;
         }
 
-        // 首先处理标签页管理器的事件
-        if (modernWorldCreatingUI$tabManager != null) {
-            modernWorldCreatingUI$tabManager.actionPerformed(button);
-
-            // If it's a tab switch button, cancel further processing
-            // 如果是标签页切换按钮，取消后续处理
-            if (modernWorldCreatingUI$tabManager.isTabButton(button.id)) {
-                ci.cancel();
-                return;
-            }
-        }
-
-        // 处理游戏规则编辑器按钮
-        if (button.id == 200) {
-            Map<String, String> pending = GameRuleApplier.getPendingGameRules();
-            if (pending == null) pending = new HashMap<>();
-
-            // 过滤掉 null 值
-            Map<String, String> cleanPending = new HashMap<>();
-            for (Map.Entry<String, String> entry : pending.entrySet()) {
-                if (entry.getKey() != null && entry.getValue() != null) {
-                    cleanPending.put(entry.getKey(), entry.getValue());
-                }
-            }
-
-            try {
-                Minecraft mc = Minecraft.getMinecraft();
-                net.minecraft.world.World clientWorld = mc != null ? mc.theWorld : null;
-                if (clientWorld != null) {
-                    Map<String, Object> opt = GameRuleMonitorNSetter.getOptimalGameruleValues(clientWorld);
-                    if (opt != null && !opt.isEmpty()) {
-                        for (Map.Entry<String, Object> e : opt.entrySet()) {
-                            if (e.getKey() != null && e.getValue() != null) {
-                                cleanPending.put(e.getKey(), String.valueOf(e.getValue()));
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable t) {
-                modernWorldCreatingUI$logger.error("On opening GameRuleEditor, an error occoured is: ", t.getMessage());
-            }
-
-            this.mc.displayGuiScreen(new GuiScreenGameRuleEditor((GuiCreateWorld)(Object)this, cleanPending));
-            ci.cancel();
-            return;
-        }
-
-        // Other buttons are handled by TabManager; prevent vanilla processing
-        // 其他按钮由标签页管理器处理，阻止原版处理
-        if (button.id >= 2 && button.id <= 9) {
-            ci.cancel();
-        }
+        // All other buttons are managed by Tab system components
+        // 所有其他按钮由 Tab 系统组件管理
+        ci.cancel();
     }
 
     /**
@@ -464,10 +345,10 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
     /**
      * <p>Handles keyboard input via @Inject — intercepts Ctrl+Tab / Ctrl+Number for tab switching,
-     * then delegates char input to TabManager, and finally cancels the vanilla method to prevent
+     * then delegates char input to {@link TabBar}, and finally cancels the vanilla method to prevent
      * the original keyTyped from feeding keys into its hardcoded text fields.</p>
      * <p>通过 @Inject 处理按键输入——拦截 Ctrl+Tab / Ctrl+数字进行 Tab 切换，
-     * 随后把字符输入交给 TabManager，最后取消原版方法，防止按键被送进原版硬编码位置的输入框。</p>
+     * 随后把字符输入交给 {@link TabBar}，最后取消原版方法，防止按键被送进原版硬编码位置的输入框。</p>
      */
     @Inject(method = "keyTyped", at = @At("HEAD"), cancellable = true)
     private void modernWorldCreatingUI$onKeyTyped(char typedChar, int keyCode, CallbackInfo ci) {
@@ -475,62 +356,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return; // Not initialized — let vanilla handle it / 未初始化，让原版自己处理
         }
 
-        // Handle Control + Tab and Control + Shift + Tab to switch tabs
-        // 处理 Control + Tab 和 Control + Shift + Tab 切换 Tab
-        if (isCtrlKeyDown() && keyCode == 15) { // Tab键的键码是15
-            if (modernWorldCreatingUI$tabManager != null) {
-                java.util.Map<Integer, ?> availableTabs = modernWorldCreatingUI$tabManager.getAllTabs();
-                java.util.List<Integer> sortedTabIds = new java.util.ArrayList<>(availableTabs.keySet());
-                java.util.Collections.sort(sortedTabIds);
-
-                if (!sortedTabIds.isEmpty()) {
-                    int currentTabId = modernWorldCreatingUI$tabManager.getCurrentTabId();
-                    int currentIndex = sortedTabIds.indexOf(currentTabId);
-
-                    int nextIndex;
-                    if (isShiftKeyDown()) {
-                        // Control + Shift + Tab: switch left (cycle)
-                        // Control + Shift + Tab: 向左切换 (循环)
-                        nextIndex = (currentIndex - 1 + sortedTabIds.size()) % sortedTabIds.size();
-                    } else {
-                        // Control + Tab: switch right (cycle)
-                        // Control + Tab: 向右切换 (循环)
-                        nextIndex = (currentIndex + 1) % sortedTabIds.size();
-                    }
-
-                    int targetTabId = sortedTabIds.get(nextIndex);
-                    modernWorldCreatingUI$tabManager.switchToTab(targetTabId);
-                }
-            }
-            ci.cancel(); // 拦截按键，阻止原版处理 / Intercept, prevent vanilla
-            return;
-        }
-
-        // Handle Control/Command + number keys to switch tabs
-        // 处理 Control/Command + 数字键切换 Tab
-        if (isCtrlKeyDown()) {  // 使用Minecraft内置的isCtrlKeyDown方法，该方法已处理Mac和Windows/Linux的差异
-            // Handle number keys 1-9 and 0 (0 is usually at position 10)
-            // 处理数字键 1-9 和 0 (0 通常在位置10)
-            if (keyCode >= 2 && keyCode <= 11) { // 键盘上的1-9,0键
-                int tabNumber = keyCode - 1; // 键码2对应数字1，码3对应数字2，以此类推
-                if (keyCode == 11) { // 数字0键
-                    tabNumber = 10;
-                }
-
-                // 获取所有可用的标签页ID并排序
-                if (modernWorldCreatingUI$tabManager != null) {
-                    java.util.Map<Integer, ?> availableTabs = modernWorldCreatingUI$tabManager.getAllTabs();
-                    java.util.List<Integer> sortedTabIds = new java.util.ArrayList<>(availableTabs.keySet());
-                    java.util.Collections.sort(sortedTabIds);
-
-                    // 确保索引不超出范围（Fallback到最大可用Tab）
-                    int targetIndex = Math.min(tabNumber - 1, sortedTabIds.size() - 1);
-                    if (targetIndex >= 0 && targetIndex < sortedTabIds.size()) {
-                        int targetTabId = sortedTabIds.get(targetIndex);
-                        modernWorldCreatingUI$tabManager.switchToTab(targetTabId);
-                    }
-                }
-                ci.cancel(); // 拦截按键，阻止原版处理 / Intercept, prevent vanilla
+        // Delegate Ctrl+Tab / Ctrl+digit tab switching to TabBar
+        // 将 Ctrl+Tab / Ctrl+数字 的 Tab 切换委托给 TabBar
+        if (modernWorldCreatingUI$tabBar != null && modernWorldCreatingUI$tabManager != null) {
+            if (modernWorldCreatingUI$tabBar.keyPressedNav(keyCode, isCtrlKeyDown(), isShiftKeyDown(), modernWorldCreatingUI$tabManager)) {
+                ci.cancel();
                 return;
             }
         }
@@ -570,6 +400,26 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
+        // Delegate tab button clicks to TabBar (e.g. switching tabs)
+        // 将 Tab 按钮点击委托给 TabBar（如切换标签页）
+        if (modernWorldCreatingUI$tabBar != null && modernWorldCreatingUI$tabManager != null) {
+            if (modernWorldCreatingUI$tabBar.mouseClickedNav(mouseX, mouseY, mouseButton, modernWorldCreatingUI$tabManager)) {
+                return; // Handled by TabBar / 由 TabBar 处理
+            }
+        }
+
+        // ===== 处理 Footer 按钮点击 =====
+        // ===== Handle Footer button clicks =====
+        if (modernWorldCreatingUI$footerButtonLayout != null) {
+            for (decok.dfcdvadstf.catframe.ui.layouts.ILayout child : modernWorldCreatingUI$footerButtonLayout.getChildren()) {
+                if (child instanceof GuiButtonAdapter) {
+                    ((GuiButtonAdapter) child).mouseClicked(mouseX, mouseY, mouseButton);
+                }
+            }
+        }
+
+        // Forward to current tab for content click handling
+        // 转发到当前 Tab 以处理内容点击
         if (modernWorldCreatingUI$tabManager != null) {
             modernWorldCreatingUI$tabManager.mouseClicked(mouseX, mouseY, mouseButton);
         }
@@ -625,8 +475,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 if (button.visible && mouseX >= button.xPosition && mouseY >= button.yPosition &&
                         mouseX < button.xPosition + button.width && mouseY < button.yPosition + button.height) {
 
-                    // 跳过标签页按钮、创建和取消按钮
-                    if (modernWorldCreatingUI$tabManager != null && modernWorldCreatingUI$tabManager.isTabButton(button.id)) continue;
+                    // 跳过创建和取消按钮
                     if (button.id == 0 || button.id == 1) continue;
 
                     // 从Map中获取悬停文本
