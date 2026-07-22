@@ -3,7 +3,7 @@ package decok.dfcdvadstf.createworldui.tab;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
-import decok.dfcdvadstf.catframe.ui.components.EditBox;
+import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
 import decok.dfcdvadstf.catframe.ui.components.StringWidget;
 import decok.dfcdvadstf.catframe.ui.layouts.LayoutSettings;
 import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
@@ -23,7 +23,7 @@ import java.util.List;
  * <p>使用 GridLayout 布局的世界选项标签页。</p>
  */
 public class WorldTab extends GridLayoutTab {
-    private EditBox seedField;
+    private SimpleEditBox seedField;
     private CyclingButton<WorldType> worldTypeButton;
     private Button customizeButton;
     private Button generateStructuresButton;
@@ -32,7 +32,7 @@ public class WorldTab extends GridLayoutTab {
     private IGuiCreateWorldAccess access;
 
     public WorldTab() {
-        super(101, Text.translatable("createworldui","createworldui.tab.world"));
+        super(101, Text.translatable("createworldui.tab.world"));
     }
 
     @Override
@@ -111,7 +111,7 @@ public class WorldTab extends GridLayoutTab {
 
         // Row 2: Seed field (spans 2 columns)
         // 第2行：种子输入框（跨2列）
-        seedField = new EditBox(0, 0, 310, 20).setUseVanillaTexture(true);
+        seedField = new SimpleEditBox(0, 0, 310, 20);
         seedField.setText(access.modernWorldCreatingUI$getSeed());
         layout.addChild(seedField, row++, 0, 1, 2);
 

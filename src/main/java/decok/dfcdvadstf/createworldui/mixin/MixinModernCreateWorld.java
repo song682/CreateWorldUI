@@ -212,14 +212,14 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$initHoverTexts() {
-        modernWorldCreatingUI$hoverTexts.put(2, Text.translatableString(Tags.MODID,"createworldui.hover.gameMode.survival"));
-        modernWorldCreatingUI$hoverTexts.put(4, Text.translatableString(Tags.MODID,"createworldui.hover.generateStructures"));
-        modernWorldCreatingUI$hoverTexts.put(5, Text.translatableString(Tags.MODID,"createworldui.hover.worldType"));
-        modernWorldCreatingUI$hoverTexts.put(6, Text.translatableString(Tags.MODID,"createworldui.hover.allowCheats"));
-        modernWorldCreatingUI$hoverTexts.put(7, Text.translatableString(Tags.MODID,"createworldui.hover.bonusChest"));
-        modernWorldCreatingUI$hoverTexts.put(8, Text.translatableString(Tags.MODID,"createworldui.hover.customize"));
-        modernWorldCreatingUI$hoverTexts.put(9, Text.translatableString(Tags.MODID,"createworldui.hover.difficulty"));
-        modernWorldCreatingUI$hoverTexts.put(200, Text.translatableString(Tags.MODID,"createworldui.hover.gameRuleEditor"));
+        modernWorldCreatingUI$hoverTexts.put(2, Text.translatableString("createworldui.hover.gameMode.survival"));
+        modernWorldCreatingUI$hoverTexts.put(4, Text.translatableString("createworldui.hover.generateStructures"));
+        modernWorldCreatingUI$hoverTexts.put(5, Text.translatableString("createworldui.hover.worldType"));
+        modernWorldCreatingUI$hoverTexts.put(6, Text.translatableString("createworldui.hover.allowCheats"));
+        modernWorldCreatingUI$hoverTexts.put(7, Text.translatableString("createworldui.hover.bonusChest"));
+        modernWorldCreatingUI$hoverTexts.put(8, Text.translatableString("createworldui.hover.customize"));
+        modernWorldCreatingUI$hoverTexts.put(9, Text.translatableString("createworldui.hover.difficulty"));
+        modernWorldCreatingUI$hoverTexts.put(200, Text.translatableString("createworldui.hover.gameRuleEditor"));
     }
 
     /**

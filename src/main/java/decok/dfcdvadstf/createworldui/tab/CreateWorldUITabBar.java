@@ -27,7 +27,6 @@ public class CreateWorldUITabBar extends TabBar {
         super(BAR_ID);
         if (Loader.isModLoaded("clearmybackground")) {
             setBackgroundColor(0x00000000);
-            setTabTexture(new ResourceLocation(Tags.MODID, "textures/gui/tabs_clear.png"));
         } else {
             // Fully transparent solid fill — the tiled texture below carries all the look.
             // 完全透明的纯色填充——视觉效果全靠下面的平铺贴图。

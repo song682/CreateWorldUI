@@ -2,7 +2,7 @@ package decok.dfcdvadstf.createworldui.command;
 
 import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
+import decok.dfcdvadstf.createworldui.gamerule.IngameGameRuleScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -73,7 +73,7 @@ public class CommandGameRuleEditor extends CommandBase {
         // Use null as parent screen since we're coming from in-game command
         // 使用null作为父界面，因为我们是从游戏内命令调用的
         Minecraft.getMinecraft().displayGuiScreen(
-                new GuiScreenGameRuleEditor(null, gameRules)
+                new IngameGameRuleScreen(null, gameRules)
         );
     }
 }

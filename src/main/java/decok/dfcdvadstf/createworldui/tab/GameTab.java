@@ -3,7 +3,7 @@ package decok.dfcdvadstf.createworldui.tab;
 import cpw.mods.fml.common.event.FMLInterModComms;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
-import decok.dfcdvadstf.catframe.ui.components.EditBox;
+import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
 import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
 import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
@@ -28,7 +28,7 @@ import java.lang.reflect.Method;
  * <p>使用 GridLayout 布局的游戏设置标签页。</p>
  */
 public class GameTab extends GridLayoutTab {
-    private EditBox worldNameField;
+    private SimpleEditBox worldNameField;
     private CyclingButton<String> gameModeButton;
     private CyclingButton<Boolean> allowCheatsButton;
     private CyclingButton<EnumDifficulty> difficultyButton;
@@ -37,7 +37,7 @@ public class GameTab extends GridLayoutTab {
     private IGuiCreateWorldAccess access;
 
     public GameTab() {
-        super(100, Text.translatable("createworldui","createworldui.tab.game"));
+        super(100, Text.translatable("createworldui.tab.game"));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class GameTab extends GridLayoutTab {
         int row = 0;
 
         // Create world name text field
-        worldNameField = new EditBox(0, 0, 208, 20).setUseVanillaTexture(true);
+        worldNameField = new SimpleEditBox(0, 0, 208, 20);
         String worldName = access.modernWorldCreatingUI$getWorldName();
         if ((worldName == null || worldName.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             worldName = I18n.format("selectWorld.newWorld");

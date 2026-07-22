@@ -21,11 +21,6 @@ import decok.dfcdvadstf.createworldui.CreateWorldUI;
  *     Provides integration interface for ModernDifficultyLocker mod<br>
  *     When both mods are loaded, CreateWorldUI can communicate with DifficultyLocker's WorldDifficultyData
  * </p>
- * <p>
- *     难度锁定器API<br>
- *     为ModernDifficultyLocker模组提供集成接口<br>
- *     当两个模组都加载时，CreateWorldUI可以与DifficultyLocker的WorldDifficultyData通信
- * </p>
  */
 public class DifficultyLocker {
     private static final Logger logger = LogManager.getLogger(Tags.NAME + ":DifficultyLocker");
@@ -33,7 +28,7 @@ public class DifficultyLocker {
     /**
      * <p>
      *     Lock state for each difficulty level<br>
-     *     锁定状态：true = 该难度被锁定，无法选择
+     *     Lock state：true = this difficulty is locked, cannot change the difficulty.
      * </p>
      */
     private static final boolean[] difficultyLocked = new boolean[4]; // 0=peaceful, 1=easy, 2=normal, 3=hard

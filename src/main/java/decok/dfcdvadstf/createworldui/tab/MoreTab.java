@@ -6,7 +6,7 @@ import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
-import decok.dfcdvadstf.createworldui.gamerule.GuiScreenGameRuleEditor;
+import decok.dfcdvadstf.createworldui.gamerule.WorldCreationGameRuleScreen;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -27,7 +27,7 @@ public class MoreTab extends GridLayoutTab {
     private IGuiCreateWorldAccess access;
 
     public MoreTab() {
-        super(102, Text.translatable("createworldui","createworldui.tab.more"));
+        super(102, Text.translatable("createworldui.tab.more"));
     }
 
     @Override
@@ -52,7 +52,7 @@ public class MoreTab extends GridLayoutTab {
                                 cleanPending.put(entry.getKey(), entry.getValue());
                             }
                         }
-                        mc.displayGuiScreen(new GuiScreenGameRuleEditor(guiCreateWorld, cleanPending));
+                        mc.displayGuiScreen(new WorldCreationGameRuleScreen(guiCreateWorld, cleanPending));
                     }).useVanillaTexture(true)
                 .width(210).height(20).build();
             layout.addChild(gameRuleEditorButton, row++, 0);
