@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.config;
+package decok.dfcdvadstf.createworldui.ui;
 
 import cpw.mods.fml.client.IModGuiFactory;
 import cpw.mods.fml.client.config.GuiConfig;

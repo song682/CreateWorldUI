@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.gamerule;
+package decok.dfcdvadstf.createworldui.ui.gamerule;
 
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter;
 import net.minecraft.client.Minecraft;

@@ -2,7 +2,7 @@ package decok.dfcdvadstf.createworldui.command;
 
 import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.gamerule.IngameGameRuleScreen;
+import decok.dfcdvadstf.createworldui.ui.gamerule.IngameGameRuleScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;

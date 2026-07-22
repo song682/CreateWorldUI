@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.gamerule;
+package decok.dfcdvadstf.createworldui.ui.gamerule;
 
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
 import decok.dfcdvadstf.catframe.ui.Text;

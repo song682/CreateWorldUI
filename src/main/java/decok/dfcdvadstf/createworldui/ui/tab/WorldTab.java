@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.tab;
+package decok.dfcdvadstf.createworldui.ui.tab;
 
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;

@@ -13,10 +13,10 @@ import decok.dfcdvadstf.catframe.ui.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
-import decok.dfcdvadstf.createworldui.tab.CreateWorldUITabBar;
-import decok.dfcdvadstf.createworldui.tab.GameTab;
-import decok.dfcdvadstf.createworldui.tab.MoreTab;
-import decok.dfcdvadstf.createworldui.tab.WorldTab;
+import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldUITabBar;
+import decok.dfcdvadstf.createworldui.ui.tab.GameTab;
+import decok.dfcdvadstf.createworldui.ui.tab.MoreTab;
+import decok.dfcdvadstf.createworldui.ui.tab.WorldTab;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
         version = Tags.VERSION,
         acceptedMinecraftVersions = "1.7.10",
         acceptableRemoteVersions = "1.7.10",
-        guiFactory = "decok.dfcdvadstf.createworldui.config.CreateWorldConfigUI",
+        guiFactory = "decok.dfcdvadstf.createworldui.ui.CreateWorldConfigUI",
         useMetadata = true,
         dependencies = "required-after:dfdvdsfsAPI",
         customProperties = {

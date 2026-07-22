@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.tab;
+package decok.dfcdvadstf.createworldui.ui.tab;
 
 import cpw.mods.fml.common.event.FMLInterModComms;
 import decok.dfcdvadstf.catframe.ui.Text;

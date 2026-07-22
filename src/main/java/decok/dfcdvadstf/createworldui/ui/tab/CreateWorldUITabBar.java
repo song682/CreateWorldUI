@@ -1,8 +1,7 @@
-package decok.dfcdvadstf.createworldui.tab;
+package decok.dfcdvadstf.createworldui.ui.tab;
 
 import cpw.mods.fml.common.Loader;
 import decok.dfcdvadstf.catframe.ui.tab.TabBar;
-import decok.dfcdvadstf.createworldui.Tags;
 import net.minecraft.util.ResourceLocation;
 
 /**

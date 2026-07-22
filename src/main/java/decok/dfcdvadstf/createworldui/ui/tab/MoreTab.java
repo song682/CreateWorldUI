@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.tab;
+package decok.dfcdvadstf.createworldui.ui.tab;
 
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;
@@ -6,7 +6,7 @@ import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
-import decok.dfcdvadstf.createworldui.gamerule.WorldCreationGameRuleScreen;
+import decok.dfcdvadstf.createworldui.ui.gamerule.WorldCreationGameRuleScreen;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
