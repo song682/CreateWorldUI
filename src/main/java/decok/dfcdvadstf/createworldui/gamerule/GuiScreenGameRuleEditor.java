@@ -7,7 +7,7 @@ import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
-import decok.dfcdvadstf.catframe.ui.components.EditBox;
+import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
 import decok.dfcdvadstf.catframe.ui.components.StringWidget;
 import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.HorizontalLayout;
@@ -1186,12 +1186,12 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
     }
 
     /**
-     * Value rule row — StringWidget (rule name) + EditBox (text input).
-     * 値规则行——StringWidget（规则名）+ EditBox（文本输入）。
+     * Value rule row — StringWidget (rule name) + SimpleEditBox (text input).
+     * 値规则行——StringWidget（规则名）+ SimpleEditBox（文本输入）。
      */
     private static class ValueRuleComponent implements RuleListItem {
         final String ruleName;
-        final EditBox editBox;
+        final SimpleEditBox editBox;
         private final StringWidget nameLabel;
 
         ValueRuleComponent(String ruleName, String initialValue, int y, int parentWidth,
@@ -1203,7 +1203,7 @@ public class GuiScreenGameRuleEditor extends GuiScreen {
             this.nameLabel.setX(parentWidth / 2 - 155);
             this.nameLabel.setY(y + 6);
 
-            this.editBox = new EditBox(parentWidth / 2 + 90, y, 44, 20);
+            this.editBox = new SimpleEditBox(parentWidth / 2 + 90, y, 44, 20);
             this.editBox.setText(initialValue);
             this.editBox.setMaxLength(200);
             this.editBox.setUseVanillaTexture(false);
