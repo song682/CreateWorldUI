@@ -38,6 +38,8 @@
   "createworldui.hover.bonusChest": "Generate a chest containing basic survival items.",
   "createworldui.hover.customize": "Custom the world details.",
   "createworldui.hover.gameRuleEditor": "Edit your game rules.",
+  "createworldui.hover.experiments": "Experimental features (placeholder \u2014 not implemented yet).",
+  "createworldui.hover.dataPacks": "Data packs (placeholder \u2014 not implemented yet).",
   "createworldui.hover.worldName.empty": "Please enter world name",
   "createworldui.hover.worldName.filled": "Create world with name: %s",
   "createworldui.placeholder.worldName": "Please type your world names here.",

@@ -25,6 +25,8 @@
   "createworldui.hover.bonusChest": "生成一个包含基本生存物品的宝箱。",
   "createworldui.hover.customize": "自定义世界细节。",
   "createworldui.hover.gameRuleEditor": "编辑你的游戏规则。",
+  "createworldui.hover.experiments": "实验性功能（占位——尚未实现）。",
+  "createworldui.hover.dataPacks": "数据包（占位——尚未实现）。",
   "createworldui.gamerules.title": "编辑游戏规则",
   "createworldui.gamerules.notification.changed": "以下游戏规则已被修改：",
   "createworldui.gamerules.notification.noChanges": "没有修改任何规则。",

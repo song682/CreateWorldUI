@@ -5,6 +5,7 @@ import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.api.TooltipProvider;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.ui.gamerule.WorldCreationGameRuleScreen;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
@@ -12,14 +13,16 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * More Options Tab with GridLayout-based layout.
  * <p>使用 GridLayout 布局的更多选项标签页。</p>
  */
-public class MoreTab extends GridLayoutTab {
+public class MoreTab extends GridLayoutTab implements TooltipProvider {
     private Button gameRuleEditorButton;
     private Button experimentsButton;
     private Button dataPacksButton;
@@ -95,5 +98,32 @@ public class MoreTab extends GridLayoutTab {
 
     @Override
     public void keyTyped(char typedChar, int keyCode) {
+    }
+
+    /**
+     * Maps the hovered component to its vanilla-style tooltip lines.
+     * <p>将悬停的组件映射到其原版风格 tooltip 文本行。</p>
+     */
+    @Override
+    public List<String> getTooltipLines(int mouseX, int mouseY) {
+        if (gameRuleEditorButton != null && gameRuleEditorButton.isVisible()
+                && gameRuleEditorButton.isMouseOver(mouseX, mouseY)) {
+            return singleLine(I18n.format("createworldui.hover.gameRuleEditor"));
+        }
+        if (experimentsButton != null && experimentsButton.isVisible()
+                && experimentsButton.isMouseOver(mouseX, mouseY)) {
+            return singleLine(I18n.format("createworldui.hover.experiments"));
+        }
+        if (dataPacksButton != null && dataPacksButton.isVisible()
+                && dataPacksButton.isMouseOver(mouseX, mouseY)) {
+            return singleLine(I18n.format("createworldui.hover.dataPacks"));
+        }
+        return null;
+    }
+
+    private static List<String> singleLine(String line) {
+        List<String> lines = new ArrayList<>(1);
+        lines.add(line);
+        return lines;
     }
 }

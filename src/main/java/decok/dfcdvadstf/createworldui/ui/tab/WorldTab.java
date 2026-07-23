@@ -9,6 +9,7 @@ import decok.dfcdvadstf.catframe.ui.layouts.LayoutSettings;
 import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
+import decok.dfcdvadstf.createworldui.api.TooltipProvider;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -22,7 +23,7 @@ import java.util.List;
  * World Options Tab with GridLayout-based layout.
  * <p>使用 GridLayout 布局的世界选项标签页。</p>
  */
-public class WorldTab extends GridLayoutTab {
+public class WorldTab extends GridLayoutTab implements TooltipProvider {
     private SimpleEditBox seedField;
     private CyclingButton<WorldType> worldTypeButton;
     private Button customizeButton;
@@ -204,5 +205,36 @@ public class WorldTab extends GridLayoutTab {
         boolean hardcore = access.modernWorldCreatingUI$getHardcore();
         boolean isOn = bonusChest && !hardcore;
         return isOn ? I18n.format("options.on") : I18n.format("options.off");
+    }
+
+    /**
+     * Maps the hovered component to its vanilla-style tooltip lines.
+     * <p>将悬停的组件映射到其原版风格 tooltip 文本行。</p>
+     */
+    @Override
+    public List<String> getTooltipLines(int mouseX, int mouseY) {
+        if (worldTypeButton != null && worldTypeButton.isVisible()
+                && worldTypeButton.isMouseOver(mouseX, mouseY)) {
+            return singleLine(I18n.format("createworldui.hover.worldType"));
+        }
+        if (customizeButton != null && customizeButton.isVisible()
+                && customizeButton.isMouseOver(mouseX, mouseY)) {
+            return singleLine(I18n.format("createworldui.hover.customize"));
+        }
+        if (generateStructuresButton != null && generateStructuresButton.isVisible()
+                && generateStructuresButton.isMouseOver(mouseX, mouseY)) {
+            return singleLine(I18n.format("createworldui.hover.generateStructures"));
+        }
+        if (bonusChestButton != null && bonusChestButton.isVisible()
+                && bonusChestButton.isMouseOver(mouseX, mouseY)) {
+            return singleLine(I18n.format("createworldui.hover.bonusChest"));
+        }
+        return null;
+    }
+
+    private static List<String> singleLine(String line) {
+        List<String> lines = new ArrayList<>(1);
+        lines.add(line);
+        return lines;
     }
 }

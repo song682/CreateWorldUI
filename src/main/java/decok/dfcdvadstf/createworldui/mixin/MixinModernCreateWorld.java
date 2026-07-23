@@ -1,7 +1,6 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
-import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
 import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
@@ -11,6 +10,7 @@ import decok.dfcdvadstf.catframe.ui.tab.Tab;
 import decok.dfcdvadstf.catframe.ui.tab.TabBar;
 import decok.dfcdvadstf.catframe.ui.tab.TabManager;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
+import decok.dfcdvadstf.createworldui.api.TooltipProvider;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldUITabBar;
 import net.minecraft.client.gui.GuiButton;
@@ -62,8 +62,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     private TabBar modernWorldCreatingUI$tabBar;
     @Unique
     private static final int TAB_HEIGHT = 24;
-    @Unique
-    private final Map<Integer, String> modernWorldCreatingUI$hoverTexts = new HashMap<>();
     @Unique
     private boolean modernWorldCreatingUI$isInitialized = false;
     @Unique
@@ -188,10 +186,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         // ===== Recalculate layout after all content is configured =====
         modernWorldCreatingUI$mainLayout.recalculate(this.width, this.height);
 
-        // Initialize hover texts
-        // 初始化悬停文本
-        modernWorldCreatingUI$initHoverTexts();
-
         modernWorldCreatingUI$isInitialized = true;
 
         // Set the tab content area so GridLayoutTab.doLayout positions correctly within the content panel.
@@ -203,22 +197,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         modernWorldCreatingUI$tabManager.setTabArea(
             new ScreenRectangle(0, tabAreaTop, this.width, tabAreaBottom - tabAreaTop)
         );
-    }
-
-    /**
-     * <p>Initialize hover texts for vanilla buttons.</p>
-     * <p>为原版按钮初始化悬停提示文本。</p>
-     */
-    @Unique
-    private void modernWorldCreatingUI$initHoverTexts() {
-        modernWorldCreatingUI$hoverTexts.put(2, Text.translatableString("createworldui.hover.gameMode.survival"));
-        modernWorldCreatingUI$hoverTexts.put(4, Text.translatableString("createworldui.hover.generateStructures"));
-        modernWorldCreatingUI$hoverTexts.put(5, Text.translatableString("createworldui.hover.worldType"));
-        modernWorldCreatingUI$hoverTexts.put(6, Text.translatableString("createworldui.hover.allowCheats"));
-        modernWorldCreatingUI$hoverTexts.put(7, Text.translatableString("createworldui.hover.bonusChest"));
-        modernWorldCreatingUI$hoverTexts.put(8, Text.translatableString("createworldui.hover.customize"));
-        modernWorldCreatingUI$hoverTexts.put(9, Text.translatableString("createworldui.hover.difficulty"));
-        modernWorldCreatingUI$hoverTexts.put(200, Text.translatableString("createworldui.hover.gameRuleEditor"));
     }
 
     /**
@@ -463,47 +441,23 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * Draws hover text
-     * 绘制悬停文本
+     * <p>Draws vanilla-style hover tooltips by delegating to the current tab.</p>
+     * <p>Each tab that implements {@link TooltipProvider} maps the hovered component
+     * to its tooltip text — keeping tooltip knowledge next to the components that own it.</p>
+     * <p>通过委托当前标签页绘制原版风格悬停提示。</p>
+     * <p>实现 {@link TooltipProvider} 的标签页负责将悬停组件映射到其 tooltip 文本——
+     * 让 tooltip 知识与持有组件的地方归属一致。</p>
      */
     @Unique
     private void modernWorldCreatingUI$drawHoverText(int mouseX, int mouseY) {
-        for (Object obj : this.buttonList) {
-            if (obj instanceof GuiButton) {
-                GuiButton button = (GuiButton) obj;
-                if (button.visible && mouseX >= button.xPosition && mouseY >= button.yPosition &&
-                        mouseX < button.xPosition + button.width && mouseY < button.yPosition + button.height) {
-
-                    // 跳过创建和取消按钮
-                    if (button.id == 0 || button.id == 1) continue;
-
-                    // 从Map中获取悬停文本
-                    String hoverText = modernWorldCreatingUI$hoverTexts.get(button.id);
-                    if (hoverText != null && !hoverText.isEmpty()) {
-                        this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
-                        return;
-                    }
-                }
-            }
+        if (modernWorldCreatingUI$tabManager == null) {
+            return;
         }
-
-        // 检查世界名称输入框的悬停提示
-        if (modernWorldCreatingUI$tabManager != null &&
-                modernWorldCreatingUI$tabManager.getCurrentTabId() == 100) {
-            String worldName = modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName();
-            String hoverText;
-            if (worldName == null || worldName.isEmpty()) {
-                hoverText = I18n.format("createworldui.hover.worldName.empty");
-            } else {
-                hoverText = I18n.format("createworldui.hover.worldName.filled", worldName);
-            }
-
-            // 检查鼠标是否在世界名称输入框区域
-            int inputX = this.width / 2 - 104;
-            int inputY = this.height / 5;
-            if (mouseX >= inputX && mouseX <= inputX + 208 &&
-                    mouseY >= inputY && mouseY <= inputY + 20) {
-                this.drawHoveringText(Arrays.asList(hoverText), mouseX, mouseY, this.fontRendererObj);
+        Tab currentTab = modernWorldCreatingUI$tabManager.getCurrentTab();
+        if (currentTab instanceof TooltipProvider) {
+            List<String> lines = ((TooltipProvider) currentTab).getTooltipLines(mouseX, mouseY);
+            if (lines != null && !lines.isEmpty()) {
+                this.drawHoveringText(lines, mouseX, mouseY, this.fontRendererObj);
             }
         }
     }

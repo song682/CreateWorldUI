@@ -505,7 +505,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             tooltipList.add(EnumChatFormatting.WHITE + tooltip);
         }
 
-        this.func_146283_a(tooltipList, mouseX, mouseY);
+        this.drawHoveringText(tooltipList, mouseX, mouseY, this.fontRendererObj);
     }
 
     // ============================================================
@@ -775,7 +775,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
          */
         String getTooltipRuleName(int mouseX, int mouseY) {
             RuleEntry hovered = getHovered();
-            if (hovered != null && hovered.getRuleName() != null && hovered.isOverName(mouseX, mouseY)) {
+            if (hovered != null && hovered.getRuleName() != null && hovered.isOverRow(mouseX, mouseY)) {
                 return hovered.getRuleName();
             }
             return null;
@@ -799,8 +799,8 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             return null;
         }
 
-        /** @return 鼠标是否位于规则名区域 / whether the mouse is over the rule-name area */
-        boolean isOverName(int mouseX, int mouseY) {
+        /** @return 鼠标是否位于整条规则行区域 / whether the mouse is over the whole rule row */
+        boolean isOverRow(int mouseX, int mouseY) {
             return false;
         }
     }
@@ -879,8 +879,8 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         }
 
         @Override
-        boolean isOverName(int mouseX, int mouseY) {
-            return mouseX >= getContentX() && mouseX < toggle.getX()
+        boolean isOverRow(int mouseX, int mouseY) {
+            return mouseX >= getContentX() && mouseX < getContentRight()
                 && mouseY >= getY() && mouseY < getY() + getHeight();
         }
 
@@ -958,8 +958,8 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         }
 
         @Override
-        boolean isOverName(int mouseX, int mouseY) {
-            return mouseX >= getContentX() && mouseX < editBox.getX()
+        boolean isOverRow(int mouseX, int mouseY) {
+            return mouseX >= getContentX() && mouseX < getContentRight()
                 && mouseY >= getY() && mouseY < getY() + getHeight();
         }
     }
