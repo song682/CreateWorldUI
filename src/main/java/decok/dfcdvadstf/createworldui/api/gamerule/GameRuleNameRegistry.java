@@ -26,13 +26,13 @@ import java.util.Map;
  * </p>
  * <p>
  *     优先级说明（从高到低）：<br>
- *     1. 本地化文件中的名称（gamerule.{ruleKey}.name）<br>
+ *     1. 本地化文件中的名称（gamerule.{ruleName}.name）<br>
  *     2. 通过此 API 注册的显示名称<br>
  *     3. 原始规则键名（如 doFireTick）
  * </p>
  * <p>
  *     Priority (high to low):<br>
- *     1. Name in localization file (gamerule.{ruleKey}.name)<br>
+ *     1. Name in localization file (gamerule.{ruleName}.name)<br>
  *     2. Display names registered through this API<br>
  *     3. Raw rule key (e.g., doFireTick)
  * </p>
@@ -59,20 +59,20 @@ public class GameRuleNameRegistry {
      *     Suitable for adding one name at a time
      * </p>
      *
-     * @param ruleKey 游戏规则键名（如 doFireTick）/ Game rule key (e.g., doFireTick)
+     * @param ruleName 游戏规则键名（如 doFireTick）/ Game rule key (e.g., doFireTick)
      * @param displayName 要显示的友好名称 / Friendly display name to show
      */
-    public static void registerName(String ruleKey, String displayName) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static void registerName(String ruleName, String displayName) {
+        if (ruleName == null || ruleName.isEmpty()) {
             LOGGER.warn("Cannot register display name with null or empty rule key");
             return;
         }
         if (displayName == null || displayName.isEmpty()) {
-            LOGGER.warn("Cannot register null or empty display name for rule: {}", ruleKey);
+            LOGGER.warn("Cannot register null or empty display name for rule: {}", ruleName);
             return;
         }
-        registeredNames.put(ruleKey, displayName);
-        LOGGER.debug("Registered display name for gamerule: {} -> {}", ruleKey, displayName);
+        registeredNames.put(ruleName, displayName);
+        LOGGER.debug("Registered display name for gamerule: {} -> {}", ruleName, displayName);
     }
 
     /**
@@ -115,17 +115,17 @@ public class GameRuleNameRegistry {
      *     Returns by priority: localization > registered name > raw rule key
      * </p>
      *
-     * @param ruleKey 游戏规则键名 / Game rule key
+     * @param ruleName 游戏规则键名 / Game rule key
      * @return 显示名称，如果没有找到则返回原始规则键 / Display name, or raw rule key if not found
      */
-    public static String getName(String ruleKey) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
-            return ruleKey;
+    public static String getName(String ruleName) {
+        if (ruleName == null || ruleName.isEmpty()) {
+            return ruleName;
         }
 
         // 1. 检查本地化文件
         // 1. Check localization file
-        String translationKey = "gamerule." + ruleKey + ".name";
+        String translationKey = "gamerule." + ruleName + ".name";
         String translated = I18n.format(translationKey);
         if (translated != null && !translated.isEmpty() && !translated.equals(translationKey)) {
             return translated;
@@ -133,13 +133,13 @@ public class GameRuleNameRegistry {
 
         // 2. 检查通过 API 注册的显示名称（按原样返回）
         // 2. Check display names registered via API (returned as-is)
-        if (registeredNames.containsKey(ruleKey)) {
-            return registeredNames.get(ruleKey);
+        if (registeredNames.containsKey(ruleName)) {
+            return registeredNames.get(ruleName);
         }
 
         // 3. 回退到原始规则键名
         // 3. Fallback to raw rule key
-        return ruleKey;
+        return ruleName;
     }
 
     /**
@@ -150,14 +150,14 @@ public class GameRuleNameRegistry {
      *     Check if display name for a specific rule is already registered
      * </p>
      *
-     * @param ruleKey 游戏规则键名 / Game rule key
+     * @param ruleName 游戏规则键名 / Game rule key
      * @return 如果已注册则返回 true / True if already registered
      */
-    public static boolean hasRegisteredName(String ruleKey) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static boolean hasRegisteredName(String ruleName) {
+        if (ruleName == null || ruleName.isEmpty()) {
             return false;
         }
-        return registeredNames.containsKey(ruleKey);
+        return registeredNames.containsKey(ruleName);
     }
 
     /**
@@ -168,16 +168,16 @@ public class GameRuleNameRegistry {
      *     Remove display name registration for a specific game rule
      * </p>
      *
-     * @param ruleKey 游戏规则键名 / Game rule key
+     * @param ruleName 游戏规则键名 / Game rule key
      * @return 如果成功移除则返回 true / True if successfully removed
      */
-    public static boolean removeName(String ruleKey) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static boolean removeName(String ruleName) {
+        if (ruleName == null || ruleName.isEmpty()) {
             return false;
         }
-        boolean removed = registeredNames.remove(ruleKey) != null;
+        boolean removed = registeredNames.remove(ruleName) != null;
         if (removed) {
-            LOGGER.debug("Removed display name for gamerule: {}", ruleKey);
+            LOGGER.debug("Removed display name for gamerule: {}", ruleName);
         }
         return removed;
     }

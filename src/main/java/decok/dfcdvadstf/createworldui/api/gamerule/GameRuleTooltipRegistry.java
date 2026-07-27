@@ -26,13 +26,13 @@ import java.util.Map;
  * </p>
  * <p>
  *     优先级说明（从高到低）：<br>
- *     1. 本地化文件中的描述（gamerule.{ruleKey}.tooltip.description）<br>
+ *     1. 本地化文件中的描述（gamerule.{ruleName}.tooltip.description）<br>
  *     2. 通过此 API 注册的 tooltip<br>
  *     3. 内置的默认描述（仅原版规则）
  * </p>
  * <p>
  *     Priority (high to low):<br>
- *     1. Description in localization file (gamerule.{ruleKey}.tooltip.description)<br>
+ *     1. Description in localization file (gamerule.{ruleName}.tooltip.description)<br>
  *     2. Tooltips registered through this API<br>
  *     3. Built-in default descriptions (vanilla rules only)
  * </p>
@@ -50,20 +50,6 @@ public class GameRuleTooltipRegistry {
     // Built-in default tooltip descriptions (fallback for vanilla rules only)
     private static final Map<String, String> DEFAULT_DESCRIPTIONS = new HashMap<>();
 
-    static {
-        // 初始化原版游戏规则的默认描述
-        // Initialize default descriptions for vanilla game rules
-        DEFAULT_DESCRIPTIONS.put("doFireTick", "Controls whether fire spreads and naturally extinguishes");
-        DEFAULT_DESCRIPTIONS.put("mobGriefing", "Controls whether mobs can destroy blocks");
-        DEFAULT_DESCRIPTIONS.put("keepInventory", "Keep inventory after death");
-        DEFAULT_DESCRIPTIONS.put("doMobSpawning", "Natural mob spawning");
-        DEFAULT_DESCRIPTIONS.put("doMobLoot", "Mobs drop loot");
-        DEFAULT_DESCRIPTIONS.put("doTileDrops", "Blocks drop items when destroyed");
-        DEFAULT_DESCRIPTIONS.put("commandBlockOutput", "Command blocks output to chat");
-        DEFAULT_DESCRIPTIONS.put("naturalRegeneration", "Natural health regeneration");
-        DEFAULT_DESCRIPTIONS.put("doDaylightCycle", "Day/night cycle");
-    }
-
     /**
      * <p>
      *     注册单个游戏规则的 tooltip<br>
@@ -77,20 +63,20 @@ public class GameRuleTooltipRegistry {
      *     Suitable for adding one tooltip at a time
      * </p>
      *
-     * @param ruleKey 游戏规则键名（如 doFireTick）/ Game rule key (e.g., doFireTick)
+     * @param ruleName 游戏规则键名（如 doFireTick）/ Game rule key (e.g., doFireTick)
      * @param tooltip 要显示的 tooltip 文本 / Tooltip text to display
      */
-    public static void registerTooltip(String ruleKey, String tooltip) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static void registerTooltip(String ruleName, String tooltip) {
+        if (ruleName == null || ruleName.isEmpty()) {
             LOGGER.warn("Cannot register tooltip with null or empty rule key");
             return;
         }
         if (tooltip == null) {
-            LOGGER.warn("Cannot register null tooltip for rule: {}", ruleKey);
+            LOGGER.warn("Cannot register null tooltip for rule: {}", ruleName);
             return;
         }
-        registeredTooltips.put(ruleKey, tooltip);
-        LOGGER.debug("Registered tooltip for gamerule: {}", ruleKey);
+        registeredTooltips.put(ruleName, tooltip);
+        LOGGER.debug("Registered tooltip for gamerule: {}", ruleName);
     }
 
     /**
@@ -133,17 +119,17 @@ public class GameRuleTooltipRegistry {
      *     Returns by priority: localization > registered tooltip > default description
      * </p>
      *
-     * @param ruleKey 游戏规则键名 / Game rule key
+     * @param ruleName 游戏规则键名 / Game rule key
      * @return tooltip 文本，如果没有找到则返回 null / Tooltip text, or null if not found
      */
-    public static String getTooltip(String ruleKey) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static String getTooltip(String ruleName) {
+        if (ruleName == null || ruleName.isEmpty()) {
             return null;
         }
 
         // 1. 检查本地化文件
         // 1. Check localization file
-        String translationKey = "gamerule." + ruleKey + ".tooltip.description";
+        String translationKey = "gamerule." + ruleName + ".tooltip.description";
         String translated = I18n.format(translationKey);
         if (translated != null && !translated.isEmpty() && !translated.equals(translationKey)) {
             return translated;
@@ -151,14 +137,14 @@ public class GameRuleTooltipRegistry {
 
         // 2. 检查通过 API 注册的 tooltip（按原样返回）
         // 2. Check tooltips registered via API (returned as-is)
-        if (registeredTooltips.containsKey(ruleKey)) {
-            return registeredTooltips.get(ruleKey);
+        if (registeredTooltips.containsKey(ruleName)) {
+            return registeredTooltips.get(ruleName);
         }
 
         // 3. 回退到内置默认描述（仅原版规则）
         // 3. Fallback to built-in default descriptions (vanilla rules only)
-        if (DEFAULT_DESCRIPTIONS.containsKey(ruleKey)) {
-            return DEFAULT_DESCRIPTIONS.get(ruleKey);
+        if (DEFAULT_DESCRIPTIONS.containsKey(ruleName)) {
+            return DEFAULT_DESCRIPTIONS.get(ruleName);
         }
 
         // 没有找到任何描述
@@ -174,14 +160,14 @@ public class GameRuleTooltipRegistry {
      *     Check if tooltip for a specific rule is already registered
      * </p>
      *
-     * @param ruleKey 游戏规则键名 / Game rule key
+     * @param ruleName 游戏规则键名 / Game rule key
      * @return 如果已注册则返回 true / True if already registered
      */
-    public static boolean hasRegisteredTooltip(String ruleKey) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static boolean hasRegisteredTooltip(String ruleName) {
+        if (ruleName == null || ruleName.isEmpty()) {
             return false;
         }
-        return registeredTooltips.containsKey(ruleKey);
+        return registeredTooltips.containsKey(ruleName);
     }
 
     /**
@@ -192,16 +178,16 @@ public class GameRuleTooltipRegistry {
      *     Remove tooltip registration for a specific game rule
      * </p>
      *
-     * @param ruleKey 游戏规则键名 / Game rule key
+     * @param ruleName 游戏规则键名 / Game rule key
      * @return 如果成功移除则返回 true / True if successfully removed
      */
-    public static boolean removeTooltip(String ruleKey) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static boolean removeTooltip(String ruleName) {
+        if (ruleName == null || ruleName.isEmpty()) {
             return false;
         }
-        boolean removed = registeredTooltips.remove(ruleKey) != null;
+        boolean removed = registeredTooltips.remove(ruleName) != null;
         if (removed) {
-            LOGGER.debug("Removed tooltip for gamerule: {}", ruleKey);
+            LOGGER.debug("Removed tooltip for gamerule: {}", ruleName);
         }
         return removed;
     }

@@ -43,7 +43,7 @@ public class GameRuleCategoryRegistry {
 
     // 存储规则到分类的反向映射（规则键 -> 分类本地化键）
     // Reverse mapping for rule to category (rule key -> category localization key)
-    private static final Map<String, String> ruleKeyToCategoryKey = new HashMap<>();
+    private static final Map<String, String> ruleNameToCategoryKey = new HashMap<>();
 
     // 原版游戏规则的默认分类
     // Default categories for vanilla game rules
@@ -98,16 +98,16 @@ public class GameRuleCategoryRegistry {
         // Add default categories to main map
         for (Map.Entry<String, List<String>> entry : VANILLA_DEFAULT_CATEGORIES.entrySet()) {
             String categoryKey = entry.getKey();
-            List<String> ruleKeys = entry.getValue();
+            List<String> ruleNames = entry.getValue();
 
             if (!categoryKeyToRules.containsKey(categoryKey)) {
                 categoryKeyToRules.put(categoryKey, new ArrayList<>());
             }
             
             // 添加规则列表
-            for (String ruleKey : ruleKeys) {
-                categoryKeyToRules.get(categoryKey).add(ruleKey);
-                ruleKeyToCategoryKey.put(ruleKey, categoryKey);
+            for (String ruleName : ruleNames) {
+                categoryKeyToRules.get(categoryKey).add(ruleName);
+                ruleNameToCategoryKey.put(ruleName, categoryKey);
             }
         }
 
@@ -122,31 +122,31 @@ public class GameRuleCategoryRegistry {
      * </p>
      *
      * @param categoryKey 分类键名，本身即本地化键（如 "gamerule.category.world"）/ Category key, itself a localization key (e.g., "gamerule.category.world")
-     * @param ruleKeys 该分类下的游戏规则列表 / List of game rules in this category
+     * @param ruleNames 该分类下的游戏规则列表 / List of game rules in this category
      */
-    public static void createCategory(String categoryKey, List<String> ruleKeys) {
+    public static void createCategory(String categoryKey, List<String> ruleNames) {
         if (categoryKey == null || categoryKey.isEmpty()) {
             LOGGER.warn("Cannot create category with null or empty key");
             return;
         }
-        if (ruleKeys == null) {
+        if (ruleNames == null) {
             LOGGER.warn("Cannot create category with null rule list");
             return;
         }
 
         initializeDefaults();
 
-        categoryKeyToRules.put(categoryKey, new ArrayList<>(ruleKeys));
+        categoryKeyToRules.put(categoryKey, new ArrayList<>(ruleNames));
 
         // 更新反向映射
         // Update reverse mapping
-        for (String ruleKey : ruleKeys) {
-            if (ruleKey != null && !ruleKey.isEmpty()) {
-                ruleKeyToCategoryKey.put(ruleKey, categoryKey);
+        for (String ruleName : ruleNames) {
+            if (ruleName != null && !ruleName.isEmpty()) {
+                ruleNameToCategoryKey.put(ruleName, categoryKey);
             }
         }
 
-        LOGGER.debug("Created category: {} with {} rules", categoryKey, ruleKeys.size());
+        LOGGER.debug("Created category: {} with {} rules", categoryKey, ruleNames.size());
     }
 
     /**
@@ -156,14 +156,14 @@ public class GameRuleCategoryRegistry {
      * </p>
      *
      * @param categoryKey 分类键名 / Category key
-     * @param ruleKey 游戏规则名称 / Game rule name
+     * @param ruleName 游戏规则名称 / Game rule name
      */
-    public static void addRuleToCategory(String categoryKey, String ruleKey) {
+    public static void addRuleToCategory(String categoryKey, String ruleName) {
         if (categoryKey == null || categoryKey.isEmpty()) {
             LOGGER.warn("Cannot add rule to null or empty category key");
             return;
         }
-        if (ruleKey == null || ruleKey.isEmpty()) {
+        if (ruleName == null || ruleName.isEmpty()) {
             LOGGER.warn("Cannot add null or empty rule name");
             return;
         }
@@ -175,10 +175,10 @@ public class GameRuleCategoryRegistry {
         }
 
         List<String> rules = categoryKeyToRules.get(categoryKey);
-        if (!rules.contains(ruleKey)) {
-            rules.add(ruleKey);
-            ruleKeyToCategoryKey.put(ruleKey, categoryKey);
-            LOGGER.debug("Added rule {} to category {}", ruleKey, categoryKey);
+        if (!rules.contains(ruleName)) {
+            rules.add(ruleName);
+            ruleNameToCategoryKey.put(ruleName, categoryKey);
+            LOGGER.debug("Added rule {} to category {}", ruleName, categoryKey);
         }
     }
 
@@ -189,14 +189,14 @@ public class GameRuleCategoryRegistry {
      * </p>
      *
      * @param categoryKey 分类键名 / Category key
-     * @param ruleKeys 游戏规则名称列表 / List of game rule names
+     * @param ruleNames 游戏规则名称列表 / List of game rule names
      */
-    public static void addRulesToCategory(String categoryKey, List<String> ruleKeys) {
+    public static void addRulesToCategory(String categoryKey, List<String> ruleNames) {
         if (categoryKey == null || categoryKey.isEmpty()) {
             LOGGER.warn("Cannot add rules to null or empty category key");
             return;
         }
-        if (ruleKeys == null) {
+        if (ruleNames == null) {
             LOGGER.warn("Cannot add null rule list");
             return;
         }
@@ -208,14 +208,14 @@ public class GameRuleCategoryRegistry {
         }
 
         List<String> rules = categoryKeyToRules.get(categoryKey);
-        for (String ruleKey : ruleKeys) {
-            if (ruleKey != null && !ruleKey.isEmpty() && !rules.contains(ruleKey)) {
-                rules.add(ruleKey);
-                ruleKeyToCategoryKey.put(ruleKey, categoryKey);
+        for (String ruleName : ruleNames) {
+            if (ruleName != null && !ruleName.isEmpty() && !rules.contains(ruleName)) {
+                rules.add(ruleName);
+                ruleNameToCategoryKey.put(ruleName, categoryKey);
             }
         }
 
-        LOGGER.debug("Added {} rules to category {}", ruleKeys.size(), categoryKey);
+        LOGGER.debug("Added {} rules to category {}", ruleNames.size(), categoryKey);
     }
 
     /**
@@ -243,12 +243,12 @@ public class GameRuleCategoryRegistry {
      *     Get the category that a game rule belongs to
      * </p>
      *
-     * @param ruleKey 游戏规则名称 / Game rule name
+     * @param ruleName 游戏规则名称 / Game rule name
      * @return 分类键名，如果没有找到则返回 null / Category key, or null if not found
      */
-    public static String getCategoryForRule(String ruleKey) {
+    public static String getCategoryForRule(String ruleName) {
         initializeDefaults();
-        return ruleKeyToCategoryKey.get(ruleKey);
+        return ruleNameToCategoryKey.get(ruleName);
     }
 
     /**
@@ -302,27 +302,27 @@ public class GameRuleCategoryRegistry {
      *     Remove a game rule from its category
      * </p>
      *
-     * @param ruleKey 游戏规则名称 / Game rule name
+     * @param ruleName 游戏规则名称 / Game rule name
      * @return 如果成功移除则返回 true / True if successfully removed
      */
-    public static boolean removeRuleFromCategory(String ruleKey) {
-        if (ruleKey == null || ruleKey.isEmpty()) {
+    public static boolean removeRuleFromCategory(String ruleName) {
+        if (ruleName == null || ruleName.isEmpty()) {
             return false;
         }
 
         initializeDefaults();
 
-        String categoryKey = ruleKeyToCategoryKey.get(ruleKey);
+        String categoryKey = ruleNameToCategoryKey.get(ruleName);
         if (categoryKey == null) {
             return false;
         }
 
         List<String> rules = categoryKeyToRules.get(categoryKey);
         if (rules != null) {
-            boolean removed = rules.remove(ruleKey);
+            boolean removed = rules.remove(ruleName);
             if (removed) {
-                ruleKeyToCategoryKey.remove(ruleKey);
-                LOGGER.debug("Removed rule {} from category {}", ruleKey, categoryKey);
+                ruleNameToCategoryKey.remove(ruleName);
+                LOGGER.debug("Removed rule {} from category {}", ruleName, categoryKey);
             }
             return removed;
         }
@@ -350,8 +350,8 @@ public class GameRuleCategoryRegistry {
         if (rules != null) {
             // 清除反向映射
             // Clear reverse mapping
-            for (String ruleKey : rules) {
-                ruleKeyToCategoryKey.remove(ruleKey);
+            for (String ruleName : rules) {
+                ruleNameToCategoryKey.remove(ruleName);
             }
             LOGGER.debug("Removed category: {} with {} rules", categoryKey, rules.size());
             return true;
@@ -370,7 +370,7 @@ public class GameRuleCategoryRegistry {
         // 重新初始化为默认状态
         // Reinitialize to default state
         categoryKeyToRules.clear();
-        ruleKeyToCategoryKey.clear();
+        ruleNameToCategoryKey.clear();
         defaultsInitialized = false;
         initializeDefaults();
         LOGGER.info("Cleared all custom categories, restored defaults");
@@ -384,7 +384,7 @@ public class GameRuleCategoryRegistry {
      */
     public static void clearAllCategories() {
         categoryKeyToRules.clear();
-        ruleKeyToCategoryKey.clear();
+        ruleNameToCategoryKey.clear();
         defaultsInitialized = false;
         LOGGER.info("Cleared all categories");
     }
