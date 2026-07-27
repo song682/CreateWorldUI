@@ -347,8 +347,10 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         for (String rule : allRules) {
             if (!categorizedRules.contains(rule)) {
                 if (!hasUncategorized) {
-                    // 未分类标题同样使用本地化键，由 lang 文件提供显示文字
-                    // The uncategorized header also uses a localization key; display text comes from lang files
+                    // 未分类标题同样使用本地化键，由 lang 文件提供显示文字；
+                    // "category:" 前缀是 rebuild() 识别分类标题条目的内部标记，不可省略
+                    // The uncategorized header also uses a localization key; display text comes from lang files.
+                    // The "category:" prefix is the internal marker rebuild() uses to detect header entries; it must not be omitted
                     orderedList.add("category:gamerule.category.uncategorized");
                     hasUncategorized = true;
                 }
