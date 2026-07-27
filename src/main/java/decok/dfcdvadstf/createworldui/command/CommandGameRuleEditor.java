@@ -56,9 +56,12 @@ public class CommandGameRuleEditor extends CommandBase {
             return;
         }
 
-        // Get current world's game rules
-        // 获取当前世界的游戏规则
-        World world = Minecraft.getMinecraft().theWorld;
+        // Get game rules from the sender's SERVER-side world: in 1.7.10 GameRules
+        // are never synced to the client, so the client world copy only contains
+        // the 9 vanilla defaults and would miss any mod-added rules.
+        // 从命令发送者所在的服务端世界读取游戏规则：1.7.10 中 GameRules 不会同步到
+        // 客户端，客户端世界副本只含 9 条原版默认规则，会漏掉模组新增的规则。
+        World world = sender.getEntityWorld();
         Map<String, String> gameRules = new HashMap<>();
 
         if (world != null) {
