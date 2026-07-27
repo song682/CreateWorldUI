@@ -11,12 +11,15 @@ import java.util.*;
  * <p>
  *     游戏规则分类注册 API<br>
  *     提供游戏规则的分类管理功能<br>
- *     用于在 GameRule Editor 中按分类组织和显示游戏规则
+ *     用于在 GameRule Editor 中按分类组织和显示游戏规则<br>
+ *     分类键本身就是本地化键，分类标题文字由调用方模组在自己的 lang 文件中提供
  * </p>
  * <p>
  *     GameRule Category Registration API<br>
  *     Provides category management for game rules<br>
- *     Used to organize and display game rules by category in GameRule Editor
+ *     Used to organize and display game rules by category in GameRule Editor<br>
+ *     The category key itself is a localization key; the category header text is
+ *     supplied by the calling mod's own lang files
  * </p>
  * <p>
  *     分类显示示例：<br>
@@ -34,13 +37,13 @@ public class GameRuleCategoryRegistry {
 
     private static final Logger LOGGER = LogManager.getLogger("GameRuleCategoryRegistry");
 
-    // 存储分类映射（分类名 -> 该分类下的规则列表）
-    // Storage for category mappings (category name -> list of rules in that category)
-    private static final Map<String, List<String>> categoryMap = new LinkedHashMap<>();
+    // 存储分类映射（分类本地化键 -> 该分类下的规则列表）
+    // Storage for category mappings (category localization key -> list of rules in that category)
+    private static final Map<String, List<String>> categoryKeyToRules = new LinkedHashMap<>();
 
-    // 存储规则到分类的反向映射（规则名 -> 分类名）
-    // Reverse mapping for rule to category (rule name -> category name)
-    private static final Map<String, String> ruleToCategory = new HashMap<>();
+    // 存储规则到分类的反向映射（规则名 -> 分类本地化键）
+    // Reverse mapping for rule to category (rule name -> category localization key)
+    private static final Map<String, String> ruleToCategoryKey = new HashMap<>();
 
     // 原版游戏规则的默认分类
     // Default categories for vanilla game rules
@@ -97,14 +100,14 @@ public class GameRuleCategoryRegistry {
             String categoryKey = entry.getKey();
             List<String> ruleNames = entry.getValue();
 
-            if (!categoryMap.containsKey(categoryKey)) {
-                categoryMap.put(categoryKey, new ArrayList<>());
+            if (!categoryKeyToRules.containsKey(categoryKey)) {
+                categoryKeyToRules.put(categoryKey, new ArrayList<>());
             }
             
             // 添加规则列表
             for (String ruleName : ruleNames) {
-                categoryMap.get(categoryKey).add(ruleName);
-                ruleToCategory.put(ruleName, categoryKey);
+                categoryKeyToRules.get(categoryKey).add(ruleName);
+                ruleToCategoryKey.put(ruleName, categoryKey);
             }
         }
 
@@ -118,7 +121,7 @@ public class GameRuleCategoryRegistry {
      *     Create a new category
      * </p>
      *
-     * @param categoryKey 分类键名（如 "gamerule.category.world"）/ Category key (e.g., "gamerule.category.world")
+     * @param categoryKey 分类键名，本身即本地化键（如 "gamerule.category.world"）/ Category key, itself a localization key (e.g., "gamerule.category.world")
      * @param ruleNames 该分类下的游戏规则列表 / List of game rules in this category
      */
     public static void createCategory(String categoryKey, List<String> ruleNames) {
@@ -133,13 +136,13 @@ public class GameRuleCategoryRegistry {
 
         initializeDefaults();
 
-        categoryMap.put(categoryKey, new ArrayList<>(ruleNames));
+        categoryKeyToRules.put(categoryKey, new ArrayList<>(ruleNames));
 
         // 更新反向映射
         // Update reverse mapping
         for (String ruleName : ruleNames) {
             if (ruleName != null && !ruleName.isEmpty()) {
-                ruleToCategory.put(ruleName, categoryKey);
+                ruleToCategoryKey.put(ruleName, categoryKey);
             }
         }
 
@@ -167,14 +170,14 @@ public class GameRuleCategoryRegistry {
 
         initializeDefaults();
 
-        if (!categoryMap.containsKey(categoryKey)) {
-            categoryMap.put(categoryKey, new ArrayList<>());
+        if (!categoryKeyToRules.containsKey(categoryKey)) {
+            categoryKeyToRules.put(categoryKey, new ArrayList<>());
         }
 
-        List<String> rules = categoryMap.get(categoryKey);
+        List<String> rules = categoryKeyToRules.get(categoryKey);
         if (!rules.contains(ruleName)) {
             rules.add(ruleName);
-            ruleToCategory.put(ruleName, categoryKey);
+            ruleToCategoryKey.put(ruleName, categoryKey);
             LOGGER.debug("Added rule {} to category {}", ruleName, categoryKey);
         }
     }
@@ -200,15 +203,15 @@ public class GameRuleCategoryRegistry {
 
         initializeDefaults();
 
-        if (!categoryMap.containsKey(categoryKey)) {
-            categoryMap.put(categoryKey, new ArrayList<>());
+        if (!categoryKeyToRules.containsKey(categoryKey)) {
+            categoryKeyToRules.put(categoryKey, new ArrayList<>());
         }
 
-        List<String> rules = categoryMap.get(categoryKey);
+        List<String> rules = categoryKeyToRules.get(categoryKey);
         for (String ruleName : ruleNames) {
             if (ruleName != null && !ruleName.isEmpty() && !rules.contains(ruleName)) {
                 rules.add(ruleName);
-                ruleToCategory.put(ruleName, categoryKey);
+                ruleToCategoryKey.put(ruleName, categoryKey);
             }
         }
 
@@ -227,7 +230,7 @@ public class GameRuleCategoryRegistry {
     public static List<String> getRulesInCategory(String categoryKey) {
         initializeDefaults();
 
-        List<String> rules = categoryMap.get(categoryKey);
+        List<String> rules = categoryKeyToRules.get(categoryKey);
         if (rules == null) {
             return Collections.emptyList();
         }
@@ -245,7 +248,7 @@ public class GameRuleCategoryRegistry {
      */
     public static String getCategoryForRule(String ruleName) {
         initializeDefaults();
-        return ruleToCategory.get(ruleName);
+        return ruleToCategoryKey.get(ruleName);
     }
 
     /**
@@ -258,17 +261,19 @@ public class GameRuleCategoryRegistry {
      */
     public static List<String> getAllCategories() {
         initializeDefaults();
-        return Collections.unmodifiableList(new ArrayList<>(categoryMap.keySet()));
+        return Collections.unmodifiableList(new ArrayList<>(categoryKeyToRules.keySet()));
     }
 
     /**
      * <p>
      *     获取分类的显示名称<br>
-     *     优先级：本地化 > 分类键名
+     *     分类键本身即本地化键，直接解析其翻译<br>
+     *     优先级：本地化键的翻译 > 分类键名原样返回
      * </p>
      * <p>
      *     Get the display name for a category<br>
-     *     Priority: localization > category key
+     *     The category key itself is a localization key and is resolved directly<br>
+     *     Priority: translation of the localization key > category key as-is
      * </p>
      *
      * @param categoryKey 分类键名 / Category key
@@ -279,15 +284,15 @@ public class GameRuleCategoryRegistry {
             return categoryKey;
         }
 
-        // 尝试获取本地化名称
-        // Try to get localized name
+        // 分类键本身即本地化键，尝试解析其翻译
+        // The category key itself is a localization key; try to resolve its translation
         String translated = net.minecraft.client.resources.I18n.format(categoryKey);
         if (translated != null && !translated.isEmpty() && !translated.equals(categoryKey)) {
             return translated;
         }
 
-        // 回退到分类键名
-        // Fallback to category key
+        // 翻译缺失时原样返回键名，便于调用方发现漏写 lang 条目
+        // Return the key as-is when the translation is missing, so callers can spot missing lang entries
         return categoryKey;
     }
 
@@ -307,16 +312,16 @@ public class GameRuleCategoryRegistry {
 
         initializeDefaults();
 
-        String categoryKey = ruleToCategory.get(ruleName);
+        String categoryKey = ruleToCategoryKey.get(ruleName);
         if (categoryKey == null) {
             return false;
         }
 
-        List<String> rules = categoryMap.get(categoryKey);
+        List<String> rules = categoryKeyToRules.get(categoryKey);
         if (rules != null) {
             boolean removed = rules.remove(ruleName);
             if (removed) {
-                ruleToCategory.remove(ruleName);
+                ruleToCategoryKey.remove(ruleName);
                 LOGGER.debug("Removed rule {} from category {}", ruleName, categoryKey);
             }
             return removed;
@@ -341,12 +346,12 @@ public class GameRuleCategoryRegistry {
 
         initializeDefaults();
 
-        List<String> rules = categoryMap.remove(categoryKey);
+        List<String> rules = categoryKeyToRules.remove(categoryKey);
         if (rules != null) {
             // 清除反向映射
             // Clear reverse mapping
             for (String ruleName : rules) {
-                ruleToCategory.remove(ruleName);
+                ruleToCategoryKey.remove(ruleName);
             }
             LOGGER.debug("Removed category: {} with {} rules", categoryKey, rules.size());
             return true;
@@ -364,8 +369,8 @@ public class GameRuleCategoryRegistry {
     public static void clearCustomCategories() {
         // 重新初始化为默认状态
         // Reinitialize to default state
-        categoryMap.clear();
-        ruleToCategory.clear();
+        categoryKeyToRules.clear();
+        ruleToCategoryKey.clear();
         defaultsInitialized = false;
         initializeDefaults();
         LOGGER.info("Cleared all custom categories, restored defaults");
@@ -378,8 +383,8 @@ public class GameRuleCategoryRegistry {
      * </p>
      */
     public static void clearAllCategories() {
-        categoryMap.clear();
-        ruleToCategory.clear();
+        categoryKeyToRules.clear();
+        ruleToCategoryKey.clear();
         defaultsInitialized = false;
         LOGGER.info("Cleared all categories");
     }
@@ -394,7 +399,7 @@ public class GameRuleCategoryRegistry {
      */
     public static int getCategoryCount() {
         initializeDefaults();
-        return categoryMap.size();
+        return categoryKeyToRules.size();
     }
 
     /**
@@ -408,7 +413,7 @@ public class GameRuleCategoryRegistry {
     public static Map<String, List<String>> getAllCategoriesMap() {
         initializeDefaults();
         Map<String, List<String>> copy = new LinkedHashMap<>();
-        for (Map.Entry<String, List<String>> entry : categoryMap.entrySet()) {
+        for (Map.Entry<String, List<String>> entry : categoryKeyToRules.entrySet()) {
             copy.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
         }
         return copy;

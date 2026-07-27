@@ -347,7 +347,9 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         for (String rule : allRules) {
             if (!categorizedRules.contains(rule)) {
                 if (!hasUncategorized) {
-                    orderedList.add("category:uncategorized");
+                    // 未分类标题同样使用本地化键，由 lang 文件提供显示文字
+                    // The uncategorized header also uses a localization key; display text comes from lang files
+                    orderedList.add("category:gamerule.category.uncategorized");
                     hasUncategorized = true;
                 }
                 orderedList.add(rule);
