@@ -62,7 +62,7 @@ public class MixinGuiSelectWorld extends GuiScreen {
             // 使用与原版代码相同的方法获取存档列表
             Minecraft mcInstance = FMLClientHandler.instance().getClient();
             ISaveFormat saveFormat = mcInstance.getSaveLoader();
-            List saveList = saveFormat.getSaveList();
+            List<?> saveList = saveFormat.getSaveList();
 
             if (saveList == null) {
                 modernWorldCreatingUI$logger.warn("Could not get save list");

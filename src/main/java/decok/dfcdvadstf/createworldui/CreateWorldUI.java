@@ -9,7 +9,7 @@ import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
 import decok.dfcdvadstf.catframe.compact.forge.language.LanguageRegister;
 import decok.dfcdvadstf.catframe.ui.Text;
-import decok.dfcdvadstf.catframe.ui.tab.TabRegistry;
+import decok.dfcdvadstf.catframe.ui.components.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
         acceptableRemoteVersions = "1.7.10",
         guiFactory = "decok.dfcdvadstf.createworldui.ui.CreateWorldConfigUI",
         useMetadata = true,
-        dependencies = "required-after:catframe@[0.5.0,)",
+        dependencies = "required-after:catframe@[0.6.0,)",
         customProperties = {
                 @Mod.CustomProperty(k = "license", v = "MIT"),
                 @Mod.CustomProperty(k = "issueTrackerUrl", v = "https://github.com/song682/CreateWorldUI/issues"),

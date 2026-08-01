@@ -2,8 +2,8 @@ package decok.dfcdvadstf.createworldui.ui.tab;
 
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;
-import decok.dfcdvadstf.catframe.ui.tab.GridLayoutTab;
-import decok.dfcdvadstf.catframe.ui.tab.TabManager;
+import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
+import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.TooltipProvider;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
