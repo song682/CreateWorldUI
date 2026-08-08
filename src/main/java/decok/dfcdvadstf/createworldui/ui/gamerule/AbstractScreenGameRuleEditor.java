@@ -839,6 +839,11 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             FontRenderer font = Minecraft.getMinecraft().fontRenderer;
             nameLabel.setX(getContentX());
             nameLabel.setY(getContentYMiddle() - font.FONT_HEIGHT / 2);
+            // 将 nameLabel 命中区域扩展至整行（文字仍按 x/y 绘制，不受尺寸影响），
+            // 使组件级 tooltip 的悬停判定覆盖整行，与高版本规则界面一致
+            // Expand nameLabel's hit area to the whole row (text is still drawn at x/y,
+            // unaffected by size): component-level tooltip hover detection covers the full row
+            nameLabel.setSize(getContentWidth(), getHeight());
             toggle.setX(getContentRight() - CONTROL_WIDTH);
             toggle.setY(getContentYMiddle() - CONTROL_HEIGHT / 2);
         }
@@ -895,6 +900,11 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             FontRenderer font = Minecraft.getMinecraft().fontRenderer;
             nameLabel.setX(getContentX());
             nameLabel.setY(getContentYMiddle() - font.FONT_HEIGHT / 2);
+            // 将 nameLabel 命中区域扩展至整行（文字仍按 x/y 绘制，不受尺寸影响），
+            // 使组件级 tooltip 的悬停判定覆盖整行，与高版本规则界面一致
+            // Expand nameLabel's hit area to the whole row (text is still drawn at x/y,
+            // unaffected by size): component-level tooltip hover detection covers the full row
+            nameLabel.setSize(getContentWidth(), getHeight());
             editBox.setX(getContentRight() - CONTROL_WIDTH);
             editBox.setY(getContentYMiddle() - CONTROL_HEIGHT / 2);
         }
