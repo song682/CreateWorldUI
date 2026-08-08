@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.ui.gamerule;
 
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
+import decok.dfcdvadstf.catframe.ui.GuiGraphicsExtractor;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
@@ -436,8 +437,8 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
 
     @Override
     public void updateScreen() {
-        // EditBox光标更新在render()内部处理，无需额外操作
-        // EditBox cursor update handled internally in render(); no extra action needed
+        // EditBox光标更新在渲染阶段（extractRenderState）内部处理，无需额外操作
+        // EditBox cursor update handled internally during rendering (extractRenderState); no extra action needed
     }
 
     // ============================================================
@@ -459,7 +460,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
 
         // 列表（自带背景、Scissor 裁剪与滚动条）/ List (own background, scissor clipping and scrollbar)
         if (ruleList != null) {
-            ruleList.render(mouseX, mouseY, partialTicks);
+            ruleList.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
         }
 
         // ===== 渲染Footer区域的按钮 / Render buttons in Footer zone =====
@@ -469,7 +470,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
                     HorizontalLayout hLayout = (HorizontalLayout) child;
                     for (ILayout buttonChild : hLayout.getChildren()) {
                         if (buttonChild instanceof Button) {
-                            ((Button) buttonChild).render(mouseX, mouseY, partialTicks);
+                            ((Button) buttonChild).extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
                         }
                     }
                 }
@@ -867,8 +868,8 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         public void renderContent(int mouseX, int mouseY, boolean hovered, float partialTicks) {
             layoutWidgets();
             nameLabel.setColor((screen.isHighlightEnabled() && screen.isRuleModified(ruleName)) ? 0xFFFF55 : 0xFFFFFF);
-            nameLabel.render(mouseX, mouseY, partialTicks);
-            toggle.render(mouseX, mouseY, partialTicks);
+            nameLabel.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
+            toggle.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
         }
 
         @Override
@@ -926,8 +927,8 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         public void renderContent(int mouseX, int mouseY, boolean hovered, float partialTicks) {
             layoutWidgets();
             nameLabel.setColor((screen.isHighlightEnabled() && screen.isRuleModified(ruleName)) ? 0xFFFF55 : 0xFFFFFF);
-            nameLabel.render(mouseX, mouseY, partialTicks);
-            editBox.render(mouseX, mouseY, partialTicks);
+            nameLabel.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
+            editBox.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
         }
 
         @Override
