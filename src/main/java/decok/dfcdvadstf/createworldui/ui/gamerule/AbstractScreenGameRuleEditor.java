@@ -8,6 +8,7 @@ import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.ObjectSelectionList;
 import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
 import decok.dfcdvadstf.catframe.ui.components.StringWidget;
+import decok.dfcdvadstf.catframe.ui.components.Tooltip;
 import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.HorizontalLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.ILayout;
@@ -476,41 +477,33 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
                 }
             }
         }
-
-        // Tooltip（在列表裁剪之外绘制）/ Tooltip (drawn outside list clipping)
-        if (ruleList != null) {
-            String ruleName = ruleList.getTooltipRuleName(mouseX, mouseY);
-            if (ruleName != null) {
-                drawRuleTooltip(ruleName, mouseX, mouseY);
-            }
-        }
+        // Tooltip 由各条目 nameLabel 组件自行泵动（WidgetTooltipHolder），帧末由 CatFrame 统一延迟绘制
+        // Tooltip is driven per-entry via the nameLabel widget (WidgetTooltipHolder) and drawn deferred by CatFrame at end of frame
     }
 
     /**
-     * 绘制某条规则的 tooltip（规则名 + 默认值 + 描述）。<br>
-     * Draw the tooltip for a rule (rule name + default value + description).
+     * 构建某条规则的 tooltip 文本（规则名 + 默认值 + 描述，以换行符分隔，支持 § 格式）。<br>
+     * Build the tooltip text for a rule (rule name + default value + description, newline-separated, §-formatted).
      */
-    private void drawRuleTooltip(String ruleName, int mouseX, int mouseY) {
-        List<String> tooltipList = new ArrayList<>();
-
+    private String buildRuleTooltipMessage(String ruleName) {
+        StringBuilder sb = new StringBuilder();
         // 第一行：规则名（黄色） / First line: rule name (yellow)
-        tooltipList.add(EnumChatFormatting.YELLOW + ruleName);
+        sb.append(EnumChatFormatting.YELLOW).append(ruleName);
 
         // 默认值 / Default value
         GameruleValue defVal = defaultRules.get(ruleName);
         if (defVal != null) {
-            tooltipList.add(EnumChatFormatting.GRAY
-                + Text.translatableString(Tags.MODID, "createworldui.customize.custom.default")
-                + " " + defVal.getOptimalValue());
+            sb.append('\n').append(EnumChatFormatting.GRAY)
+                .append(Text.translatableString(Tags.MODID, "createworldui.customize.custom.default"))
+                .append(' ').append(defVal.getOptimalValue());
         }
 
         // 描述（若有） / Description (if any)
         String tooltip = getRuleTooltip(ruleName);
         if (tooltip != null) {
-            tooltipList.add(EnumChatFormatting.WHITE + tooltip);
+            sb.append('\n').append(EnumChatFormatting.WHITE).append(tooltip);
         }
-
-        this.drawHoveringText(tooltipList, mouseX, mouseY, this.fontRendererObj);
+        return sb.toString();
     }
 
     // ============================================================
@@ -773,18 +766,6 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             }
             return false;
         }
-
-        /**
-         * 返回当前应显示 tooltip 的规则名（鼠标悬停在规则名区域时）。<br>
-         * Return the rule name whose tooltip should be shown (when hovering the name area).
-         */
-        String getTooltipRuleName(int mouseX, int mouseY) {
-            RuleEntry hovered = getHovered();
-            if (hovered != null && hovered.getRuleName() != null && hovered.isOverRow(mouseX, mouseY)) {
-                return hovered.getRuleName();
-            }
-            return null;
-        }
     }
 
     /**
@@ -802,11 +783,6 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         /** @return 规则名，分类标题返回 null / rule name, category header returns null */
         String getRuleName() {
             return null;
-        }
-
-        /** @return 鼠标是否位于整条规则行区域 / whether the mouse is over the whole rule row */
-        boolean isOverRow(int mouseX, int mouseY) {
-            return false;
         }
     }
 
@@ -846,6 +822,9 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             super(screen);
             this.ruleName = ruleName;
             this.nameLabel = new StringWidget(GameRuleNameRegistry.getName(ruleName), 0xFFFFFF);
+            // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动（悬停/焦点 + 延迟）
+            // Component-level tooltip: auto-pumped by WidgetTooltipHolder driven from extractRenderState (hover/focus + delay)
+            this.nameLabel.setTooltip(Tooltip.create(screen.buildRuleTooltipMessage(ruleName)));
             this.toggle = CyclingButton.onOffBuilder()
                 .values(true, false)
                 .initially(initialValue)
@@ -883,12 +862,6 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             return ruleName;
         }
 
-        @Override
-        boolean isOverRow(int mouseX, int mouseY) {
-            return mouseX >= getContentX() && mouseX < getContentRight()
-                && mouseY >= getY() && mouseY < getY() + getHeight();
-        }
-
         CyclingButton<Boolean> getToggle() {
             return toggle;
         }
@@ -908,6 +881,9 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             super(screen);
             this.ruleName = ruleName;
             this.nameLabel = new StringWidget(GameRuleNameRegistry.getName(ruleName), 0xFFFFFF);
+            // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动（悬停/焦点 + 延迟）
+            // Component-level tooltip: auto-pumped by WidgetTooltipHolder driven from extractRenderState (hover/focus + delay)
+            this.nameLabel.setTooltip(Tooltip.create(screen.buildRuleTooltipMessage(ruleName)));
             this.editBox = new SimpleEditBox(0, 0, CONTROL_WIDTH, CONTROL_HEIGHT);
             this.editBox.setText(initialValue);
             this.editBox.setMaxLength(200);
@@ -960,12 +936,6 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         @Override
         String getRuleName() {
             return ruleName;
-        }
-
-        @Override
-        boolean isOverRow(int mouseX, int mouseY) {
-            return mouseX >= getContentX() && mouseX < getContentRight()
-                && mouseY >= getY() && mouseY < getY() + getHeight();
         }
     }
 }
