@@ -5,11 +5,11 @@ import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
 import decok.dfcdvadstf.catframe.ui.components.StringWidget;
+import decok.dfcdvadstf.catframe.ui.components.Tooltip;
 import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
 import decok.dfcdvadstf.catframe.ui.layouts.LayoutSettings;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.api.TooltipProvider;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -23,7 +23,7 @@ import java.util.List;
  * World Options Tab with GridLayout-based layout.
  * <p>使用 GridLayout 布局的世界选项标签页。</p>
  */
-public class WorldTab extends GridLayoutTab implements TooltipProvider {
+public class WorldTab extends GridLayoutTab {
     private SimpleEditBox seedField;
     private CyclingButton<WorldType> worldTypeButton;
     private Button customizeButton;
@@ -88,6 +88,9 @@ public class WorldTab extends GridLayoutTab implements TooltipProvider {
                         }
                     }
                 });
+        // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动，帧末由 CatFrame 统一延迟绘制
+        // Component-level tooltip: auto-pumped by WidgetTooltipHolder via extractRenderState, drawn deferred by CatFrame at end of frame
+        worldTypeButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.worldType")));
         layout.addChild(worldTypeButton, row, 0);
 
         // Create customize button
@@ -101,6 +104,7 @@ public class WorldTab extends GridLayoutTab implements TooltipProvider {
                 })
                 .useVanillaTexture(true)
             .width(150).height(20).build();
+        customizeButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.customize")));
         layout.addChild(customizeButton, row++, 1);
 
         // Row 1: Seed label (spans 2 cols) + spacing
@@ -131,6 +135,7 @@ public class WorldTab extends GridLayoutTab implements TooltipProvider {
                 btn -> access.modernWorldCreatingUI$setGenerateStructures(
                     !access.modernWorldCreatingUI$getGenerateStructures()))
             .width(44).height(20).useVanillaTexture(true).build();
+        generateStructuresButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.generateStructures")));
         layout.addChild(generateStructuresButton, row++, 1, rightAlign);
 
         // Row 4: Bonus Chest label + toggle button
@@ -147,6 +152,7 @@ public class WorldTab extends GridLayoutTab implements TooltipProvider {
                     }
                 })
             .width(44).height(20).useVanillaTexture(true).build();
+        bonusChestButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.bonusChest")));
         layout.addChild(bonusChestButton, row++, 1, rightAlign);
 
         super.initGui(tabManager, width, height);
@@ -205,36 +211,5 @@ public class WorldTab extends GridLayoutTab implements TooltipProvider {
         boolean hardcore = access.modernWorldCreatingUI$getHardcore();
         boolean isOn = bonusChest && !hardcore;
         return isOn ? I18n.format("options.on") : I18n.format("options.off");
-    }
-
-    /**
-     * Maps the hovered component to its vanilla-style tooltip lines.
-     * <p>将悬停的组件映射到其原版风格 tooltip 文本行。</p>
-     */
-    @Override
-    public List<String> getTooltipLines(int mouseX, int mouseY) {
-        if (worldTypeButton != null && worldTypeButton.isVisible()
-                && worldTypeButton.isMouseOver(mouseX, mouseY)) {
-            return singleLine(I18n.format("createworldui.hover.worldType"));
-        }
-        if (customizeButton != null && customizeButton.isVisible()
-                && customizeButton.isMouseOver(mouseX, mouseY)) {
-            return singleLine(I18n.format("createworldui.hover.customize"));
-        }
-        if (generateStructuresButton != null && generateStructuresButton.isVisible()
-                && generateStructuresButton.isMouseOver(mouseX, mouseY)) {
-            return singleLine(I18n.format("createworldui.hover.generateStructures"));
-        }
-        if (bonusChestButton != null && bonusChestButton.isVisible()
-                && bonusChestButton.isMouseOver(mouseX, mouseY)) {
-            return singleLine(I18n.format("createworldui.hover.bonusChest"));
-        }
-        return null;
-    }
-
-    private static List<String> singleLine(String line) {
-        List<String> lines = new ArrayList<>(1);
-        lines.add(line);
-        return lines;
     }
 }

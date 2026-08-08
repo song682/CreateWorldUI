@@ -5,12 +5,12 @@ import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
 import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
+import decok.dfcdvadstf.catframe.ui.components.Tooltip;
 import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
-import decok.dfcdvadstf.createworldui.api.TooltipProvider;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
@@ -23,14 +23,12 @@ import net.minecraft.world.EnumDifficulty;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Game Settings Tab with GridLayout-based layout.
  * <p>使用 GridLayout 布局的游戏设置标签页。</p>
  */
-public class GameTab extends GridLayoutTab implements TooltipProvider {
+public class GameTab extends GridLayoutTab {
     private SimpleEditBox worldNameField;
     private CyclingButton<String> gameModeButton;
     private CyclingButton<Boolean> allowCheatsButton;
@@ -210,6 +208,36 @@ public class GameTab extends GridLayoutTab implements TooltipProvider {
             }
         }
 
+        // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动，帧末由 CatFrame 统一延迟绘制；
+        // 每帧重建以反映世界名、游戏模式、难度锁定等动态状态
+        // Component-level tooltip: auto-pumped by WidgetTooltipHolder via extractRenderState, drawn deferred by
+        // CatFrame at end of frame; rebuilt each frame to reflect dynamic state (world name, mode, difficulty lock)
+        String worldName = access.modernWorldCreatingUI$getWorldName();
+        if (worldName == null || worldName.isEmpty()) {
+            worldNameField.setTooltip(Tooltip.create(I18n.format("createworldui.hover.worldName.empty")));
+        } else {
+            worldNameField.setTooltip(Tooltip.create(I18n.format("createworldui.hover.worldName.filled", worldName)));
+        }
+
+        String mode = access.modernWorldCreatingUI$getGameMode();
+        if (mode == null || mode.isEmpty()) mode = "survival";
+        gameModeButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.gameMode." + mode)));
+
+        String difficultyTip = I18n.format("createworldui.hover.difficulty");
+        if (DifficultyLocker.isDifficultyLocked(difficultyButton.getValue())) {
+            difficultyTip += "\n" + I18n.format("createworldui.hover.difficulty.locked");
+        }
+        difficultyButton.setTooltip(Tooltip.create(difficultyTip));
+
+        if (difficultyLockButton != null && difficultyButton != null) {
+            boolean locked = DifficultyLocker.isDifficultyLocked(difficultyButton.getValue());
+            difficultyLockButton.setTooltip(Tooltip.create(I18n.format(locked
+                    ? "createworldui.hover.difficulty.unlockButton"
+                    : "createworldui.hover.difficulty.lockButton")));
+        }
+
+        allowCheatsButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.allowCheats")));
+
         // Render all components
         super.drawScreen(mouseX, mouseY, partialTicks);
 
@@ -240,69 +268,5 @@ public class GameTab extends GridLayoutTab implements TooltipProvider {
         // 转发按键到所有 Component，然后同步世界名称
         super.keyTyped(typedChar, keyCode);
         access.modernWorldCreatingUI$setWorldName(worldNameField.getText());
-    }
-
-    /**
-     * Maps the hovered component to its vanilla-style tooltip lines.
-     * <p>将悬停的组件映射到其原版风格 tooltip 文本行。</p>
-     */
-    @Override
-    public List<String> getTooltipLines(int mouseX, int mouseY) {
-        // World name field: prompt to enter a name, or echo the current name
-        // 世界名称输入框：提示输入名称，或回显当前名称
-        if (worldNameField != null && worldNameField.isVisible()
-                && worldNameField.isMouseOver(mouseX, mouseY)) {
-            String worldName = access.modernWorldCreatingUI$getWorldName();
-            if (worldName == null || worldName.isEmpty()) {
-                return singleLine(I18n.format("createworldui.hover.worldName.empty"));
-            }
-            return singleLine(I18n.format("createworldui.hover.worldName.filled", worldName));
-        }
-
-        // Game mode: describe the currently selected mode
-        // 游戏模式：描述当前选中的模式
-        if (gameModeButton != null && gameModeButton.isVisible()
-                && gameModeButton.isMouseOver(mouseX, mouseY)) {
-            String mode = access.modernWorldCreatingUI$getGameMode();
-            if (mode == null || mode.isEmpty()) mode = "survival";
-            return singleLine(I18n.format("createworldui.hover.gameMode." + mode));
-        }
-
-        // Difficulty: base description, plus a locked note when this difficulty is locked
-        // 难度：基础说明；若当前难度被锁定则追加一行提示
-        if (difficultyButton != null && difficultyButton.isVisible()
-                && difficultyButton.isMouseOver(mouseX, mouseY)) {
-            List<String> lines = new ArrayList<>();
-            lines.add(I18n.format("createworldui.hover.difficulty"));
-            if (DifficultyLocker.isDifficultyLocked(difficultyButton.getValue())) {
-                lines.add(I18n.format("createworldui.hover.difficulty.locked"));
-            }
-            return lines;
-        }
-
-        // Difficulty lock button: click-to-lock / click-to-unlock depending on state
-        // 难度锁定按钮：根据状态显示“点击锁定 / 点击解锁”
-        if (difficultyLockButton != null && difficultyLockButton.isVisible()
-                && difficultyLockButton.isMouseOver(mouseX, mouseY) && difficultyButton != null) {
-            boolean locked = DifficultyLocker.isDifficultyLocked(difficultyButton.getValue());
-            return singleLine(I18n.format(locked
-                    ? "createworldui.hover.difficulty.unlockButton"
-                    : "createworldui.hover.difficulty.lockButton"));
-        }
-
-        // Allow cheats
-        // 允许作弊
-        if (allowCheatsButton != null && allowCheatsButton.isVisible()
-                && allowCheatsButton.isMouseOver(mouseX, mouseY)) {
-            return singleLine(I18n.format("createworldui.hover.allowCheats"));
-        }
-
-        return null;
-    }
-
-    private static List<String> singleLine(String line) {
-        List<String> lines = new ArrayList<>(1);
-        lines.add(line);
-        return lines;
     }
 }

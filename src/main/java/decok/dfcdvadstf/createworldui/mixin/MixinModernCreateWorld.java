@@ -10,7 +10,6 @@ import decok.dfcdvadstf.catframe.ui.components.tab.Tab;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabBar;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
-import decok.dfcdvadstf.createworldui.api.TooltipProvider;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldUITabBar;
 import net.minecraft.client.gui.GuiButton;
@@ -275,9 +274,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
                 }
             }
         }
-
-        // 绘制悬停文本
-        modernWorldCreatingUI$drawHoverText(mouseX, mouseY);
     }
 
     /**
@@ -440,27 +436,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         }
     }
 
-    /**
-     * <p>Draws vanilla-style hover tooltips by delegating to the current tab.</p>
-     * <p>Each tab that implements {@link TooltipProvider} maps the hovered component
-     * to its tooltip text — keeping tooltip knowledge next to the components that own it.</p>
-     * <p>通过委托当前标签页绘制原版风格悬停提示。</p>
-     * <p>实现 {@link TooltipProvider} 的标签页负责将悬停组件映射到其 tooltip 文本——
-     * 让 tooltip 知识与持有组件的地方归属一致。</p>
-     */
-    @Unique
-    private void modernWorldCreatingUI$drawHoverText(int mouseX, int mouseY) {
-        if (modernWorldCreatingUI$tabManager == null) {
-            return;
-        }
-        Tab currentTab = modernWorldCreatingUI$tabManager.getCurrentTab();
-        if (currentTab instanceof TooltipProvider) {
-            List<String> lines = ((TooltipProvider) currentTab).getTooltipLines(mouseX, mouseY);
-            if (lines != null && !lines.isEmpty()) {
-                this.drawHoveringText(lines, mouseX, mouseY, this.fontRendererObj);
-            }
-        }
-    }
 
     @Unique
     private GuiButton modernWorldCreatingUI$getButtonById(int id) {
