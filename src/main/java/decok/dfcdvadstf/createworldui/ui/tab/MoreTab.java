@@ -43,7 +43,7 @@ public class MoreTab extends GridLayoutTab {
 
         if (CreateWorldUI.config.gameruleEdit) {
             gameRuleEditorButton = Button.builder(
-                    Text.translatable("createworldui", "createworldui.button.gamerule_editor"),
+                    Text.literal(I18n.format("createworldui.button.gamerule_editor")),
                     btn -> {
                         Map<String, String> pending = GameRuleApplier.getPendingGameRules();
                         if (pending == null) pending = new HashMap<>();

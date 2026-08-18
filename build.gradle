@@ -97,7 +97,7 @@ dependencies {
 
     compileOnly fileTree(dir: 'lib', includes: ['*.jar'])
     compileOnly "com.github.song682:ModernDifficultyLocker:v1.0.6"
-    implementation "com.github.song682:CatFrame:v0.6.4"
+    implementation "com.github.song682:CatFrame:v0.7.1.1"
 }
 
 def dependenciesList = []

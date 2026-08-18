@@ -89,5 +89,7 @@
   "config.option.lockDifficultyButton": "Enable the Difficulty Lock button in the world creation",
   "config.option.lockDifficultyButton.tooltip": "Set True to enable the difficulty lock button, in the world creation.ModernDifficultyLocker Required",
   "createworldui.gamerules.notification.changed": "The following game rules have been changed:",
-  "createworldui.gamerules.notification.noChanges": "No rules were changed."
+  "createworldui.gamerules.notification.noChanges": "No rules were changed.",
+  "selectWorld.experiments": "Experimental Settings",
+  "selectWorld.dataPacks": "Data Packs"
 }

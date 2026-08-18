@@ -85,5 +85,7 @@
   "createworldui.tab.more": "更多",
   "config.title": "CreateWorldUI",
   "config.option.lockDifficultyButton": "添加难度锁定按钮",
-  "config.option.lockDifficultyButton.tooltip": "在创建世界时，将锁定按钮添加到难度按钮旁边"
+  "config.option.lockDifficultyButton.tooltip": "在创建世界时，将锁定按钮添加到难度按钮旁边",
+  "selectWorld.experiments": "实验性",
+  "selectWorld.dataPacks": "数据包"
 }
