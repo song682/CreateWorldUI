@@ -7,7 +7,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
-import decok.dfcdvadstf.catframe.compact.forge.language.LanguageRegister;
+import decok.dfcdvadstf.catframe.adapter.forge.language.LanguageRegister;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;

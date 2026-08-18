@@ -13,7 +13,6 @@ import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.HorizontalLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.ILayout;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.Tags;
 import decok.dfcdvadstf.createworldui.api.gamerule.*;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter.GameruleValue;
 import net.minecraft.client.Minecraft;
@@ -255,7 +254,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         if (CreateWorldUI.config.enableResetButton) {
             // 三按钮模式 / Three-button mode
             this.saveButton = Button.builder(
-                Text.translatable(Tags.MODID, "options.save"),
+                Text.translatable("options.save"),
                 btn -> { saveChanges(); this.mc.displayGuiScreen(this.parentScreen); }
             ).width(100).build();
 
@@ -265,7 +264,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             ).width(100).build();
 
             this.resetButton = Button.builder(
-                Text.translatable(Tags.MODID, "options.cancel"),
+                Text.translatable("options.cancel"),
                 btn -> {
                     modifiedRules.clear();
                     changedRules.clear();
@@ -280,12 +279,12 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         } else {
             // 两按钮模式 / Two-button mode
             this.cancelButton = Button.builder(
-                Text.translatable(Tags.MODID, "options.save"),
+                Text.translatable("options.save"),
                 btn -> this.mc.displayGuiScreen(this.parentScreen)
             ).width(150).build();
 
             this.saveButton = Button.builder(
-                Text.translatable(Tags.MODID, "options.cancel"),
+                Text.translatable("options.cancel"),
                 btn -> { saveChanges(); this.mc.displayGuiScreen(this.parentScreen); }
             ).width(150).build();
 
@@ -452,7 +451,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
 
         // 标题 / Title
         this.drawCenteredString(this.fontRendererObj,
-            Text.translatableString(Tags.MODID, "createworldui.gamerules.title"),
+            Text.translatableString("createworldui.gamerules.title"),
             this.width / 2, 15, 0xFFFFFF);
 
         // 列表上下分隔线 / List header/footer separators
@@ -494,7 +493,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         GameruleValue defVal = defaultRules.get(ruleName);
         if (defVal != null) {
             sb.append('\n').append(EnumChatFormatting.GRAY)
-                .append(Text.translatableString(Tags.MODID, "createworldui.customize.custom.default"))
+                .append(Text.translatableString("createworldui.customize.custom.default"))
                 .append(' ').append(defVal.getOptimalValue());
         }
 
@@ -686,11 +685,14 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
         /**
          * 覆盖前置模组的裁剪实现：CatFrame 直接用 GUI 坐标调用 glScissor，
          * 在 GUI 缩放 != 1 时会裁错区域。这里把列表边界从 GUI 坐标换算成帧缓冲
-         * 像素坐标（并翻转 Y 轴原点），以正确处理任意 GUI 缩放。<br>
-         * Override the prerequisite mod's clipping: CatFrame calls glScissor with raw
-         * GUI coordinates, which clips the wrong region when the GUI scale != 1. Here we
-         * convert the list bounds from GUI coordinates to framebuffer pixel coordinates
-         * (flipping the Y origin) so any GUI scale is handled correctly.
+         * 像素坐标（并翻转 Y 轴原点），以正确处理任意 GUI 缩放。
+         * CatFrame 0.7.1.1 的 AbstractScrollArea.enableScissor 仍使用 GUI 坐标，
+         * 此覆写在 0.7.1.1 下必须保留。<br>
+         * Override the prerequisite mod's clipping: CatFrame 0.7.1.1 calls glScissor
+         * with raw GUI coordinates, which clips the wrong region when the GUI scale
+         * != 1. Here we convert the list bounds from GUI coordinates to framebuffer
+         * pixel coordinates (flipping the Y origin) so any GUI scale is handled
+         * correctly; this override must be kept on 0.7.1.1.
          */
         @Override
         protected void enableScissor() {

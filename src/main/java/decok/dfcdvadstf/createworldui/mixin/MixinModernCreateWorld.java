@@ -1,6 +1,7 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
+import decok.dfcdvadstf.catframe.ui.GuiGraphicsExtractor;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
 import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
@@ -270,7 +271,14 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         if (modernWorldCreatingUI$footerButtonLayout != null) {
             for (decok.dfcdvadstf.catframe.ui.layouts.ILayout child : modernWorldCreatingUI$footerButtonLayout.getChildren()) {
                 if (child instanceof GuiButtonAdapter) {
-                    ((GuiButtonAdapter) child).render(mouseX, mouseY, partialTicks);
+                    // CatFrame 0.7.1.1: rendering goes through the extractRenderState
+                    // template method (visibility check + hover refresh + renderWidget).
+                    // Adapter-level visibility is controlled via setVisible() and is not
+                    // affected by delegate.visible=true inside renderWidget.
+                    // 0.7.1.1 渲染统一走 extractRenderState 模板方法（可见性检查 + hover
+                    // 刷新 + renderWidget 委托）；适配器可见性由 setVisible() 控制，
+                    // 不受 renderWidget 内 delegate.visible=true 影响。
+                    ((GuiButtonAdapter) child).extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
                 }
             }
         }

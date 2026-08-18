@@ -254,12 +254,13 @@ public class GameTab extends GridLayoutTab {
 
     @Override
     public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        // Delegate to GridLayoutTab which forwards to all Components
-        // 委托给 GridLayoutTab，它会转发到所有 Component
+        // Delegate to GridLayoutTab which forwards to all Components (including the
+        // difficulty lock button registered via addComponent). Calling it again here
+        // would double-dispatch and toggle the lock state twice (net zero).
+        // 委托给 GridLayoutTab，它会转发到所有 Component（difficultyLockButton 经
+        // addComponent 注册也在其中）。0.7.1.1 起 GridLayoutTab.mouseClicked 已转发
+        // 组件事件，此处若再次转发将导致双重派发，锁定状态切换被抵消，故不再单独调用。
         super.mouseClicked(mouseX, mouseY, mouseButton);
-        if (difficultyLockButton != null) {
-            difficultyLockButton.mouseClicked(mouseX, mouseY, mouseButton);
-        }
     }
 
     @Override

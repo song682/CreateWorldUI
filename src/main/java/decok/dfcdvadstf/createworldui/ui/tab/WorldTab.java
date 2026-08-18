@@ -95,7 +95,7 @@ public class WorldTab extends GridLayoutTab {
 
         // Create customize button
         customizeButton = Button.builder(
-                Text.literal(I18n.format("selectWorld.customizeType")),
+                Text.translatable("selectWorld.customizeType"),
                 btn -> {
                     if (WorldType.worldTypes != null && access.modernWorldCreatingUI$getWorldTypeIndex() < WorldType.worldTypes.length &&
                             WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()] != null) {
@@ -128,7 +128,7 @@ public class WorldTab extends GridLayoutTab {
         // Row 3: Generate Structures label + toggle button
         // 第3行：生成结构标签 + 开关按钮
         layout.addChild(
-            new StringWidget(Text.translatable("createworldui","createworldui.select_world.gen_structure"), 0xFFFFFF),
+            new StringWidget(Text.translatable("createworldui.select_world.gen_structure"), 0xFFFFFF),
             row, 0, leftAlign);
         generateStructuresButton = Button.builder(
                 Text.literal(getGenerateStructuresText()),
@@ -141,7 +141,7 @@ public class WorldTab extends GridLayoutTab {
         // Row 4: Bonus Chest label + toggle button
         // 第4行：奖励箱标签 + 开关按钮
         layout.addChild(
-            new StringWidget(Text.translatable("createworldui","createworldui.select_world.bonus_chest"), 0xFFFFFF),
+            new StringWidget(Text.translatable("createworldui.select_world.bonus_chest"), 0xFFFFFF),
             row, 0, leftAlign);
         bonusChestButton = Button.builder(
                 Text.literal(getBonusChestText()),
