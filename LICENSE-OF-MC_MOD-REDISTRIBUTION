@@ -1,0 +1,115 @@
+Redistribution License v1.0 (Short Form)
+
+Copyright (c) 2025-2026 dfdvdsf
+Project: CreateWorld UI
+Contact: seniye0987@gmail.com
+
+Specific License Precedence
+If the project includes a separate LICENSE, LICENSE-ASSETS, LICENSE-Assets,
+or another specific license file, that license controls the files it covers.
+In case of conflict, the specific license for that part takes precedence over
+this Redistribution License.
+This Redistribution License applies only to parts not covered by a specific license.
+
+1. Scope
+This License governs the Mod's jar, binary, official releases, and Assets.
+Source Code is governed by its own Source Code License, such as MIT, Apache-2.0,
+GPL-3.0, LGPL, or MPL, as stated in the source repository.
+
+2. Allowed Redistribution
+You may redistribute the Mod only on:
+- Modrinth
+- CurseForge
+- GitHub
+- Codeberg
+- GitLab
+
+MCMod is official-only: only the author or an authorized representative may upload there.
+Other platforms require prior written permission from the author.
+
+3. Attribution and Original Link
+You must credit the original author and include at least one Original Link.
+An Original Link must be a link to the Mod as officially uploaded by the author on
+Modrinth, CurseForge, GitHub, Codeberg, GitLab, or MCMod. Any one such link is sufficient.
+It must not be a third-party reupload, mirror, modpack page, or unauthorized copy.
+
+Exception: Private Server Modpacks, Commercial Modpacks, and Offline Modpacks do not
+need to include the Original Link, but attribution to the author is still required.
+
+4. Source Code / Modify / Fork
+The source code is governed by its own Source Code License, such as MIT, Apache-2.0,
+GPL-3.0, LGPL, or MPL, as stated in the source repository.
+You may modify or fork the source code only if you comply with that Source Code License.
+Keep copyright and license notices. Clearly mark your version as modified or forked.
+Do not claim your fork is official or endorsed by the author.
+
+5. Assets
+If there is a LICENSE-ASSETS / LICENSE-Assets or similar asset license,
+that asset license controls the assets it covers.
+If no asset license applies, you may use the author's assets only if you preserve
+the author's copyright notice and any applicable asset license.
+If assets are marked ARR / All Rights Reserved, commercial use is strictly prohibited.
+You may not sell, paywall, sublicense, or commercially exploit them.
+You may not extract, redistribute, or modify them separately without written permission.
+For any commercial use of ARR assets, you must get prior written permission from the author,
+or replace them with your own original assets.
+
+6. Modpacks
+- Normal modpacks on CurseForge / Modrinth: allowed.
+- Private server modpacks: allowed. The Mod itself must remain free and publicly available.
+- Commercial modpacks: allowed only if the Mod itself remains free and publicly available.
+  If you do not want to meet that condition, contact the author to purchase or negotiate
+  a separate license for that specific version of the Mod.
+- For private server modpacks and commercial modpacks, the Original Link is not required,
+  but attribution to the author is still required.
+
+7. Offline Modpacks / Lazy Packs
+- Public upload or public distribution by content creators, modpack makers, or uploaders
+  is prohibited worldwide.
+- Only end users may privately pass them to other users, without charge.
+- Worldwide, passing is allowed only if the recipient is reasonably determined by at least
+  3 experienced persons, including the sender, to be unable to use a computer or
+  unfamiliar with computer operation.
+- Original Link is not required for Offline Modpacks, but attribution is still required.
+
+8. Servers
+- Private servers: allowed. The Mod itself must remain free and publicly available.
+- Commercial servers: allowed, but the Mod itself must remain free and publicly available.
+  You may not paywall, sell, or access-restrict the Mod as a standalone item.
+  If you do not want to meet these conditions, contact the author to purchase or
+  negotiate a separate license for that specific version of the Mod.
+- Modifying the Mod for server use: allowed only if you comply with the Source Code License
+  and this License. For assets, either make your own or keep the author's copyright notice.
+- Attribution: required on the server page, modpack page, credits page, in-game credits,
+  or another reasonably visible location.
+- License notices: keep all copyright and license notices. Follow the applicable license.
+  For source code, the Source Code License controls.
+- Server distribution of the Mod: allowed as part of a private or commercial server modpack,
+  but must follow the Modpack terms. Public standalone Offline Modpacks / Lazy Packs are prohibited.
+
+9. Commercial Use
+Commercial use is not allowed unless expressly permitted above or with prior written permission.
+If you want a paid-only, exclusive, or special version, contact the author to purchase or
+negotiate a separate license for that specific version of the Mod.
+
+ARR Assets: If the Mod contains ARR Assets, commercial use is prohibited even if the Mod
+itself is free. This includes commercial modpacks, commercial servers, paid downloads,
+subscriptions, donation-gated access, memberships, ad-gates, and ad-funded distribution.
+To use ARR Assets commercially, contact the author for a separate written license,
+or replace the ARR Assets with your own original assets.
+
+10. Unauthorized ReUpload
+Unauthorized ReUpload is strictly prohibited. This applies to jars, binaries, official
+releases, and Assets. Do not upload unofficial standalone mirrors, do not replace the
+Original Link, do not upload to MCMod unless you are the author or an authorized
+representative, and do not paywall or access-restrict the Mod.
+
+11. Termination
+Violation of this License automatically terminates your rights under it.
+You must remove all unauthorized copies under your control.
+
+12. Disclaimer
+This Mod is provided “AS IS”, without warranty. The author is not liable for any damages
+arising from or related to the Mod or this License.
+
+Full version see here: https://github.com/song682/license-of-redistribute/blob/main/REDISTRIBUTE-License.md

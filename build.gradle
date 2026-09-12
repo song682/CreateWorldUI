@@ -287,12 +287,15 @@ artifacts {
 if (project.include_license.toBoolean()){
     jar {
         from file("./LICENSE")
+        from file("./LICENSE-OF-MC_MOD-REDISTRIBUTION")
     }
     deobfJar {
         from file("./LICENSE")
+        from file("./LICENSE-OF-MC_MOD-REDISTRIBUTION")
     }
     sourcesJar {
         from file("./LICENSE")
+        from file("./LICENSE-OF-MC_MOD-REDISTRIBUTION")
     }
 }
 
