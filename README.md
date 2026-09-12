@@ -1,5 +1,5 @@
 CreateWorldUI
-<img align="right" alt="Logo" width="128" height="128" src="src/main/resources/assets/createworldui/logo.png">
+<img align="right" alt="Logo" width="128" height="128" src="docs/logo.png">
 ====
 
 > Why not have a modern feeling of creating world?
