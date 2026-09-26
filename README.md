@@ -34,7 +34,7 @@ to your build.gradle(.kts) to use it.
 
 Code - [MIT Licence](LICENSE)    
 Textures (PreAlpha, Alpha) - Copyright © 2025 dfdvdsf. All Rights Reserved.     
-Textures (Current) & Inspirations - Copyright © 2025 Mojang AB. All Rights Reserved. Microsoft and Minecraft are trademarks of the Microsoft group of companies.
+Textures (Current) & Inspirations - Copyright © 2025 Mojang AB. All Rights Reserved. Microsoft and Minecraft are trademarks of the Microsoft group of companies.    
 Binary Jars - [Redistribution License v1.0](LICENSE-OF-MC_MOD-REDISTRIBUTION)    
 
 ---

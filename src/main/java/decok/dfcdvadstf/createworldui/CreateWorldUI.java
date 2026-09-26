@@ -20,6 +20,7 @@ import decok.dfcdvadstf.createworldui.ui.tab.WorldTab;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.spongepowered.asm.launch.MixinBootstrap;
 
 @Mod(
         modid = Tags.MODID,
@@ -44,10 +45,11 @@ public class CreateWorldUI {
 
     @EventHandler
     public void preInit(FMLPreInitializationEvent event) {
+        MixinBootstrap.init();
+
         config = new Config(event.getSuggestedConfigurationFile());
         logger = event.getModLog();
         logger.info("Initializing CreateWorldUI Mod");
-        LanguageRegister.domain(Tags.MODID, "assets/createworldui/lang");
 
         // Register built-in tabs to the CreateWorldUI bar
         // 注册内置标签页到 CreateWorldUI 的 bar 下
