@@ -28,6 +28,7 @@ forge*changelog.txt
 fix-lineendings.ps1
 .gitattributes
 .editorconfig
+/.vscode/
 Mixin
 temps
 Wiki
