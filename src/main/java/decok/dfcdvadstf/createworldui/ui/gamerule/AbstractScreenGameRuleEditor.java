@@ -11,7 +11,7 @@ import decok.dfcdvadstf.catframe.ui.components.StringWidget;
 import decok.dfcdvadstf.catframe.ui.components.Tooltip;
 import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.HorizontalLayout;
-import decok.dfcdvadstf.catframe.ui.layouts.ILayout;
+import decok.dfcdvadstf.catframe.ui.screens.Screen;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.*;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleMonitorNSetter.GameruleValue;
@@ -26,7 +26,6 @@ import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import java.util.*;
@@ -38,6 +37,8 @@ import java.util.*;
  *     - 数据来源：通过{@link GameRuleMonitorNSetter}读取所有游戏规则作为默认值<br>
  *     - 中间列表：使用前置模组 CatFrame 的 {@link ObjectSelectionList} 渲染规则条目，
  *       裁剪、滚动和列表尺寸均由列表自身管理<br>
+ *     - 屏幕基类：继承前置模组 CatFrame 的 {@link Screen}，中间列表与底部按钮经
+ *       {@code addRenderableWidget} 注册为屏幕组件，渲染与事件派发统一由基类处理<br>
  *     - 底部按钮、标题、tooltip 等公共界面元素<br>
  *     具体的"保存目标"由子类通过 {@link #persistChanges(Map, Set)} 实现：<br>
  *     - {@link WorldCreationGameRuleScreen}：在创建世界界面打开，保存为待应用规则<br>
@@ -50,6 +51,10 @@ import java.util.*;
  *     - Middle list: render rule entries with the prerequisite mod CatFrame's
  *       {@link ObjectSelectionList}; clipping, scrolling and list sizing are all
  *       managed by the list itself<br>
+ *     - Screen base: extends the prerequisite mod CatFrame's {@link Screen}; the
+ *       middle list and footer buttons are registered as screen widgets via
+ *       {@code addRenderableWidget}, so rendering and event dispatch are handled
+ *       uniformly by the base class<br>
  *     - Shared UI: bottom buttons, title, tooltips, etc.<br>
  *     The concrete "save target" is provided by subclasses via
  *     {@link #persistChanges(Map, Set)}:<br>
@@ -59,7 +64,7 @@ import java.util.*;
  *       current world
  * </p>
  */
-public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
+public abstract class AbstractScreenGameRuleEditor extends Screen {
 
     protected static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
 
@@ -114,6 +119,7 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
      * @param editableRules 可编辑的游戏规则映射 / Editable game rule map
      */
     public AbstractScreenGameRuleEditor(GuiScreen parentScreen, Map<String, String> editableRules) {
+        super(Text.translatable("createworldui.gamerules.title"));
         this.parentScreen = parentScreen;
 
         // 过滤掉 null 值，确保 editableRules 不包含 null
@@ -234,9 +240,8 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
     // ============================================================
 
     @Override
-    public void initGui() {
+    protected void init() {
         Keyboard.enableRepeatEvents(true);
-        this.buttonList.clear();
 
         // ===== 计算列表边界 / Compute list bounds =====
         this.listTop = LIST_TOP;
@@ -276,6 +281,12 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
             buttonLayout.addChild(this.saveButton);
             buttonLayout.addChild(this.cancelButton);
             buttonLayout.addChild(this.resetButton);
+
+            // 注册为屏幕组件：渲染与鼠标事件派发由 Screen 基类统一处理
+            // Register as screen widgets: rendering and mouse dispatch are handled by the Screen base
+            addRenderableWidget(this.saveButton);
+            addRenderableWidget(this.cancelButton);
+            addRenderableWidget(this.resetButton);
         } else {
             // 两按钮模式 / Two-button mode
             this.cancelButton = Button.builder(
@@ -290,6 +301,9 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
 
             buttonLayout.addChild(this.cancelButton);
             buttonLayout.addChild(this.saveButton);
+
+            addRenderableWidget(this.cancelButton);
+            addRenderableWidget(this.saveButton);
         }
 
         mainLayout.setFooter(buttonLayout);
@@ -297,11 +311,12 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
 
         // ===== 创建中间列表并构建条目 / Create middle list and build entries =====
         this.ruleList = new GameRuleList(this, this.width, listHeight, this.listTop, ROW_HEIGHT);
+        addRenderableWidget(this.ruleList);
         this.ruleList.rebuild();
     }
 
     @Override
-    public void onGuiClosed() {
+    public void removed() {
         Keyboard.enableRepeatEvents(false);
     }
 
@@ -363,82 +378,56 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
     }
 
     // ============================================================
-    // 输入事件转发到列表 / Input event forwarding to the list
+    // 输入事件 / Input events
     // ============================================================
 
-    @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        // ===== Footer区域按钮点击检测 / Footer zone button click detection =====
-        if (mainLayout != null && mainLayout.getFooterFrame() != null) {
-            for (ILayout child : mainLayout.getFooterFrame().getChildren()) {
-                if (child instanceof HorizontalLayout) {
-                    HorizontalLayout hLayout = (HorizontalLayout) child;
-                    for (ILayout buttonChild : hLayout.getChildren()) {
-                        if (buttonChild instanceof Button) {
-                            Button button = (Button) buttonChild;
-                            if (button.isMouseOver(mouseX, mouseY)) {
-                                button.mouseClicked(mouseX, mouseY, mouseButton);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    // 鼠标点击/释放/拖动与键盘输入由 Screen 基类按组件树派发：dispatchMouseClicked
+    // 命中列表或底部按钮后，事件在对应组件内部继续分发（列表 → 条目 → EditBox /
+    // 循环按钮）；键盘输入经 Screen.keyTyped 送达焦点组件（列表 → 聚焦条目 → EditBox）。
+    // Mouse click/release/drag and keyboard input are dispatched by the Screen base
+    // through the widget tree: dispatchMouseClicked hits the list or a footer button
+    // and the event continues inside that widget (list → entry → edit box / cycling
+    // button); keyboard input reaches the focused widget via Screen.keyTyped
+    // (list → focused entry → edit box).
 
-        // ===== 列表交互（裁剪、条目、滚动条由列表自身管理） =====
-        // ===== List interaction (clipping, entries, scrollbar all managed by the list) =====
-        if (ruleList != null) {
-            ruleList.mouseClicked(mouseX, mouseY, mouseButton);
+    /**
+     * 鼠标滚轮：悬停在布尔规则的循环按钮上时优先由该按钮消费（切换值），
+     * 否则交给基类派发给鼠标下的组件（列表滚动等）。<br>
+     * Mouse wheel: when hovering a boolean rule's cycling button the button consumes
+     * it first (cycling the value); otherwise the base class dispatches it to the
+     * component under the cursor (list scrolling, etc.).
+     */
+    @Override
+    public void dispatchMouseScrolled(int mouseX, int mouseY, int delta) {
+        if (ruleList != null && ruleList.tryScrollCyclingButton(mouseX, mouseY, delta)) {
+            return;
         }
+        super.dispatchMouseScrolled(mouseX, mouseY, delta);
     }
 
+    // 显式覆写为 public 并转发基类（子类一并受益）。编译期 classpath 上的 CatFrame
+    // 构件为 reobf(SRG) 命名：其字节码中的 Screen.func_73869_a / func_73864_a 在
+    // javac 视角下不是 keyTyped / mouseClicked，接口方法的 public 实现会回落到
+    // GuiScreen 的 protected 同名方法，从而报"正在尝试分配更低的访问权限"编译错误；
+    // 显式 public 覆写转发基类即可消除。运行时 reobf 后，super 调用会经 JVM
+    // invokespecial 的超类方法选择重新命中 Screen 的覆写（Esc 处理 / 组件事件派发），
+    // 行为不变——这两个覆写不可删除。
+    // Explicit public overrides forwarding to super (subclasses benefit too). The
+    // CatFrame artifact on the compile classpath is a reobf(SRG) build: its
+    // Screen.func_73869_a / func_73864_a are invisible to javac as keyTyped /
+    // mouseClicked, so the public interface methods would fall back to GuiScreen's
+    // protected ones and fail to compile ("attempting to assign weaker access
+    // privileges"). After reobf, the super calls re-select Screen's overrides at
+    // runtime via JVM invokespecial superclass method selection (Esc handling /
+    // widget event dispatch), so behaviour is preserved — do not remove.
     @Override
-    protected void mouseMovedOrUp(int mouseX, int mouseY, int state) {
-        super.mouseMovedOrUp(mouseX, mouseY, state);
-        if (ruleList != null) {
-            ruleList.mouseReleased(mouseX, mouseY, state);
-        }
-    }
-
-    @Override
-    protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
-        if (ruleList != null) {
-            ruleList.mouseDrag(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
-        }
-    }
-
-    @Override
-    public void handleMouseInput() {
-        super.handleMouseInput();
-
-        int mouseX = Mouse.getEventX() * this.width / this.mc.displayWidth;
-        int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
-
-        int dWheel = Mouse.getEventDWheel();
-        if (dWheel != 0 && ruleList != null) {
-            // 悬停在循环按钮上时优先用滚轮切换其值 / When hovering a cycling button, wheel cycles its value first
-            if (ruleList.tryScrollCyclingButton(mouseX, mouseY, dWheel)) {
-                return;
-            }
-            // 否则滚动列表 / Otherwise scroll the list
-            if (ruleList.isMouseOver(mouseX, mouseY)) {
-                ruleList.mouseScrolled(dWheel > 0 ? 1 : -1);
-            }
-        }
-    }
-
-    @Override
-    protected void keyTyped(char typedChar, int keyCode) {
+    public void keyTyped(char typedChar, int keyCode) {
         super.keyTyped(typedChar, keyCode);
-        if (ruleList != null) {
-            ruleList.keyTyped(typedChar, keyCode);
-        }
     }
 
     @Override
-    public void updateScreen() {
-        // EditBox光标更新在渲染阶段（extractRenderState）内部处理，无需额外操作
-        // EditBox cursor update handled internally during rendering (extractRenderState); no extra action needed
+    public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+        super.mouseClicked(mouseX, mouseY, mouseButton);
     }
 
     // ============================================================
@@ -447,35 +436,19 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        drawDefaultBackground();
+        // 背景与已注册组件（中间列表、底部按钮）由基类渲染
+        // Background and registered widgets (middle list, footer buttons) rendered by the base
+        super.drawScreen(mouseX, mouseY, partialTicks);
 
-        // 标题 / Title
-        this.drawCenteredString(this.fontRendererObj,
-            Text.translatableString("createworldui.gamerules.title"),
+        // 标题与列表上下分隔线：与列表/按钮区域不重叠，后绘不会遮盖任何组件
+        // Title and list header/footer separators: they do not overlap the list/button
+        // areas, so drawing them after the widgets covers nothing
+        this.drawCenteredString(this.fontRendererObj, this.getTitle().getString(),
             this.width / 2, 15, 0xFFFFFF);
 
-        // 列表上下分隔线 / List header/footer separators
         ContentPanelRenderer.drawHeaderSeparator(0, this.listTop - ContentPanelRenderer.SEPARATOR_HEIGHT, this.width);
         ContentPanelRenderer.drawFooterSeparator(0, this.listBottom, this.width);
 
-        // 列表（自带背景、Scissor 裁剪与滚动条）/ List (own background, scissor clipping and scrollbar)
-        if (ruleList != null) {
-            ruleList.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
-        }
-
-        // ===== 渲染Footer区域的按钮 / Render buttons in Footer zone =====
-        if (mainLayout != null && mainLayout.getFooterFrame() != null) {
-            for (ILayout child : mainLayout.getFooterFrame().getChildren()) {
-                if (child instanceof HorizontalLayout) {
-                    HorizontalLayout hLayout = (HorizontalLayout) child;
-                    for (ILayout buttonChild : hLayout.getChildren()) {
-                        if (buttonChild instanceof Button) {
-                            ((Button) buttonChild).extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
-                        }
-                    }
-                }
-            }
-        }
         // Tooltip 由各条目 nameLabel 组件自行泵动（WidgetTooltipHolder），帧末由 CatFrame 统一延迟绘制
         // Tooltip is driven per-entry via the nameLabel widget (WidgetTooltipHolder) and drawn deferred by CatFrame at end of frame
     }
@@ -754,14 +727,15 @@ public abstract class AbstractScreenGameRuleEditor extends GuiScreen {
          * 若鼠标悬停在某个布尔规则的循环按钮上，用滚轮切换其值。<br>
          * If the mouse hovers a boolean rule's cycling button, use the wheel to cycle its value.
          *
+         * @param delta 归一化滚轮增量（仅符号有意义） / normalised wheel delta (only the sign matters)
          * @return 是否已被循环按钮消费 / whether it was consumed by a cycling button
          */
-        boolean tryScrollCyclingButton(int mouseX, int mouseY, int rawWheel) {
+        boolean tryScrollCyclingButton(int mouseX, int mouseY, int delta) {
             for (RuleEntry entry : children()) {
                 if (entry instanceof BooleanRuleEntry) {
                     CyclingButton<Boolean> toggle = ((BooleanRuleEntry) entry).getToggle();
                     if (toggle.isMouseOver(mouseX, mouseY)) {
-                        toggle.mouseScrolled(rawWheel);
+                        toggle.mouseScrolled(delta);
                         return true;
                     }
                 }

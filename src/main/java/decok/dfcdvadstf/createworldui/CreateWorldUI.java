@@ -1,5 +1,6 @@
 package decok.dfcdvadstf.createworldui;
 
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -7,7 +8,6 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
-import decok.dfcdvadstf.catframe.adapter.forge.language.LanguageRegister;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
@@ -84,7 +84,11 @@ public class CreateWorldUI {
     public void onServerStarting(FMLServerStartingEvent event) {
         // Register the /gameruleEditor command
         // 注册/gameruleEditor命令
-        event.registerServerCommand(new CommandGameRuleEditor());
-        logger.info("Registered /gameruleEditor command");
+        if (config.gameruleEdit || Loader.isModLoaded("difficultylocker")) {
+            event.registerServerCommand(new CommandGameRuleEditor());
+            logger.info("Registered /gameruleEditor command");
+        } else {
+            logger.info("Failed to register /gameruleEditor, either config is enabled or mod difficultylocker is loaded");
+        }
     }
 }
