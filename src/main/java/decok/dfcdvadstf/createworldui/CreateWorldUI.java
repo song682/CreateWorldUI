@@ -88,7 +88,7 @@ public class CreateWorldUI {
             event.registerServerCommand(new CommandGameRuleEditor());
             logger.info("Registered /gameruleEditor command");
         } else {
-            logger.info("Failed to register /gameruleEditor, either config is enabled or mod difficultylocker is loaded");
+            logger.info("Failed to register /gameruleEditor, either config is disabled or mod difficultylocker is not loaded");
         }
     }
 }
