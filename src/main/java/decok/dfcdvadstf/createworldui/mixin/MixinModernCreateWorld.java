@@ -10,6 +10,7 @@ import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
 import decok.dfcdvadstf.catframe.ui.components.tab.Tab;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabBar;
 import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
+import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldUITabBar;
@@ -204,9 +205,14 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
      */
     @Unique
     private void modernWorldCreatingUI$ensureFieldsNotNull() {
-        // Only set default world name if it's null or empty
-        // 只在世界名称为 null 或空时设置默认值,避免覆盖外部模组设置的值
-        if (this.field_146330_J == null || this.field_146330_J.isEmpty()) {
+        // Only set the default world name when the field is null (never set) — an
+        // empty string is a valid user state (cleared name) and must not be
+        // overwritten, since initGui re-runs on resize and when returning from
+        // sub-screens. This also avoids clobbering values set by external mods.
+        // 只在世界名称为 null（从未设置）时设置默认值——空串是合法的用户状态
+        // （用户清空了名字），不能覆盖；initGui 会在窗口缩放、从子界面返回时重跑，
+        // 覆盖空串会抹掉用户意图。这同时也避免覆盖外部模组设置的值。
+        if (this.field_146330_J == null) {
             this.field_146330_J = I18n.format("selectWorld.newWorld");
             modernWorldCreatingUI$logger.info("Set default world name: " + this.field_146330_J);
         }
@@ -294,15 +300,74 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return;
         }
 
-        // Only Create (0) and Cancel (1) are in buttonList; let vanilla handle them
-        // buttonList 中只有创建(0)和取消(1)按钮，交给原版处理
-        if (button.id == 0 || button.id == 1) {
+        // Create button (0): first push the UI-pending name/seed back into vanilla's
+        // own fields, then let vanilla handle the click — vanilla's creation path
+        // reads field_146333_g / field_146335_h / field_146336_i directly and never
+        // touches field_146330_J / field_146329_I.
+        // 创建按钮(0)：先把 UI 端待创建的名字/种子写回原版自己的字段，再交还原版
+        // 处理点击——原版创建路径直接读 field_146333_g / field_146335_h /
+        // field_146336_i，从不碰 field_146330_J / field_146329_I。
+        if (button.id == 0) {
+            modernWorldCreatingUI$syncWorldNameToVanilla();
+            modernWorldCreatingUI$syncSeedToVanilla();
+            return;
+        }
+
+        // Cancel button (1): let vanilla handle it
+        // 取消按钮(1)：交给原版处理
+        if (button.id == 1) {
             return;
         }
 
         // All other buttons are managed by Tab system components
         // 所有其他按钮由 Tab 系统组件管理
         ci.cancel();
+    }
+
+    /**
+     * <p>Pushes the pending world name (as edited in the tab UI) into vanilla's own
+     * {@code worldNameField}, then re-runs vanilla's save-dir name calculation so
+     * {@code field_146336_i} picks up the sanitized / de-duplicated directory name.
+     * Running vanilla's own routine keeps directory-name rules (illegal characters,
+     * reserved names, name conflicts) in one place instead of duplicating them.</p>
+     * <p>把 UI 端待创建的世界名写回原版自己的 {@code worldNameField}，再重跑原版的
+     * 存档目录名计算，让 {@code field_146336_i} 拿到清洗过、避让过重名的目录名。
+     * 直接复用原版例程，非法字符/保留名/重名避让等规则只需维护原来那一份。</p>
+     */
+    @Unique
+    private void modernWorldCreatingUI$syncWorldNameToVanilla() {
+        String pending = modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName();
+
+        // Mirror GameTab.initGui's empty-name fallback so both entry points agree
+        // 与 GameTab.initGui 的空名 fallback 口径保持一致
+        if ((pending == null || pending.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
+            pending = I18n.format("selectWorld.newWorld");
+            modernWorldCreatingUI$accessor.modernWorldCreatingUI$setWorldName(pending);
+        }
+        if (pending == null) {
+            pending = "";
+        }
+
+        modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldNameField().setText(pending);
+        modernWorldCreatingUI$accessor.modernWorldCreatingUI$calcSaveDirName();
+    }
+
+    /**
+     * <p>Pushes the pending seed (as edited in the tab UI) into vanilla's own
+     * {@code seedField} — vanilla reads the seed from that field at creation time,
+     * never from {@code field_146329_I}. No extra processing is needed: an empty
+     * string simply means "random seed", same as vanilla.</p>
+     * <p>把 UI 端待创建的种子写回原版自己的 {@code seedField}——原版创建时从它读
+     * 种子，从不读 {@code field_146329_I}。无需额外处理：空串就是“随机种子”，
+     * 与原版语义一致。</p>
+     */
+    @Unique
+    private void modernWorldCreatingUI$syncSeedToVanilla() {
+        String seed = modernWorldCreatingUI$accessor.modernWorldCreatingUI$getSeed();
+        if (seed == null) {
+            seed = "";
+        }
+        modernWorldCreatingUI$accessor.modernWorldCreatingUI$getSeedField().setText(seed);
     }
 
     /**

@@ -2,8 +2,10 @@ package decok.dfcdvadstf.createworldui.mixin.access;
 
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.GuiTextField;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
+import org.spongepowered.asm.mixin.gen.Invoker;
 
 /**
  * <p>Accessor mixin interface exposing the private fields of vanilla {@code GuiCreateWorld}.</p>
@@ -25,6 +27,11 @@ public interface IGuiCreateWorldAccess {
     @Accessor("field_146330_J") String modernWorldCreatingUI$getWorldName();
     @Accessor("field_146330_J") void   modernWorldCreatingUI$setWorldName(String value);
 
+    // === Vanilla world-name input field / 原版世界名输入框 ===
+    // Vanilla's creation path reads the world name from this field, never from field_146330_J.
+    // 原版创建路径从这个输入框读世界名，从不读 field_146330_J。
+    @Accessor("field_146333_g") GuiTextField modernWorldCreatingUI$getWorldNameField();
+
     // === Game mode / 游戏模式 ===
     @Accessor("field_146342_r") String modernWorldCreatingUI$getGameMode();
     @Accessor("field_146342_r") void   modernWorldCreatingUI$setGameMode(String value);
@@ -32,6 +39,11 @@ public interface IGuiCreateWorldAccess {
     // === Seed / 种子 ===
     @Accessor("field_146329_I") String modernWorldCreatingUI$getSeed();
     @Accessor("field_146329_I") void   modernWorldCreatingUI$setSeed(String value);
+
+    // === Vanilla seed input field / 原版种子输入框 ===
+    // Vanilla's creation path reads the seed from this field, never from field_146329_I.
+    // 原版创建路径从这个输入框读种子，从不读 field_146329_I。
+    @Accessor("field_146335_h") GuiTextField modernWorldCreatingUI$getSeedField();
 
     // === World type index / 世界类型索引 ===
     @Accessor("field_146331_K") int  modernWorldCreatingUI$getWorldTypeIndex();
@@ -55,4 +67,11 @@ public interface IGuiCreateWorldAccess {
 
     // === Parent screen (read-only) / 父界面（只读） ===
     @Accessor("field_146332_f") GuiScreen modernWorldCreatingUI$getParentScreen();
+
+    // === Save-dir name recalculation / 存档目录名重算 ===
+    // Re-runs vanilla's func_146314_g: sanitizes the world name into a directory
+    // name and de-duplicates it against existing saves (field_146336_i).
+    // 重跑原版 func_146314_g：把世界名清洗成目录名，并对已有存档做重名避让
+    // （结果写入 field_146336_i）。
+    @Invoker("func_146314_g") void modernWorldCreatingUI$calcSaveDirName();
 }
