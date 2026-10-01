@@ -8,15 +8,9 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
-import decok.dfcdvadstf.catframe.ui.Text;
-import decok.dfcdvadstf.catframe.ui.components.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
-import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldUITabBar;
-import decok.dfcdvadstf.createworldui.ui.tab.GameTab;
-import decok.dfcdvadstf.createworldui.ui.tab.MoreTab;
-import decok.dfcdvadstf.createworldui.ui.tab.WorldTab;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,12 +45,6 @@ public class CreateWorldUI {
         logger = event.getModLog();
         logger.info("Initializing CreateWorldUI Mod");
 
-        // Register built-in tabs to the CreateWorldUI bar
-        // 注册内置标签页到 CreateWorldUI 的 bar 下
-        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, GameTab::new, 100, Text.translatable("createworldui.tab.game"));
-        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, WorldTab::new, 101, Text.translatable("createworldui.tab.world"));
-        TabRegistry.registerTab(CreateWorldUITabBar.BAR_ID, MoreTab::new, 102, Text.translatable("createworldui.tab.more"));
-        logger.info("Registered built-in tabs: Game, World, More");
     }
 
     @EventHandler

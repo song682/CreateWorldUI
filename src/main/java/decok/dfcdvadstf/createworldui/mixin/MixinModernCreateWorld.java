@@ -2,18 +2,23 @@ package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
 import decok.dfcdvadstf.catframe.ui.GuiGraphicsExtractor;
-import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
+import decok.dfcdvadstf.catframe.ui.components.events.CatFrameInputScreen;
+import decok.dfcdvadstf.catframe.ui.components.events.GuiEventListener;
+import decok.dfcdvadstf.catframe.ui.components.tab.Tab;
+import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
+import decok.dfcdvadstf.catframe.ui.components.tab.TabNavigationBar;
 import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.HorizontalLayout;
 import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
-import decok.dfcdvadstf.catframe.ui.components.tab.Tab;
-import decok.dfcdvadstf.catframe.ui.components.tab.TabBar;
-import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
-import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldUITabBar;
+import decok.dfcdvadstf.createworldui.ui.TabScreenRoot;
+import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldTab;
+import decok.dfcdvadstf.createworldui.ui.tab.GameTab;
+import decok.dfcdvadstf.createworldui.ui.tab.MoreTab;
+import decok.dfcdvadstf.createworldui.ui.tab.WorldTab;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
@@ -42,7 +47,7 @@ import java.util.*;
  */
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)
-public abstract class MixinModernCreateWorld extends GuiScreen {
+public abstract class MixinModernCreateWorld extends GuiScreen implements CatFrameInputScreen {
 
     // 原版字段
     @Shadow
@@ -60,7 +65,9 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     @Unique
     private TabManager modernWorldCreatingUI$tabManager;
     @Unique
-    private TabBar modernWorldCreatingUI$tabBar;
+    private TabNavigationBar modernWorldCreatingUI$tabBar;
+    @Unique
+    private TabScreenRoot modernWorldCreatingUI$tabRoot;
     @Unique
     private static final int TAB_HEIGHT = 24;
     @Unique
@@ -145,59 +152,51 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
         // Set button layout to Footer zone
         modernWorldCreatingUI$mainLayout.setFooter(modernWorldCreatingUI$footerButtonLayout);
 
-        // Check whether this is a re-init triggered by resize (TabManager already exists)
-        // 检查是否是 resize 导致的重新初始化（TabManager 已存在）
-        if (modernWorldCreatingUI$tabManager != null) {
-            // resize case: reinitialize tabs in TabManager without creating a new one
-            // resize 情况：重新初始化 TabManager 中的 tabs，而不是创建新的 TabManager
-            modernWorldCreatingUI$tabManager.reinitializeTabs(this.width, this.height);
-            modernWorldCreatingUI$logger.info("Reinitialized tabs after resize");
-            modernWorldCreatingUI$mainLayout.recalculate(this.width, this.height);
-        } else {
-            // First initialization: create the TabBar and a new TabManager
-            // 首次初始化：创建 TabBar 与新的 TabManager
-            modernWorldCreatingUI$tabBar = new CreateWorldUITabBar();
-            modernWorldCreatingUI$tabManager = new TabManager(
-                    this, this.buttonList, this.width, this.height,
-                    modernWorldCreatingUI$tabBar
-            );
-        }
+        // ===== 组件系统 Tab 装配（对齐高版本 CreateWorldScreen.init()） =====
+        // ===== Component-system tab assembly (mirrors high-version CreateWorldScreen.init()) =====
+        // Drive the whole tab stack rebuild from initGui every pass — the same shape as
+        // the high-version init(): a fresh navigation bar + fresh tabs, with the old root
+        // discarded wholesale (the 1.7.10 counterpart of vanilla Screen's widget reset),
+        // so no stale components can survive a resize or a sub-screen round-trip.
+        // 每次 initGui 都重建整套 Tab 栈：新导航栏 + 新 Tab，旧 root 整体丢弃
+        // （这是原版 Screen 控件重置机制在 1.7.10 下的等价物），drop 掉 resize 或
+        // 子界面往返后的任何旧组件残留。
+        modernWorldCreatingUI$tabRoot = new TabScreenRoot();
+        modernWorldCreatingUI$tabManager = new TabManager(
+                modernWorldCreatingUI$tabRoot::addChild,
+                modernWorldCreatingUI$tabRoot::removeChild);
+        // Cast through Object: this mixin merges into GuiCreateWorld at runtime, so
+        // `this` IS the screen instance — the cast only satisfies the compile-time view.
+        // 经 Object 转型：本 Mixin 运行时合并进 GuiCreateWorld，`this` 就是屏幕实例，
+        // 强转仅为满足编译期类型视角。
+        GuiCreateWorld screen = (GuiCreateWorld) (Object) this;
+        GameTab gameTab = new GameTab(screen);
+        modernWorldCreatingUI$tabBar = TabNavigationBar.builder(modernWorldCreatingUI$tabManager, this.width)
+                .addTabs(gameTab, new WorldTab(screen), new MoreTab(screen))
+                .build();
 
-        // TabBar handles tab button creation and layout
-        // TabBar 负责标签页按钮的创建和布局
-        if (modernWorldCreatingUI$tabBar != null) {
-            if (modernWorldCreatingUI$tabBar.getTabCount() == 0) {
-                // First init: register all tabs into TabBar via Builder
-                // 首次初始化：通过 Builder 将全部 Tab 注册到 TabBar
-                TabBar.builder(modernWorldCreatingUI$tabManager, this.width)
-                    .addAllFromManager()
-                    .build(modernWorldCreatingUI$tabBar);
-            } else {
-                // Resize: recalculate nav element positions
-                // 窗口大小改变：重新计算导航元素位置
-                modernWorldCreatingUI$tabBar.setNavWidth(this.width);
-            }
-            
-            // 将 TabBar 设置到 Header 区域
-            // Set TabBar to Header zone
-            modernWorldCreatingUI$mainLayout.setHeader(modernWorldCreatingUI$tabBar);
-        }
+        // 将导航栏设置到 Header 区域，并作为根容器的第一个子组件（点击/焦点链路）
+        // Set the nav bar to the Header zone and register it as the root's first child
+        // (click / focus chain)
+        modernWorldCreatingUI$mainLayout.setHeader(modernWorldCreatingUI$tabBar);
+        modernWorldCreatingUI$tabRoot.addChild(modernWorldCreatingUI$tabBar);
 
+        // ===== 布局、内容区域与初始选中（对齐高版本 selectTab(0) + repositionElements） =====
+        // ===== Layout, tab area and initial selection (mirrors the high-version pair) =====
+        modernWorldCreatingUI$tabBar.updateWidth(this.width);
         // ===== 所有内容配置完成后，重新计算整体布局 =====
         // ===== Recalculate layout after all content is configured =====
         modernWorldCreatingUI$mainLayout.recalculate(this.width, this.height);
-
-        modernWorldCreatingUI$isInitialized = true;
-
         // Set the tab content area so GridLayoutTab.doLayout positions correctly within the content panel.
         // Tab area: below the tab bar (TAB_HEIGHT), above the footer (height - 35).
         // 设置Tab内容区域，使 GridLayoutTab.doLayout 在内容面板内正确布局。
         // Tab区域：Tab栏下方(TAB_HEIGHT)到脚部上方(height - 35)。
-        int tabAreaTop = TAB_HEIGHT;
-        int tabAreaBottom = this.height - 35;
-        modernWorldCreatingUI$tabManager.setTabArea(
-            new ScreenRectangle(0, tabAreaTop, this.width, tabAreaBottom - tabAreaTop)
-        );
+        modernWorldCreatingUI$tabManager.setTabArea(modernWorldCreatingUI$tabArea());
+        modernWorldCreatingUI$tabManager.setCurrentTab(gameTab, false);
+        modernWorldCreatingUI$tabRoot.setFocused(gameTab.getInitialFocus());
+
+        modernWorldCreatingUI$isInitialized = true;
+        modernWorldCreatingUI$logger.info("Initialized tab component stack");
     }
 
     /**
@@ -261,15 +260,20 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             ContentPanelRenderer.drawPanelBackground(0, TAB_HEIGHT, this.width, footerY - TAB_HEIGHT);
         }
 
-        // 绘制 TabBar 导航按钮（Tab 按钮）
-        // Draw TabBar nav buttons (tab buttons)
-        if (modernWorldCreatingUI$tabBar != null && modernWorldCreatingUI$tabManager != null) {
-            modernWorldCreatingUI$tabBar.drawNavButtons(mouseX, mouseY, partialTicks, modernWorldCreatingUI$tabManager);
+        // 当前标签页的每帧准备（动态状态、tooltip、标签覆盖层）
+        // Per-frame preparation of the current tab (dynamic states, tooltips, label overlays)
+        if (modernWorldCreatingUI$tabManager != null) {
+            Tab currentTab = modernWorldCreatingUI$tabManager.getCurrentTab();
+            if (currentTab instanceof CreateWorldTab) {
+                ((CreateWorldTab) currentTab).prepareFrame();
+            }
         }
 
-        // 绘制当前标签页内容
-        if (modernWorldCreatingUI$tabManager != null) {
-            modernWorldCreatingUI$tabManager.drawScreen(mouseX, mouseY, partialTicks);
+        // 组件系统渲染：导航栏 + 当前标签页子组件（含 hover 刷新与延迟 tooltip 泵动）
+        // Component-system rendering: nav bar + current tab children (hover refresh and
+        // deferred tooltip pumping included)
+        if (modernWorldCreatingUI$tabRoot != null) {
+            modernWorldCreatingUI$tabRoot.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
         }
 
         // ===== 绘制 Footer 区域的按钮 =====
@@ -338,8 +342,8 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     private void modernWorldCreatingUI$syncWorldNameToVanilla() {
         String pending = modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName();
 
-        // Mirror GameTab.initGui's empty-name fallback so both entry points agree
-        // 与 GameTab.initGui 的空名 fallback 口径保持一致
+        // Mirror GameTab constructor's empty-name fallback so both entry points agree
+        // 与 GameTab 构造器的空名 fallback 口径保持一致
         if ((pending == null || pending.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             pending = I18n.format("selectWorld.newWorld");
             modernWorldCreatingUI$accessor.modernWorldCreatingUI$setWorldName(pending);
@@ -390,11 +394,18 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
     }
 
     /**
-     * <p>Handles keyboard input via @Inject — intercepts Ctrl+Tab / Ctrl+Number for tab switching,
-     * then delegates char input to {@link TabBar}, and finally cancels the vanilla method to prevent
-     * the original keyTyped from feeding keys into its hardcoded text fields.</p>
-     * <p>通过 @Inject 处理按键输入——拦截 Ctrl+Tab / Ctrl+数字进行 Tab 切换，
-     * 随后把字符输入交给 {@link TabBar}，最后取消原版方法，防止按键被送进原版硬编码位置的输入框。</p>
+     * <p>Handles the merged keyTyped channel via @Inject — forwards the event to the
+     * component root (leaf widgets such as edit boxes implement only keyTyped) and
+     * then cancels the vanilla method to prevent keys from reaching vanilla’s
+     * hardcoded text fields.</p>
+     * <p>Split events (keyPressed / keyReleased / charTyped) and Tab focus navigation
+     * are delivered by CatFrame’s {@link CatFrameInputScreen} bridge
+     * (MixinGuiScreen → ScreenKeyboardInput) — they must not be dispatched again here.</p>
+     * <p>通过 @Inject 处理合并式 keyTyped 通道——把事件转发给组件根（输入框等叶子
+     * 组件只实现 keyTyped），随后取消原版方法，防止按键流进原版硬编码位置的输入框。</p>
+     * <p>拆分事件（keyPressed / keyReleased / charTyped）与 Tab 焦点导航由 CatFrame 的
+     * {@link CatFrameInputScreen} 桥接链路（MixinGuiScreen → ScreenKeyboardInput）投递，
+     * 此处不可重复派发。</p>
      */
     @Inject(method = "keyTyped", at = @At("HEAD"), cancellable = true)
     private void modernWorldCreatingUI$onKeyTyped(char typedChar, int keyCode, CallbackInfo ci) {
@@ -402,17 +413,10 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             return; // Not initialized — let vanilla handle it / 未初始化，让原版自己处理
         }
 
-        // Delegate Ctrl+Tab / Ctrl+digit tab switching to TabBar
-        // 将 Ctrl+Tab / Ctrl+数字 的 Tab 切换委托给 TabBar
-        if (modernWorldCreatingUI$tabBar != null && modernWorldCreatingUI$tabManager != null) {
-            if (modernWorldCreatingUI$tabBar.keyPressedNav(keyCode, isCtrlKeyDown(), isShiftKeyDown(), modernWorldCreatingUI$tabManager)) {
-                ci.cancel();
-                return;
-            }
-        }
-
-        if (modernWorldCreatingUI$tabManager != null) {
-            modernWorldCreatingUI$tabManager.keyTyped(typedChar, keyCode);
+        // Deliver the merged keyTyped event to the focused component
+        // 把合并式 keyTyped 事件投递给焦点组件
+        if (modernWorldCreatingUI$tabRoot != null) {
+            modernWorldCreatingUI$tabRoot.dispatchKeyTyped(typedChar, keyCode);
         }
 
         // 更新创建按钮状态
@@ -435,23 +439,17 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
     /**
      * <p>Handles mouse clicks via @Inject TAIL — runs after vanilla's own mouseClicked
-     * (which dispatches to vanilla button list via super.mouseClicked internally),
-     * then hands off to TabManager for tab-content click handling.</p>
+     * (which dispatches to the vanilla button list via super.mouseClicked internally),
+     * then forwards the raw event to the component root, which resolves the target
+     * child (nav-bar switching included) and updates focus.</p>
      * <p>通过 @Inject TAIL 处理鼠标点击——在原版自己的 mouseClicked 执行完之后
-     * （它内部会调 super.mouseClicked 派发给按钮列表），再把事件交给 TabManager 处理 tab 内容。</p>
+     * （它内部会调 super.mouseClicked 派发给按钮列表），把原始事件交给组件根：
+     * 由它解析目标子组件（含导航栏切换）并更新焦点。</p>
      */
     @Inject(method = "mouseClicked", at = @At("TAIL"))
     private void modernWorldCreatingUI$onMouseClicked(int mouseX, int mouseY, int mouseButton, CallbackInfo ci) {
         if (!modernWorldCreatingUI$isInitialized) {
             return;
-        }
-
-        // Delegate tab button clicks to TabBar (e.g. switching tabs)
-        // 将 Tab 按钮点击委托给 TabBar（如切换标签页）
-        if (modernWorldCreatingUI$tabBar != null && modernWorldCreatingUI$tabManager != null) {
-            if (modernWorldCreatingUI$tabBar.mouseClickedNav(mouseX, mouseY, mouseButton, modernWorldCreatingUI$tabManager)) {
-                return; // Handled by TabBar / 由 TabBar 处理
-            }
         }
 
         // ===== 处理 Footer 按钮点击 =====
@@ -464,10 +462,11 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
             }
         }
 
-        // Forward to current tab for content click handling
-        // 转发到当前 Tab 以处理内容点击
-        if (modernWorldCreatingUI$tabManager != null) {
-            modernWorldCreatingUI$tabManager.mouseClicked(mouseX, mouseY, mouseButton);
+        // 组件系统派发：导航栏点击切换 + 当前标签页内容（自动更新焦点）
+        // Component-system dispatch: nav-bar switching + current tab content
+        // (focus updated automatically)
+        if (modernWorldCreatingUI$tabRoot != null) {
+            modernWorldCreatingUI$tabRoot.mouseClicked(mouseX, mouseY, mouseButton);
         }
     }
 
@@ -491,22 +490,78 @@ public abstract class MixinModernCreateWorld extends GuiScreen {
 
         int mouseX = Mouse.getEventX() * this.width / this.mc.displayWidth;
         int mouseY = this.height - Mouse.getEventY() * this.height / this.mc.displayHeight - 1;
+        int delta = Mouse.getEventDWheel();
 
-        if (modernWorldCreatingUI$tabManager != null) {
-            Tab currentTab = modernWorldCreatingUI$tabManager.getCurrentTab();
-            if (currentTab != null) {
-                currentTab.visitComponents(comp -> {
-                    // Handle scroll wheel for CyclingButton components
-                    if (comp instanceof CyclingButton && comp.isVisible() && comp.isActive()
-                            && comp.isMouseOver(mouseX, mouseY)) {
-                        int delta = Mouse.getEventDWheel();
-                        if (delta != 0) {
-                            comp.mouseScrolled(delta);
-                        }
-                    }
-                });
-            }
+        if (delta != 0 && modernWorldCreatingUI$tabRoot != null) {
+            // Normalised delta (±1) matches CatFrame's own screen pipeline; the component
+            // under the cursor decides what to do with the scroll (cycling, scrolling, …).
+            // 归一化增量（±1）与 CatFrame 自有屏幕管线一致；由鼠标下的组件决定如何使用
+            // （循环切换、滚动等）。
+            modernWorldCreatingUI$tabRoot.dispatchMouseScrolled(mouseX, mouseY, delta > 0 ? 1 : -1);
         }
+    }
+
+    /**
+     * <p>Forwards mouse-release to the component root. Kept as a plain @Override for the
+     * same reason as {@link #handleMouseInput()} — the method is inherited from GuiScreen,
+     * so Mixin cannot inject into it reliably.</p>
+     * <p>把鼠标释放转发给组件根。保留普通 @Override，原因同 {@link #handleMouseInput()}：
+     * 该方法继承自 GuiScreen，Mixin 无法稳定注入。</p>
+     */
+    @Override
+    protected void mouseMovedOrUp(int mouseX, int mouseY, int state) {
+        super.mouseMovedOrUp(mouseX, mouseY, state);
+
+        if (!modernWorldCreatingUI$isInitialized || modernWorldCreatingUI$tabRoot == null) {
+            return;
+        }
+
+        // state < 0 is a pure move event; only button releases (>= 0) are dispatched
+        // state < 0 是纯移动事件；只派发按钮释放（>= 0）
+        if (state >= 0) {
+            modernWorldCreatingUI$tabRoot.dispatchMouseReleased(mouseX, mouseY, state);
+        }
+    }
+
+    /**
+     * <p>Forwards mouse-drag to the component root. Kept as a plain @Override for the
+     * same reason as {@link #handleMouseInput()}.</p>
+     * <p>把鼠标拖动转发给组件根。保留普通 @Override，原因同 {@link #handleMouseInput()}。</p>
+     */
+    @Override
+    protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
+        super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+
+        if (!modernWorldCreatingUI$isInitialized || modernWorldCreatingUI$tabRoot == null) {
+            return;
+        }
+
+        modernWorldCreatingUI$tabRoot.dispatchMouseDragged(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>CatFrame input bridge: routes split keyboard events (keyPressed / keyReleased /
+     * charTyped) and Tab focus navigation to the component root. The merged keyTyped
+     * channel arrives through the vanilla {@code handleKeyboardInput} loop instead.</p>
+     * <p>CatFrame 输入桥：把拆分键盘事件（keyPressed / keyReleased / charTyped）与
+     * Tab 焦点导航投递给组件根；合并式 keyTyped 通道则经原版
+     * {@code handleKeyboardInput} 循环到达。</p>
+     */
+    @Override
+    public GuiEventListener getEventRoot() {
+        return modernWorldCreatingUI$tabRoot;
+    }
+
+    /**
+     * @return the tab content area — below the tab bar (TAB_HEIGHT), above the footer
+     *         (height - 35) / Tab 内容区域：Tab 栏下方（TAB_HEIGHT）到脚部上方（height - 35）
+     */
+    @Unique
+    private ScreenRectangle modernWorldCreatingUI$tabArea() {
+        int tabAreaTop = TAB_HEIGHT;
+        int tabAreaBottom = this.height - 35;
+        return new ScreenRectangle(0, tabAreaTop, this.width, tabAreaBottom - tabAreaTop);
     }
 
 

@@ -3,13 +3,10 @@ package decok.dfcdvadstf.createworldui.ui.tab;
 import decok.dfcdvadstf.catframe.ui.Text;
 import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.components.Tooltip;
-import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
-import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.ui.gamerule.WorldCreationGameRuleScreen;
-import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
 
@@ -20,21 +17,16 @@ import java.util.Map;
  * More Options Tab with GridLayout-based layout.
  * <p>使用 GridLayout 布局的更多选项标签页。</p>
  */
-public class MoreTab extends GridLayoutTab {
-    private Button gameRuleEditorButton;
-    private Button experimentsButton;
-    private Button dataPacksButton;
+public class MoreTab extends CreateWorldTab {
     private GuiCreateWorld guiCreateWorld;
-    private IGuiCreateWorldAccess access;
 
-    public MoreTab() {
-        super(102, Text.translatable("createworldui.tab.more"));
-    }
-
-    @Override
-    public void initGui(TabManager tabManager, int width, int height) {
-        guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
-        access = (IGuiCreateWorldAccess) guiCreateWorld;
+    /**
+     * Builds the tab once; the widgets live as long as the screen instance.
+     * <p>一次性构建标签页；组件随屏幕实例存活。</p>
+     */
+    public MoreTab(GuiCreateWorld screen) {
+        super(Text.translatable("createworldui.tab.more"));
+        this.guiCreateWorld = screen;
 
         // Single column with row spacing
         layout.rowSpacing(8);
@@ -42,7 +34,7 @@ public class MoreTab extends GridLayoutTab {
         int row = 0;
 
         if (CreateWorldUI.config.gameruleEdit) {
-            gameRuleEditorButton = Button.builder(
+            Button gameRuleEditorButton = Button.builder(
                     Text.literal(I18n.format("createworldui.button.gamerule_editor")),
                     btn -> {
                         Map<String, String> pending = GameRuleApplier.getPendingGameRules();
@@ -53,7 +45,7 @@ public class MoreTab extends GridLayoutTab {
                                 cleanPending.put(entry.getKey(), entry.getValue());
                             }
                         }
-                        mc.displayGuiScreen(new WorldCreationGameRuleScreen(guiCreateWorld, cleanPending));
+                        Minecraft.getMinecraft().displayGuiScreen(new WorldCreationGameRuleScreen(guiCreateWorld, cleanPending));
                     }).useVanillaTexture(true)
                 .width(210).height(20).build();
             // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动，帧末由 CatFrame 统一延迟绘制
@@ -63,43 +55,19 @@ public class MoreTab extends GridLayoutTab {
         }
 
         if (CreateWorldUI.config.enableOtherMoreTabButton) {
-            experimentsButton = Button.builder(
+            Button experimentsButton = Button.builder(
                     Text.literal(I18n.format("selectWorld.experiments")),
                     btn -> {})
                 .width(210).height(20).useVanillaTexture(true).build();
             experimentsButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.experiments")));
             layout.addChild(experimentsButton, row++, 0);
 
-            dataPacksButton = Button.builder(
+            Button dataPacksButton = Button.builder(
                     Text.literal(I18n.format("selectWorld.dataPacks")),
                     btn -> {})
                 .width(210).height(20).useVanillaTexture(true).build();
             dataPacksButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.dataPacks")));
             layout.addChild(dataPacksButton, row++, 0);
         }
-
-        super.initGui(tabManager, width, height);
-    }
-
-    @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        if (!visible) return;
-        super.drawScreen(mouseX, mouseY, partialTicks);
-    }
-
-    @Override
-    public void actionPerformed(GuiButton button) {
-        // All actions handled via OnPress callbacks
-    }
-
-    @Override
-    public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        // Delegate to GridLayoutTab which forwards to all Components
-        // 委托给 GridLayoutTab，它会转发到所有 Component
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
-    @Override
-    public void keyTyped(char typedChar, int keyCode) {
     }
 }

@@ -6,12 +6,10 @@ import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
 import decok.dfcdvadstf.catframe.ui.components.StringWidget;
 import decok.dfcdvadstf.catframe.ui.components.Tooltip;
-import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
-import decok.dfcdvadstf.catframe.ui.components.tab.TabManager;
 import decok.dfcdvadstf.catframe.ui.layouts.LayoutSettings;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
-import net.minecraft.client.gui.GuiButton;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.world.WorldType;
@@ -23,23 +21,23 @@ import java.util.List;
  * World Options Tab with GridLayout-based layout.
  * <p>使用 GridLayout 布局的世界选项标签页。</p>
  */
-public class WorldTab extends GridLayoutTab {
+public class WorldTab extends CreateWorldTab {
     private SimpleEditBox seedField;
     private CyclingButton<WorldType> worldTypeButton;
     private Button customizeButton;
     private Button generateStructuresButton;
     private Button bonusChestButton;
-    private GuiCreateWorld guiCreateWorld;
-    private IGuiCreateWorldAccess access;
+    private final GuiCreateWorld guiCreateWorld;
+    private final IGuiCreateWorldAccess access;
 
-    public WorldTab() {
-        super(101, Text.translatable("createworldui.tab.world"));
-    }
-
-    @Override
-    public void initGui(TabManager tabManager, int width, int height) {
-        guiCreateWorld = (GuiCreateWorld) tabManager.getScreen();
-        access = (IGuiCreateWorldAccess) guiCreateWorld;
+    /**
+     * Builds the tab once; the widgets live as long as the screen instance.
+     * <p>一次性构建标签页；组件随屏幕实例存活。</p>
+     */
+    public WorldTab(GuiCreateWorld screen) {
+        super(Text.translatable("createworldui.tab.world"));
+        this.guiCreateWorld = screen;
+        this.access = (IGuiCreateWorldAccess) screen;
 
         // Match high-version WorldTab: 2 columns with column and row spacing
         layout.columnSpacing(10).rowSpacing(8);
@@ -49,7 +47,7 @@ public class WorldTab extends GridLayoutTab {
         // Row 0: World Type button (left) + Customize button (right)
         // 第0行：世界类型按钮（左）+ 自定义按钮（右）
         // Create world type button
-        List<WorldType> validWorldTypes = new ArrayList<>();
+        List<WorldType> validWorldTypes = new ArrayList<WorldType>();
         boolean filterEnabled = CreateWorldUI.config != null && CreateWorldUI.config.filterNonCreatableWorldTypes;
         for (WorldType wt : WorldType.worldTypes) {
             if (wt != null && (!filterEnabled || wt.getCanBeCreated())) {
@@ -99,7 +97,7 @@ public class WorldTab extends GridLayoutTab {
                 btn -> {
                     if (WorldType.worldTypes != null && access.modernWorldCreatingUI$getWorldTypeIndex() < WorldType.worldTypes.length &&
                             WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()] != null) {
-                        WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()].onCustomizeButton(mc, guiCreateWorld);
+                        WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()].onCustomizeButton(Minecraft.getMinecraft(), guiCreateWorld);
                     }
                 })
                 .useVanillaTexture(true)
@@ -116,7 +114,15 @@ public class WorldTab extends GridLayoutTab {
 
         // Row 2: Seed field (spans 2 columns)
         // 第2行：种子输入框（跨2列）
-        seedField = new SimpleEditBox(0, 0, 310, 20);
+        // Seed field; edits are pushed back into the host screen immediately through
+        // the component's onTextChanged hook.
+        // 种子输入框；编辑通过组件的 onTextChanged 钩子即时写回宿主界面。
+        seedField = new SimpleEditBox(0, 0, 310, 20) {
+            @Override
+            protected void onTextChanged() {
+                access.modernWorldCreatingUI$setSeed(getText());
+            }
+        };
         seedField.setText(access.modernWorldCreatingUI$getSeed());
         layout.addChild(seedField, row++, 0, 1, 2);
 
@@ -154,14 +160,15 @@ public class WorldTab extends GridLayoutTab {
             .width(44).height(20).useVanillaTexture(true).build();
         bonusChestButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.bonusChest")));
         layout.addChild(bonusChestButton, row++, 1, rightAlign);
-
-        super.initGui(tabManager, width, height);
     }
 
+    /**
+     * Refreshes button states and toggle labels before the host renders this tab's
+     * children.
+     * <p>在本标签页子组件渲染前刷新按钮状态与开关文案。</p>
+     */
     @Override
-    public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        if (!visible) return;
-
+    public void prepareFrame() {
         // Update button states before rendering
         if (WorldType.worldTypes != null && access.modernWorldCreatingUI$getWorldTypeIndex() < WorldType.worldTypes.length &&
                 WorldType.worldTypes[access.modernWorldCreatingUI$getWorldTypeIndex()] != null) {
@@ -173,33 +180,6 @@ public class WorldTab extends GridLayoutTab {
         generateStructuresButton.setMessage(Text.literal(getGenerateStructuresText()));
         bonusChestButton.setMessage(Text.literal(getBonusChestText()));
         bonusChestButton.setActive(!access.modernWorldCreatingUI$getHardcore());
-
-        // Render all components
-        super.drawScreen(mouseX, mouseY, partialTicks);
-
-        // Update toggle button text each frame (labels are now layout elements)
-        generateStructuresButton.setMessage(Text.literal(getGenerateStructuresText()));
-        bonusChestButton.setMessage(Text.literal(getBonusChestText()));
-    }
-
-    @Override
-    public void actionPerformed(GuiButton button) {
-        // All actions handled via OnPress callbacks
-    }
-
-    @Override
-    public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
-        // Delegate to GridLayoutTab which forwards to all Components
-        // 委托给 GridLayoutTab，它会转发到所有 Component
-        super.mouseClicked(mouseX, mouseY, mouseButton);
-    }
-
-    @Override
-    public void keyTyped(char typedChar, int keyCode) {
-        // Forward key to all Components via GridLayoutTab, then sync seed
-        // 转发按键到所有 Component，然后同步种子
-        super.keyTyped(typedChar, keyCode);
-        access.modernWorldCreatingUI$setSeed(seedField.getText());
     }
 
     private String getGenerateStructuresText() {
