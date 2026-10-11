@@ -74,4 +74,10 @@ public interface IGuiCreateWorldAccess {
     // 重跑原版 func_146314_g：把世界名清洗成目录名，并对已有存档做重名避让
     // （结果写入 field_146336_i）。
     @Invoker("func_146314_g") void modernWorldCreatingUI$calcSaveDirName();
+
+    // === Final save-dir name（vanilla 的 launchIntegratedServer 第一个参数） ===
+    // === Final save-dir name (vanilla's first launchIntegratedServer argument) ===
+    // The sanitized / de-duplicated world folder name computed by func_146314_g.
+    // 由 func_146314_g 计算出的清洗过、避让过重名的存档目录名。
+    @Accessor("field_146336_i") String modernWorldCreatingUI$getSaveDirName();
 }

@@ -1,12 +1,9 @@
 package decok.dfcdvadstf.createworldui.mixin;
 
 import cpw.mods.fml.client.FMLClientHandler;
-import cpw.mods.fml.common.event.FMLInterModComms;
-import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
-import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
+import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyApplier;
+import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyLocker;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldServer;
@@ -85,21 +82,25 @@ public abstract class MixinIntegratedServer {
             mc.gameSettings.saveOptions();
         }
         
-        // Also apply to WorldDifficultyData if ModernDifficultyLocker is loaded
-        // 如果ModernDifficultyLocker已加载，也同步到WorldDifficultyData
+        // Also apply to WorldDifficultyData if ModernDifficultyLocker is loaded:
+        // a direct write into its in-memory state, plus the world_created IMC as
+        // the authoritative sync — the other mod's own loadAllWorlds-TAIL mixin
+        // may reload (reset) WorldDifficultyData after our direct write, and its
+        // once-a-second poller re-applies the IMC, guaranteeing consistency.
+        // 如果ModernDifficultyLocker已加载，也同步到WorldDifficultyData：
+        // 直达写入其内存状态，并以 world_created IMC 做权威同步 —— 对方自己的
+        // loadAllWorlds-TAIL mixin 可能在本侧直达写入之后重载（重置）
+        // WorldDifficultyData，其每秒轮询会把 IMC 补写回去，保证最终一致。
         if (DifficultyLocker.isLoaded() && DifficultyLocker.hasLockedDifficulty()) {
             EnumDifficulty lockedDiff = DifficultyLocker.getLockedDifficulty();
             if (lockedDiff != null) {
-                DifficultyLocker.applyToWorldData(lockedDiff);
-                
-                // IMC: 通知 DifficultyLocker 世界已创建，携带 UI 侧的锁定状态
-                NBTTagCompound imcTag = new NBTTagCompound();
-                imcTag.setString("worldName", worldNameIn);
-                imcTag.setInteger("difficulty", lockedDiff.getDifficultyId());
-                imcTag.setBoolean("locked", true);
-                FMLInterModComms.sendRuntimeMessage(CreateWorldUI.class, "difficultylocker", "world_created", imcTag);
-                createWorldUI$logger.info("Sent runtime IMC: world_created, world='{}', diff={}", worldNameIn, lockedDiff.getDifficultyId());
-                
+                DifficultyLocker.applyLockedDifficultyToWorldData(lockedDiff);
+
+                // IMC: 通知 difficultylocker 世界已创建，携带 UI 侧的锁定状态
+                // IMC: notify difficultylocker the world was created, carrying the
+                // screen-side lock state
+                DifficultyLocker.notifyWorldCreated(worldNameIn, lockedDiff, true);
+
                 DifficultyLocker.resetAllLocks(); // Reset after applying
                 createWorldUI$logger.info("Locked difficulty '{}' also applied to WorldDifficultyData", lockedDiff.getDifficultyId());
             }

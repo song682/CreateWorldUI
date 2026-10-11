@@ -2,7 +2,7 @@ package decok.dfcdvadstf.createworldui.mixin;
 
 import decok.dfcdvadstf.catframe.ui.ContentPanelRenderer;
 import decok.dfcdvadstf.catframe.ui.GuiGraphicsExtractor;
-import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
+import decok.dfcdvadstf.catframe.ui.extended.adapter.GuiButtonAdapter;
 import decok.dfcdvadstf.catframe.ui.components.events.CatFrameInputScreen;
 import decok.dfcdvadstf.catframe.ui.components.events.GuiEventListener;
 import decok.dfcdvadstf.catframe.ui.components.tab.Tab;
@@ -12,10 +12,10 @@ import decok.dfcdvadstf.catframe.ui.layouts.HeaderFooterLayout;
 import decok.dfcdvadstf.catframe.ui.layouts.HorizontalLayout;
 import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
+import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.TabScreenRoot;
+import decok.dfcdvadstf.createworldui.integrations.datapack.ok.OKCoreCompat;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
-import decok.dfcdvadstf.createworldui.ui.tab.CreateWorldTab;
 import decok.dfcdvadstf.createworldui.ui.tab.GameTab;
 import decok.dfcdvadstf.createworldui.ui.tab.MoreTab;
 import decok.dfcdvadstf.createworldui.ui.tab.WorldTab;
@@ -68,8 +68,26 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
     private TabNavigationBar modernWorldCreatingUI$tabBar;
     @Unique
     private TabScreenRoot modernWorldCreatingUI$tabRoot;
+    /**
+     * 26.1.2 {@code HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT} —— 页脚
+     * 区域高度（{@code MAGIC_PADDING 13} + 20 高的按钮）。
+     * 26.1.2 {@code HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT} — the
+     * footer zone height ({@code MAGIC_PADDING 13} + a 20-tall button).
+     */
     @Unique
-    private static final int TAB_HEIGHT = 24;
+    private static final int modernWorldCreatingUI$FOOTER_HEIGHT = 33;
+    /**
+     * 26.1.2 页脚按钮间距：{@code DirectionalLayoutWidget.horizontal().spacing(8)}。
+     * 26.1.2 footer button spacing: {@code DirectionalLayoutWidget.horizontal().spacing(8)}.
+     */
+    @Unique
+    private static final int modernWorldCreatingUI$FOOTER_SPACING = 8;
+    /**
+     * 26.1.2 按钮默认宽度（{@code ButtonWidget.builder(...).build()} 即 200x20）。
+     * 26.1.2 default button width ({@code ButtonWidget.builder(...).build()} is 200x20).
+     */
+    @Unique
+    private static final int modernWorldCreatingUI$BUTTON_WIDTH = 200;
     @Unique
     private boolean modernWorldCreatingUI$isInitialized = false;
     @Unique
@@ -119,37 +137,31 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         this.buttonList.clear();
         this.buttonList.addAll(essentialButtons);
 
-        // ===== 使用 HeaderFooterLayout 作为主布局 =====
-        // ===== Use HeaderFooterLayout as main layout =====
+        // ===== 主布局：26.1.2 CreateWorldScreen 的 ThreePartsLayout/HeaderAndFooterLayout =====
+        // ===== Main layout: 26.1.2 CreateWorldScreen's ThreePartsLayout/HeaderAndFooterLayout =====
         modernWorldCreatingUI$mainLayout = new HeaderFooterLayout(true); // true = 绘制面板背景
-        
-        // Header 区域：TabBar (高度 = TAB_HEIGHT)
-        // Header zone: TabBar
-        modernWorldCreatingUI$mainLayout.setHeaderHeight(TAB_HEIGHT);
-        
-        // Footer 区域：底部按钮 (高度 30px)
-        // Footer zone: bottom buttons (height 30px)
-        modernWorldCreatingUI$mainLayout.setFooterHeight(30);
-        
-        // 创建 Footer 按钮布局
-        // Create Footer button layout
+
+        // ===== Footer（26.1.2 init(): addFooter(DirectionalLayoutWidget.horizontal().spacing(8))）=====
+        // ===== Footer (26.1.2 init(): addFooter(DirectionalLayoutWidget.horizontal().spacing(8))) =====
         modernWorldCreatingUI$footerButtonLayout = new HorizontalLayout();
-        modernWorldCreatingUI$footerButtonLayout.setSpacing(10); // 按钮间距
-        
-        // 使用 GuiButtonAdapter 包装原版按钮
-        // Wrap vanilla buttons with GuiButtonAdapter
+        modernWorldCreatingUI$footerButtonLayout.setSpacing(modernWorldCreatingUI$FOOTER_SPACING);
+
+        // 使用 GuiButtonAdapter 包装原版按钮；26.1.2 的创建/取消为默认 200 宽按钮
+        // Wrap vanilla buttons with GuiButtonAdapter; 26.1.2's Create/Cancel are
+        // default 200-wide buttons
         if (createButton != null) {
+            createButton.width = modernWorldCreatingUI$BUTTON_WIDTH;
             modernWorldCreatingUI$createButtonAdapter = new GuiButtonAdapter(createButton);
             modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$createButtonAdapter);
         }
-        
+
         if (cancelButton != null) {
+            cancelButton.width = modernWorldCreatingUI$BUTTON_WIDTH;
             modernWorldCreatingUI$cancelButtonAdapter = new GuiButtonAdapter(cancelButton);
             modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$cancelButtonAdapter);
         }
-        
-        // 将按钮布局设置到 Footer 区域
-        // Set button layout to Footer zone
+
+        modernWorldCreatingUI$mainLayout.setFooterHeight(modernWorldCreatingUI$FOOTER_HEIGHT);
         modernWorldCreatingUI$mainLayout.setFooter(modernWorldCreatingUI$footerButtonLayout);
 
         // ===== 组件系统 Tab 装配（对齐高版本 CreateWorldScreen.init()） =====
@@ -181,16 +193,17 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         modernWorldCreatingUI$mainLayout.setHeader(modernWorldCreatingUI$tabBar);
         modernWorldCreatingUI$tabRoot.addChild(modernWorldCreatingUI$tabBar);
 
-        // ===== 布局、内容区域与初始选中（对齐高版本 selectTab(0) + repositionElements） =====
-        // ===== Layout, tab area and initial selection (mirrors the high-version pair) =====
+        // ===== 26.1.2 initTabNavigation()：布局、内容区域与初始选中 =====
+        // ===== 26.1.2 initTabNavigation(): layout, tab area and initial selection =====
+        // 导航栏宽度更新后取其底边作为页头高度（26.1.2: getNavigationFocus().getBottom()）
+        // After the nav bar width update, its bottom edge is the header height
+        // (26.1.2: getNavigationFocus().getBottom())
         modernWorldCreatingUI$tabBar.updateWidth(this.width);
-        // ===== 所有内容配置完成后，重新计算整体布局 =====
-        // ===== Recalculate layout after all content is configured =====
+        modernWorldCreatingUI$mainLayout.setHeaderHeight(modernWorldCreatingUI$tabBar.getRectangle().bottom());
         modernWorldCreatingUI$mainLayout.recalculate(this.width, this.height);
-        // Set the tab content area so GridLayoutTab.doLayout positions correctly within the content panel.
-        // Tab area: below the tab bar (TAB_HEIGHT), above the footer (height - 35).
-        // 设置Tab内容区域，使 GridLayoutTab.doLayout 在内容面板内正确布局。
-        // Tab区域：Tab栏下方(TAB_HEIGHT)到脚部上方(height - 35)。
+        // Tab 内容区域：导航栏底边到页脚上沿（26.1.2: ScreenRect(0, i, width, height - footerHeight - i)）
+        // Tab content area: from the nav bar's bottom edge to the footer's top edge
+        // (26.1.2: ScreenRect(0, i, width, height - footerHeight - i))
         modernWorldCreatingUI$tabManager.setTabArea(modernWorldCreatingUI$tabArea());
         modernWorldCreatingUI$tabManager.setCurrentTab(gameTab, false);
         modernWorldCreatingUI$tabRoot.setFocused(gameTab.getInitialFocus());
@@ -250,22 +263,35 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // 绘制主背景
         this.drawBackground(0);
 
-        // ===== Footer 分隔线 + Panel 背景 =====
-        // ===== Footer separator + Panel background =====
+        // ===== 26.1.2 renderDarkening() + render()：页头背景、页头下方暗化、页脚分隔线 =====
+        // ===== 26.1.2 renderDarkening() + render(): header background, darkening below
+        // the header, footer separator =====
         if (modernWorldCreatingUI$mainLayout != null) {
-            int footerY = this.height - modernWorldCreatingUI$mainLayout.getFooterHeight();
-            // 画 Footer 分隔线
-            ContentPanelRenderer.drawFooterSeparator(0, footerY, this.width);
-            // 画 Panel 背景（TabBar 下方到 Footer 上方）
-            ContentPanelRenderer.drawPanelBackground(0, TAB_HEIGHT, this.width, footerY - TAB_HEIGHT);
+            int headerHeight = modernWorldCreatingUI$mainLayout.getHeaderHeight();
+            int footerTop = this.height - modernWorldCreatingUI$mainLayout.getFooterHeight();
+            // 页头区域：tab 头部背景（26.1.2 TAB_HEADER_BACKGROUND_TEXTURE 铺满页头）
+            // Header zone: the tab header background (26.1.2's TAB_HEADER_BACKGROUND_TEXTURE
+            // tiled over the header)
+            ContentPanelRenderer.drawPanelBackground(0, 0, this.width, headerHeight);
+            // 页头以下全部暗化（26.1.2 renderDarkening 覆盖页头下方直到屏幕底部，含页脚区）
+            // Everything below the header darkened (26.1.2's renderDarkening covers from
+            // below the header down to the screen bottom, footer zone included)
+            ContentPanelRenderer.drawPanelBackground(0, headerHeight, this.width, this.height - headerHeight);
+            // 页脚分隔线：2px 高，紧贴页脚上沿（26.1.2 render(): height - footerHeight - 2）
+            // Footer separator: 2px tall, right above the footer top (26.1.2 render():
+            // height - footerHeight - 2)
+            ContentPanelRenderer.drawFooterSeparator(0, footerTop - 2, this.width);
         }
 
-        // 当前标签页的每帧准备（动态状态、tooltip、标签覆盖层）
-        // Per-frame preparation of the current tab (dynamic states, tooltips, label overlays)
+        // 当前标签页的每帧准备（动态状态、tooltip、标签覆盖层）—— 具体页各自实现
+        // Per-frame preparation of the current tab (dynamic states, tooltips, label
+        // overlays) — each concrete tab implements its own
         if (modernWorldCreatingUI$tabManager != null) {
             Tab currentTab = modernWorldCreatingUI$tabManager.getCurrentTab();
-            if (currentTab instanceof CreateWorldTab) {
-                ((CreateWorldTab) currentTab).prepareFrame();
+            if (currentTab instanceof GameTab) {
+                ((GameTab) currentTab).prepareFrame();
+            } else if (currentTab instanceof WorldTab) {
+                ((WorldTab) currentTab).prepareFrame();
             }
         }
 
@@ -281,13 +307,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         if (modernWorldCreatingUI$footerButtonLayout != null) {
             for (decok.dfcdvadstf.catframe.ui.layouts.ILayout child : modernWorldCreatingUI$footerButtonLayout.getChildren()) {
                 if (child instanceof GuiButtonAdapter) {
-                    // CatFrame 0.7.1.1: rendering goes through the extractRenderState
-                    // template method (visibility check + hover refresh + renderWidget).
-                    // Adapter-level visibility is controlled via setVisible() and is not
-                    // affected by delegate.visible=true inside renderWidget.
-                    // 0.7.1.1 渲染统一走 extractRenderState 模板方法（可见性检查 + hover
-                    // 刷新 + renderWidget 委托）；适配器可见性由 setVisible() 控制，
-                    // 不受 renderWidget 内 delegate.visible=true 影响。
                     ((GuiButtonAdapter) child).extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
                 }
             }
@@ -391,6 +410,45 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // MixinIntegratedServer.loadAllWorlds TAIL
         // 从 UI 选中的难度设置待应用难度，将由 MixinIntegratedServer.loadAllWorlds TAIL 应用
         DifficultyApplier.setPendingDifficulty(DifficultyApplier.getSelectedDifficulty());
+    }
+
+    /**
+     * <p>
+     *     World-launch pre-processing: if the DataPackScreen toggled any OKCore
+     *     datapack, flush the disabled list into the new world's
+     *     {@code okcore_datapacks.txt} BEFORE the integrated server thread starts —
+     *     via OKCoreCompat's direct call to OKCore's own saveDisabledPacksConfig.
+     *     OKCore reads that file at {@code FMLServerAboutToStartEvent}
+     *     (IntegratedServer.startServer runs {@code handleServerAboutToStart}
+     *     before {@code loadAllWorlds}), so writing any later — e.g. at
+     *     loadAllWorlds TAIL like the difficulty — would be too late for the first
+     *     world load. The world dir does not exist yet on the client thread, so the
+     *     compat layer creates it first.
+     * </p>
+     * <p>
+     *     世界启动前处理：若 DataPackScreen 切换过任何 OKCore 数据包状态，则在
+     *     集成服务器线程启动之前，经 OKCoreCompat 直接调用 OKCore 自己的
+     *     saveDisabledPacksConfig，把禁用清单写入新世界的
+     *     {@code okcore_datapacks.txt}。OKCore 在
+     *     {@code FMLServerAboutToStartEvent}（IntegratedServer.startServer 中
+     *     {@code handleServerAboutToStart} 先于 {@code loadAllWorlds} 执行）读取该
+     *     文件，所以更晚写入（比如像难度那样在 loadAllWorlds TAIL）对首次加载就
+     *     太迟了。此时世界目录在客户端线程上尚不存在，由兼容层负责先创建。
+     * </p>
+     */
+    @Inject(
+            method = "actionPerformed",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/Minecraft;launchIntegratedServer(Ljava/lang/String;Ljava/lang/String;Lnet/minecraft/world/WorldSettings;)V",
+                    shift = At.Shift.BEFORE
+            )
+    )
+    private void modernWorldCreatingUI$beforeLaunchWorld(GuiButton button, CallbackInfo ci) {
+        // 仅在 DataPackScreen 切换过状态时落盘，复用 OKCore 自己的写入器（见 OKCoreCompat）
+        // Only flush when DataPackScreen toggled something; reuse OKCore's own writer (see OKCoreCompat)
+        OKCoreCompat.savePendingSelectionToWorldDir(
+                modernWorldCreatingUI$accessor.modernWorldCreatingUI$getSaveDirName());
     }
 
     /**
@@ -554,13 +612,16 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
     }
 
     /**
-     * @return the tab content area — below the tab bar (TAB_HEIGHT), above the footer
-     *         (height - 35) / Tab 内容区域：Tab 栏下方（TAB_HEIGHT）到脚部上方（height - 35）
+     * @return the tab content area — from the tab bar's bottom edge (header height) down
+     *         to the footer's top edge (height - footerHeight), mirroring 26.1.2's
+     *         {@code ScreenRect(0, i, width, height - footerHeight - i)}
+     *         / Tab 内容区域 —— Tab 栏底边（页头高度）到页脚上沿（height - footerHeight），
+     *         对齐 26.1.2 的 {@code ScreenRect(0, i, width, height - footerHeight - i)}
      */
     @Unique
     private ScreenRectangle modernWorldCreatingUI$tabArea() {
-        int tabAreaTop = TAB_HEIGHT;
-        int tabAreaBottom = this.height - 35;
+        int tabAreaTop = modernWorldCreatingUI$mainLayout.getHeaderHeight();
+        int tabAreaBottom = this.height - modernWorldCreatingUI$mainLayout.getFooterHeight();
         return new ScreenRectangle(0, tabAreaTop, this.width, tabAreaBottom - tabAreaTop);
     }
 

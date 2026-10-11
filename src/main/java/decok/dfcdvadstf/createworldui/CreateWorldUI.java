@@ -8,7 +8,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
-import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
+import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
 import net.minecraftforge.common.MinecraftForge;
@@ -20,11 +20,9 @@ import org.spongepowered.asm.launch.MixinBootstrap;
         modid = Tags.MODID,
         name = Tags.NAME,
         version = Tags.VERSION,
-        acceptedMinecraftVersions = "1.7.10",
-        acceptableRemoteVersions = "1.7.10",
         guiFactory = "decok.dfcdvadstf.createworldui.ui.CreateWorldConfigUI",
         useMetadata = true,
-        dependencies = "required-after:catframe@[0.10.2,)",
+        dependencies = "required-after:catframe@[0.10.3,);required-after:catframe_compact@[0.0.8,)",
         customProperties = {
                 @Mod.CustomProperty(k = "license", v = "MIT"),
                 @Mod.CustomProperty(k = "issueTrackerUrl", v = "https://github.com/song682/CreateWorldUI/issues"),

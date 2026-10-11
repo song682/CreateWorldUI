@@ -95,9 +95,13 @@ dependencies {
     runtimeOnly "maven.modrinth:codechickencore-unofficial:${project.cc_version}"
     runtimeOnly "maven.modrinth:codechickenlib-unofficial:${project.cc_version}"
 
+    compileOnly "maven.modrinth:ok-core:26.10.10.0"
     compileOnly fileTree(dir: 'lib', includes: ['*.jar'])
-    compileOnly "com.github.song682:ModernDifficultyLocker:v1.0.6"
-    implementation "com.github.song682:CatFrame:v0.10.2"
+
+    implementation "com.github.song682:jar-utils:v0.0.3"
+    compileOnly "com.github.song682:ModernDifficultyLocker:v1.3.2"
+    implementation "com.github.song682:CatFrame:${project.cf_version}"
+    implementation "com.github.song682:CatFrame-Compat:${project.cfc_version}"
 }
 
 def dependenciesList = []

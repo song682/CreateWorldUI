@@ -1,38 +1,33 @@
 package decok.dfcdvadstf.createworldui.ui.tab;
 
-import cpw.mods.fml.common.event.FMLInterModComms;
 import decok.dfcdvadstf.catframe.ui.Text;
+import decok.dfcdvadstf.catframe.ui.components.Button;
 import decok.dfcdvadstf.catframe.ui.components.CyclingButton;
 import decok.dfcdvadstf.catframe.ui.components.SimpleEditBox;
-import decok.dfcdvadstf.catframe.ui.components.GuiButtonAdapter;
 import decok.dfcdvadstf.catframe.ui.components.Tooltip;
 import decok.dfcdvadstf.catframe.ui.components.events.GuiEventListener;
+import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
+import decok.dfcdvadstf.catframe.ui.layouts.FrameLayout;
+import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.api.DifficultyApplier;
-import decok.dfcdvadstf.createworldui.api.DifficultyLocker;
+import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyApplier;
+import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.audio.PositionedSoundRecord;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.EnumDifficulty;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 
 /**
  * Game Settings Tab with GridLayout-based layout.
  * <p>使用 GridLayout 布局的游戏设置标签页。</p>
  */
-public class GameTab extends CreateWorldTab {
+public class GameTab extends GridLayoutTab {
     private SimpleEditBox worldNameField;
     private CyclingButton<String> gameModeButton;
     private CyclingButton<Boolean> allowCheatsButton;
     private CyclingButton<EnumDifficulty> difficultyButton;
-    private GuiButtonAdapter difficultyLockButton;
+    private Button difficultyLockButton;
     private final IGuiCreateWorldAccess access;
 
     /**
@@ -45,8 +40,6 @@ public class GameTab extends CreateWorldTab {
 
         // Match high-version GameTab: single column with row spacing
         layout.rowSpacing(8);
-        // More top spacing from tab bar / 增大标签栏间距
-        verticalAlignment = 0.22F;
 
         int row = 0;
 
@@ -67,7 +60,10 @@ public class GameTab extends CreateWorldTab {
             worldName = "";
         }
         worldNameField.setText(worldName);
-        layout.addChild(worldNameField, row++, 0);
+        // 26.1.2 GameTab: 208 宽名字框以 alignHorizontalCenter 居中在 210 宽的列中
+        // 26.1.2 GameTab: the 208-wide name field centered via alignHorizontalCenter in
+        // the 210-wide column
+        layout.addChild(worldNameField, row++, 0, s -> s.alignHorizontallyCenter());
 
         // Create game mode button
         String currentMode = access.modernWorldCreatingUI$getGameMode();
@@ -78,7 +74,9 @@ public class GameTab extends CreateWorldTab {
                 .values("survival", "creative", "hardcore", "adventure")
                 .initially(currentMode)
                 .useVanillaTexture(true)
-                .build(0, 0, 208, 20, (button, mode) -> {
+                // 26.1.2 GameTab: 游戏模式/难度/作弊按钮均为 210 宽
+                // 26.1.2 GameTab: game mode / difficulty / cheats buttons are all 210 wide
+                .build(0, 0, 210, 20, (button, mode) -> {
                     access.modernWorldCreatingUI$setGameMode(mode);
                     access.modernWorldCreatingUI$setHardcore("hardcore".equals(mode));
 
@@ -102,7 +100,10 @@ public class GameTab extends CreateWorldTab {
         boolean showLock = (DifficultyLocker.hasIMCConfig()
             ? DifficultyLocker.getIMCShowLockButton()
             : DifficultyLocker.isLoaded()) && CreateWorldUI.config.lockDifficultyButton;
-        int difficultyWidth = showLock ? 188 : 208;
+        // 26.1.2 难度按钮为 210 宽；显示锁按钮时收窄为 188（188 + 2 间距 + 20 锁按钮 = 210）
+        // 26.1.2's difficulty button is 210 wide; narrowed to 188 when the lock button
+        // is shown (188 + 2 gap + 20 lock = 210)
+        int difficultyWidth = showLock ? 188 : 210;
 
         difficultyButton = CyclingButton.<EnumDifficulty>builder(d -> {
                     if (access.modernWorldCreatingUI$getHardcore()) {
@@ -120,56 +121,35 @@ public class GameTab extends CreateWorldTab {
                 });
         layout.addChild(difficultyButton, row, 0);
 
-        // Create difficulty lock button (reflection-based, from external mod)
-        GuiButtonAdapter lockAdapter = null;
+        // Create difficulty lock button via the compat layer — difficultylocker
+        // (CatFrame-migrated) hands out its CatFrame lock button directly: no
+        // reflection, no GuiButtonAdapter; click sound / hover / disabled states
+        // are handled by the CatFrame base class.
+        // 经兼容层创建难度锁定按钮 —— difficultylocker（已迁移 CatFrame）直接
+        // 交出其 CatFrame 锁按钮：无反射、无 GuiButtonAdapter；点击音效/悬停/禁用
+        // 状态由 CatFrame 基类统一处理。
+        Button lockButton = null;
         if (showLock) {
-            try {
-                Class<?> guiLockButtonClass = Class.forName("decok.dfcdvadstf.difficultyLocker.GuiLockButton");
-                Constructor<?> constructor = guiLockButtonClass.getConstructor(int.class, int.class, int.class, boolean.class);
-                final GuiButton lockButton = (GuiButton) constructor.newInstance(10, 0, 0, false);
-                lockAdapter = new GuiButtonAdapter(lockButton) {
-                    @Override
-                    public void mouseClicked(int mx, int my, int mb) {
-                        if (active && visible && getDelegate().mousePressed(Minecraft.getMinecraft(), mx, my)) {
-                            try {
-                                Method isLockedMethod = getDelegate().getClass().getMethod("isLocked");
-                                boolean isCurrentlyLocked = (boolean) isLockedMethod.invoke(getDelegate());
-                                boolean newLockedState = !isCurrentlyLocked;
+            lockButton = DifficultyLocker.createLockButton(btn -> {
+                EnumDifficulty currentDifficulty = difficultyButton.getValue();
+                boolean newLockedState = !DifficultyLocker.isDifficultyLocked(currentDifficulty);
+                DifficultyLocker.setDifficultyLocked(currentDifficulty, newLockedState);
 
-                                Method setLockedMethod = getDelegate().getClass().getMethod("setLocked", boolean.class);
-                                setLockedMethod.invoke(getDelegate(), newLockedState);
+                // IMC: 同步锁定状态变化给 difficultylocker
+                // IMC: sync the lock-state change to difficultylocker
+                DifficultyLocker.sendLockStateChange(currentDifficulty, newLockedState);
 
-                                EnumDifficulty currentDifficulty = difficultyButton.getValue();
-                                DifficultyLocker.setDifficultyLocked(currentDifficulty, newLockedState);
-
-                                // IMC: 发送 runtime 消息通知 DifficultyLocker
-                                NBTTagCompound imcTag = new NBTTagCompound();
-                                imcTag.setInteger("difficultyId", currentDifficulty.getDifficultyId());
-                                imcTag.setBoolean("locked", newLockedState);
-                                FMLInterModComms.sendRuntimeMessage(CreateWorldUI.class, "difficultylocker", "lock_state_change", imcTag);
-
-                                if (newLockedState) {
-                                    difficultyButton.setActive(false);
-                                } else {
-                                    difficultyButton.setActive(!access.modernWorldCreatingUI$getHardcore());
-                                }
-
-                                Minecraft.getMinecraft().getSoundHandler().playSound(
-                                    PositionedSoundRecord.func_147674_a(
-                                        new ResourceLocation("gui.button.press"), 1.0F));
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                };
-                layout.addChild(lockAdapter, row, 1);
-            } catch (Exception e) {
-                e.printStackTrace();
-                lockAdapter = null;
+                if (newLockedState) {
+                    difficultyButton.setActive(false);
+                } else {
+                    difficultyButton.setActive(!access.modernWorldCreatingUI$getHardcore());
+                }
+            });
+            if (lockButton != null) {
+                layout.addChild(lockButton, row, 1);
             }
         }
-        this.difficultyLockButton = lockAdapter;
+        this.difficultyLockButton = lockButton;
         row++;
 
         // Create allow cheats button
@@ -181,7 +161,7 @@ public class GameTab extends CreateWorldTab {
                 .values(Boolean.TRUE, Boolean.FALSE)
                 .initially(access.modernWorldCreatingUI$getAllowCheats())
                 .useVanillaTexture(true)
-                .build(0, 0, 208, 20, (button, value) -> {
+                .build(0, 0, 210, 20, (button, value) -> {
                     if (!access.modernWorldCreatingUI$getHardcore()) {
                         access.modernWorldCreatingUI$setAllowCheats(value);
                     }
@@ -190,24 +170,40 @@ public class GameTab extends CreateWorldTab {
     }
 
     /**
+     * <p>
+     *     Extra top spacing relative to GridLayoutTab's default 0.16666667F — kept from
+     *     the previous tab architecture. {@code doLayout} is the only place CatFrame
+     *     lets a single tab customize its alignment, hence this local override.
+     * </p>
+     * <p>
+     *     相比 GridLayoutTab 默认 0.16666667F 的额外顶部间距 —— 沿袭旧标签页架构。
+     *     {@code doLayout} 是 CatFrame 允许单个标签页自定义对齐的唯一位置，故在此本地覆写。
+     * </p>
+     */
+    @Override
+    public void doLayout(ScreenRectangle screenRectangle) {
+        this.layout.arrangeElements();
+        FrameLayout.alignInRectangle(this.layout, screenRectangle.x, screenRectangle.y,
+                screenRectangle.width, screenRectangle.height, 0.5F, 0.22F);
+    }
+
+    /**
      * Refreshes dynamic states, tooltips and the field label before the host renders
      * this tab's children.
      * <p>在本标签页子组件渲染前刷新动态状态、tooltip 与输入框标签。</p>
      */
-    @Override
     public void prepareFrame() {
         // Update button states before rendering
         difficultyButton.setActive(!access.modernWorldCreatingUI$getHardcore()
             && !DifficultyLocker.isDifficultyLocked(difficultyButton.getValue()));
 
         if (difficultyLockButton != null) {
-            try {
-                java.lang.reflect.Method method = difficultyLockButton.getDelegate().getClass().getMethod("setLocked", boolean.class);
-                method.invoke(difficultyLockButton.getDelegate(),
-                    DifficultyLocker.isDifficultyLocked(difficultyButton.getValue()));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            boolean lockButtonLocked = DifficultyLocker.isDifficultyLocked(difficultyButton.getValue());
+            // 同步锁按钮的锁定视觉与启用状态（HardCore 模式恒锁死，对方界面同规则）
+            // Sync the lock button's locked visual and active state (hardcore is
+            // always locked — same rule as the other mod's own screen)
+            DifficultyLocker.setButtonLocked(difficultyLockButton, lockButtonLocked);
+            difficultyLockButton.setActive(!access.modernWorldCreatingUI$getHardcore());
         }
 
         // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动，帧末由 CatFrame 统一延迟绘制；
@@ -247,7 +243,6 @@ public class GameTab extends CreateWorldTab {
                 worldNameField.getX(), worldNameField.getY() - mc.fontRenderer.FONT_HEIGHT - 3, 0xA0A0A0);
     }
 
-    @Override
     public GuiEventListener getInitialFocus() {
         return worldNameField;
     }

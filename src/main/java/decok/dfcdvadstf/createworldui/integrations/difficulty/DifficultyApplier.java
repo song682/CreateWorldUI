@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.api;
+package decok.dfcdvadstf.createworldui.integrations.difficulty;
 
 import decok.dfcdvadstf.createworldui.Tags;
 import decok.dfcdvadstf.createworldui.mixin.MixinIntegratedServer;
