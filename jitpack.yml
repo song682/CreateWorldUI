@@ -1,0 +1,14 @@
+# Jitpack compatibility configuration.
+#
+# After pushing this repo to GitHub and tagging a release, Jitpack builds it
+# automatically, so other projects can depend on it via
+# `com.github.<user>:<repo>:<tag>`.
+#
+# Reference:
+# https://github.com/GTNewHorizons/ExampleMod1.7.10/blob/master/jitpack.yml
+
+jdk:
+  - openjdk8
+
+before_install:
+  - ./gradlew setupCIWorkspace
