@@ -57,7 +57,7 @@ public class MoreTab extends GridLayoutTab {
             layout.addChild(gameRuleEditorButton, row++, 0);
         }
 
-        if (CreateWorldUI.config.enableOtherMoreTabButton) {
+        if (CreateWorldUI.config.enableDataPack) {
             // 实验界面按钮：打开 ExperimentScreen（由其他模组经 IExperimentScreenUsage 注册的实验开关）
             // Experiments button: opens ExperimentScreen (switches registered by other mods via IExperimentScreenUsage)
             Button experimentsButton = Button.builder(

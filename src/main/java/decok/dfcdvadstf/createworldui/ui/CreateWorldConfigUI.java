@@ -47,6 +47,10 @@ public class CreateWorldConfigUI implements IModGuiFactory {
             // Note: Forge Configuration lowercases category names internally,
             // so we must use lowercase here to match the stored categories.
             // 注意：Forge Configuration 内部会将分类名转为小写，所以这里必须用小写来匹配。
+            ConfigCategory expCategory = configuration.getCategory("experiment");
+            expCategory.setLanguageKey("config.button.EXP");
+            expCategory.setComment(I18n.format("config.subtitle.EXP"));
+
             ConfigCategory greCategory = configuration.getCategory("gamerule editor");
             greCategory.setLanguageKey("config.button.GRE");
             greCategory.setComment(I18n.format("config.subtitle.GRE"));

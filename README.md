@@ -23,6 +23,7 @@ to your build.gradle(.kts) to use it.
 
 - [CatFrame](https://github.com/song682/CatFrame) ([CodeBerg Alter](https://codeberg.org/song682/cat-frame))
 - [UniMixins](https://github.com/LegacyModdingMC/UniMixins)
+- [CatFrame: Compat](https://github.com/song682/CatFrame-Compat) ([CodeBerg Alter](https://codeberg.org/song682/cat-frame-compat), Recommended)
 
 ---
 

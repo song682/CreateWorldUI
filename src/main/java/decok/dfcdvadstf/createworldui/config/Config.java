@@ -13,12 +13,13 @@ public class Config {
     public boolean changedRulesInChatHighLighted;
     public boolean highlightModifiedRulesInGUI;
     public boolean topTabCharatorModernWhite;
-    public boolean enableOtherMoreTabButton;
     public boolean showWorldNamePlaceHolder;
     public boolean disableCreateButtonWhenWNIsBlank;
     public boolean lockDifficultyButton;
     public boolean filterNonCreatableWorldTypes;
     public boolean enableExampleExperiment;
+    public boolean enableDataPack;
+    public boolean enableExperiment;
 
     public Config(File file) {
         configFile = new Configuration(file);
@@ -44,10 +45,6 @@ public class Config {
             "Enable the Gamerule Editor");
         configFile.getCategory("ui management").get("gameruleEdit").setLanguageKey("config.option.gameruleEdit");
         
-        enableOtherMoreTabButton = configFile.getBoolean("enableOtherMoreTabButton", "UI Management", false, 
-            "Enable unused modern feature button.");
-        configFile.getCategory("ui management").get("enableOtherMoreTabButton").setLanguageKey("config.option.enableOtherMoreTabButton");
-        
         showWorldNamePlaceHolder = configFile.getBoolean("showWorldNamePlaceHolder", "UI Management", false, 
             "Show a place-holder to gently reminds player to add a own world name");
         configFile.getCategory("ui management").get("showWorldNamePlaceHolder").setLanguageKey("config.option.showWorldNamePlaceHolder");
@@ -63,11 +60,13 @@ public class Config {
         filterNonCreatableWorldTypes = configFile.getBoolean("filterNonCreatableWorldTypes", "UI Management", true, 
             "Set True to hide world types that cannot be created (e.g. Default_1_1)");
         configFile.getCategory("ui management").get("filterNonCreatableWorldTypes").setLanguageKey("config.option.filterNonCreatableWorldTypes");
-        
-        enableExampleExperiment = configFile.getBoolean("enableExampleExperiment", "UI Management", true, 
-            "Set True to show the built-in example toggle on the experiments screen (demo only, does nothing)");
-        configFile.getCategory("ui management").get("enableExampleExperiment").setLanguageKey("config.option.enableExampleExperiment");
-        
+
+        enableDataPack = configFile.getBoolean("enableDataPack", "UI Management", false, "Set True to enable the data pack sections");
+        configFile.getCategory("ui management").get("enableDataPack").setLanguageKey("config.option.enableDataPack");
+
+        enableExperiment = configFile.getBoolean("enableExperiment", "UI Management", false, "Set True to enable the experiment content screen");
+        configFile.getCategory("ui management").get("enableExperiment").setLanguageKey("config.option.enableExperiment");
+
         // GameRule Editor category options
         // 游戏规则编辑器分类配置项
         configFile.getCategory("gamerule editor").setLanguageKey("config.button.GRE");
@@ -87,6 +86,13 @@ public class Config {
         highlightModifiedRulesInGUI = configFile.getBoolean("highlightModifiedRulesInGUI", "GameRule Editor", true, 
             "Set True to highlight modified rules with yellow color in GUI");
         configFile.getCategory("gamerule editor").get("highlightModifiedRulesInGUI").setLanguageKey("config.option.highlightModifiedRulesInGUI");
+
+        // Experimental Content category options
+        // 实验性内容的分类配置项
+        configFile.getCategory("experiment").setLanguageKey("config.option.experiment");
+        enableExampleExperiment = configFile.getBoolean("enableExampleExperiment", "Experiment", false,
+                "Set True to show the built-in example toggle on the experiments screen (demo only, does nothing)");
+        configFile.getCategory("ui management").get("enableExampleExperiment").setLanguageKey("config.option.enableExampleExperiment");
     }
 
     public void saveConfigurationFile() {
