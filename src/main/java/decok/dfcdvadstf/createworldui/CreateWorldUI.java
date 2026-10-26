@@ -8,6 +8,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
+import decok.dfcdvadstf.createworldui.api.ExperimentApplier;
 import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
@@ -49,6 +50,8 @@ public class CreateWorldUI {
     public void init(FMLInitializationEvent event) {
         logger.info("CreateWorldUI Mod loaded successfully");
         MinecraftForge.EVENT_BUS.register(new IMCRuntimeHandler());
+        // Persist/restore experiment selections into each save's WorldSavedData on load/unload.
+        MinecraftForge.EVENT_BUS.register(new ExperimentApplier());
     }
     
     @EventHandler
