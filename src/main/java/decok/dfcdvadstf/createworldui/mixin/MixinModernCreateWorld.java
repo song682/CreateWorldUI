@@ -14,6 +14,7 @@ import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.api.TabScreenRoot;
+import decok.dfcdvadstf.createworldui.api.tab.TabRegistry;
 import decok.dfcdvadstf.createworldui.integrations.datapack.ok.OKCoreCompat;
 import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import decok.dfcdvadstf.createworldui.ui.tab.GameTab;
@@ -183,8 +184,13 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // 强转仅为满足编译期类型视角。
         GuiCreateWorld screen = (GuiCreateWorld) (Object) this;
         GameTab gameTab = new GameTab(screen);
+        // Merge external tabs registered through the TabRegistry API with the built-ins,
+        // sorted by priority; the registry freezes on this first build.
+        // 经 TabRegistry 注册的外部 Tab 按优先级与内置 Tab 合并；注册表在首次构建时冻结。
+        List<Tab> orderedTabs = TabRegistry.buildTabList(screen,
+                gameTab, new WorldTab(screen), new MoreTab(screen));
         modernWorldCreatingUI$tabBar = TabNavigationBar.builder(modernWorldCreatingUI$tabManager, this.width)
-                .addTabs(gameTab, new WorldTab(screen), new MoreTab(screen))
+                .addTabs(orderedTabs.toArray(new Tab[0]))
                 .build();
 
         // 将导航栏设置到 Header 区域，并作为根容器的第一个子组件（点击/焦点链路）
