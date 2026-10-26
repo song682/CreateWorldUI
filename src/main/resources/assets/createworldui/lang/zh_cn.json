@@ -98,6 +98,8 @@
   "config.title": "CreateWorldUI",
   "config.option.lockDifficultyButton": "添加难度锁定按钮",
   "config.option.lockDifficultyButton.tooltip": "在创建世界时，将锁定按钮添加到难度按钮旁边",
+  "config.option.enableExampleExperiment": "启用示例实验性内容",
+  "config.option.enableExampleExperiment.tooltip": "设置为 true 以在实验性界面上显示内置的示例开关（仅作演示，不做任何事）",
   "selectWorld.experiments": "实验性",
   "selectWorld.experiments.info": "这些设置是实验性的，可能随时更改或移除，使用它们的存档可能无法正常工作。",
   "createworldui.experiments.empty": "没有已注册的实验性内容",

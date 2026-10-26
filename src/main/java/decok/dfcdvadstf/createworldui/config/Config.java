@@ -18,6 +18,7 @@ public class Config {
     public boolean disableCreateButtonWhenWNIsBlank;
     public boolean lockDifficultyButton;
     public boolean filterNonCreatableWorldTypes;
+    public boolean enableExampleExperiment;
 
     public Config(File file) {
         configFile = new Configuration(file);
@@ -62,6 +63,10 @@ public class Config {
         filterNonCreatableWorldTypes = configFile.getBoolean("filterNonCreatableWorldTypes", "UI Management", true, 
             "Set True to hide world types that cannot be created (e.g. Default_1_1)");
         configFile.getCategory("ui management").get("filterNonCreatableWorldTypes").setLanguageKey("config.option.filterNonCreatableWorldTypes");
+        
+        enableExampleExperiment = configFile.getBoolean("enableExampleExperiment", "UI Management", true, 
+            "Set True to show the built-in example toggle on the experiments screen (demo only, does nothing)");
+        configFile.getCategory("ui management").get("enableExampleExperiment").setLanguageKey("config.option.enableExampleExperiment");
         
         // GameRule Editor category options
         // 游戏规则编辑器分类配置项

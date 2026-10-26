@@ -9,6 +9,8 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCEvent;
 import cpw.mods.fml.common.event.FMLInterModComms.IMCMessage;
 import decok.dfcdvadstf.createworldui.api.ExperimentApplier;
+import decok.dfcdvadstf.createworldui.api.IExperimentScreenUsage;
+import decok.dfcdvadstf.createworldui.experiment.ExampleExperiment;
 import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyLocker;
 import decok.dfcdvadstf.createworldui.command.CommandGameRuleEditor;
 import decok.dfcdvadstf.createworldui.config.Config;
@@ -52,6 +54,11 @@ public class CreateWorldUI {
         MinecraftForge.EVENT_BUS.register(new IMCRuntimeHandler());
         // Persist/restore experiment selections into each save's WorldSavedData on load/unload.
         MinecraftForge.EVENT_BUS.register(new ExperimentApplier());
+        // Register the built-in demo experiment when the config option is on (author mods call
+        // IExperimentScreenUsage.register(...) the same way for their own experiment enums).
+        if (config.enableExampleExperiment) {
+            IExperimentScreenUsage.register(ExampleExperiment.class);
+        }
     }
     
     @EventHandler

@@ -100,6 +100,8 @@
   "config.option.disableCreateButtonWhenWNIsBlank.tooltip": "Set True to disable the Create Button when world name is blank",
   "config.option.lockDifficultyButton": "Enable the Difficulty Lock button in the world creation",
   "config.option.lockDifficultyButton.tooltip": "Set True to enable the difficulty lock button, in the world creation.ModernDifficultyLocker Required",
+  "config.option.enableExampleExperiment": "Enable Example Experiment",
+  "config.option.enableExampleExperiment.tooltip": "Set True to show the built-in example toggle on the experiments screen (demo only, does nothing)",
   "createworldui.gamerules.notification.changed": "The following game rules have been changed:",
   "createworldui.gamerules.notification.noChanges": "No rules were changed.",
   "selectWorld.experiments": "Experimental Settings",
