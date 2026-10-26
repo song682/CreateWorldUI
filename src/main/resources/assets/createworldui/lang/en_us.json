@@ -38,7 +38,7 @@
   "createworldui.hover.bonusChest": "Generate a chest containing basic survival items.",
   "createworldui.hover.customize": "Custom the world details.",
   "createworldui.hover.gameRuleEditor": "Edit your game rules.",
-  "createworldui.hover.experiments": "Experimental features (placeholder \u2014 not implemented yet).",
+  "createworldui.hover.experiments": "Toggle experimental features registered by mods for the new world.",
   "createworldui.hover.dataPacks": "Select the data packs (OKCore format) to activate in the new world.",
   "createworldui.datapacks.title": "Select Data Packs",
   "createworldui.datapacks.available": "Available",
@@ -103,5 +103,7 @@
   "createworldui.gamerules.notification.changed": "The following game rules have been changed:",
   "createworldui.gamerules.notification.noChanges": "No rules were changed.",
   "selectWorld.experiments": "Experimental Settings",
+  "selectWorld.experiments.info": "These settings are experimental. They may change or be removed at any time, and worlds using them might stop working.",
+  "createworldui.experiments.empty": "No experimental features registered",
   "selectWorld.dataPacks": "Data Packs"
 }

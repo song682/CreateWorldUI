@@ -25,7 +25,7 @@
   "createworldui.hover.bonusChest": "生成一个包含基本生存物品的宝箱。",
   "createworldui.hover.customize": "自定义世界细节。",
   "createworldui.hover.gameRuleEditor": "编辑你的游戏规则。",
-  "createworldui.hover.experiments": "实验性功能（占位——尚未实现）。",
+  "createworldui.hover.experiments": "切换由模组为新世界注册的实验性内容。",
   "createworldui.hover.dataPacks": "选择要在新世界中激活的数据包（OKCore 格式）。",
   "createworldui.datapacks.title": "选择数据包",
   "createworldui.datapacks.available": "可选择的",
@@ -99,5 +99,7 @@
   "config.option.lockDifficultyButton": "添加难度锁定按钮",
   "config.option.lockDifficultyButton.tooltip": "在创建世界时，将锁定按钮添加到难度按钮旁边",
   "selectWorld.experiments": "实验性",
+  "selectWorld.experiments.info": "这些设置是实验性的，可能随时更改或移除，使用它们的存档可能无法正常工作。",
+  "createworldui.experiments.empty": "没有已注册的实验性内容",
   "selectWorld.dataPacks": "数据包"
 }

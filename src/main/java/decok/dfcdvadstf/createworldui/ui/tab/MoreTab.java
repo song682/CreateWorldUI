@@ -7,6 +7,7 @@ import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.api.gamerule.GameRuleApplier;
 import decok.dfcdvadstf.createworldui.ui.datapack.DataPackScreen;
+import decok.dfcdvadstf.createworldui.ui.experiment.ExperimentScreen;
 import decok.dfcdvadstf.createworldui.ui.gamerule.WorldCreationGameRuleScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
@@ -57,9 +58,11 @@ public class MoreTab extends GridLayoutTab {
         }
 
         if (CreateWorldUI.config.enableOtherMoreTabButton) {
+            // 实验界面按钮：打开 ExperimentScreen（由其他模组经 IExperimentScreenUsage 注册的实验开关）
+            // Experiments button: opens ExperimentScreen (switches registered by other mods via IExperimentScreenUsage)
             Button experimentsButton = Button.builder(
                     Text.literal(I18n.format("selectWorld.experiments")),
-                    btn -> {})
+                    btn -> Minecraft.getMinecraft().displayGuiScreen(new ExperimentScreen(guiCreateWorld)))
                 .width(210).height(20).useVanillaTexture(true).build();
             experimentsButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.experiments")));
             layout.addChild(experimentsButton, row++, 0);
