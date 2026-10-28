@@ -11,13 +11,6 @@ import java.util.Map;
 
 /**
  * <p>
- *     游戏规则 Tooltip 注册 API<br>
- *     提供游戏规则的 tooltip 注册、查询和获取功能<br>
- *     用于在 GameRule Editor 中显示规则的说明信息<br>
- *     注册的 tooltip 按原样使用；若需要本地化，请调用方自行传入
- *     {@code I18n.format("gamerule.ruleNames.***")} 等已翻译好的文本
- * </p>
- * <p>
  *     GameRule Tooltip Registration API<br>
  *     Provides tooltip registration, query, and retrieval for game rules<br>
  *     Used to display rule descriptions in GameRule Editor<br>
@@ -25,16 +18,9 @@ import java.util.Map;
  *     pass already-translated text such as {@code I18n.format("gamerule.ruleNames.***")}
  * </p>
  * <p>
- *     优先级说明（从高到低）：<br>
- *     1. 本地化文件中的描述（gamerule.{ruleName}.tooltip.description）<br>
- *     2. 通过此 API 注册的 tooltip<br>
- *     3. 内置的默认描述（仅原版规则）
- * </p>
- * <p>
  *     Priority (high to low):<br>
  *     1. Description in localization file (gamerule.{ruleName}.tooltip.description)<br>
  *     2. Tooltips registered through this API<br>
- *     3. Built-in default descriptions (vanilla rules only)
  * </p>
  */
 @SideOnly(Side.CLIENT)
@@ -46,16 +32,7 @@ public class GameRuleTooltipRegistry {
     // Storage for registered tooltips (rule key -> tooltip text)
     private static final Map<String, String> registeredTooltips = new HashMap<>();
 
-    // 内置的默认 tooltip 描述（仅用于原版规则的回退）
-    // Built-in default tooltip descriptions (fallback for vanilla rules only)
-    private static final Map<String, String> DEFAULT_DESCRIPTIONS = new HashMap<>();
-
     /**
-     * <p>
-     *     注册单个游戏规则的 tooltip<br>
-     *     tooltip 文本按原样使用；若需要本地化，请自行传入 {@code I18n.format(...)} 的结果<br>
-     *     适合一次添加一个 tooltip
-     * </p>
      * <p>
      *     Register tooltip for a single game rule<br>
      *     The tooltip text is used as-is; pass the result of {@code I18n.format(...)}
@@ -63,8 +40,8 @@ public class GameRuleTooltipRegistry {
      *     Suitable for adding one tooltip at a time
      * </p>
      *
-     * @param ruleName 游戏规则键名（如 doFireTick）/ Game rule key (e.g., doFireTick)
-     * @param tooltip 要显示的 tooltip 文本 / Tooltip text to display
+     * @param ruleName Game rule key (e.g., doFireTick)
+     * @param tooltip Tooltip text to display
      */
     public static void registerTooltip(String ruleName, String tooltip) {
         if (ruleName == null || ruleName.isEmpty()) {
@@ -81,18 +58,13 @@ public class GameRuleTooltipRegistry {
 
     /**
      * <p>
-     *     批量注册多个游戏规则的 tooltip<br>
-     *     tooltip 文本按原样使用；若需要本地化，请自行传入 {@code I18n.format(...)} 的结果<br>
-     *     适合一次添加很多个 tooltip
-     * </p>
-     * <p>
      *     Register tooltips for multiple game rules at once<br>
      *     Tooltip texts are used as-is; pass the results of {@code I18n.format(...)}
      *     yourself if localization is needed<br>
      *     Suitable for adding many tooltips in one call
      * </p>
      *
-     * @param tooltips 规则键到 tooltip 文本的映射 / Map of rule keys to tooltip texts
+     * @param tooltips Map of rule keys to tooltip texts
      */
     public static void registerTooltips(Map<String, String> tooltips) {
         if (tooltips == null) {
@@ -112,11 +84,11 @@ public class GameRuleTooltipRegistry {
     /**
      * <p>
      *     获取指定游戏规则的 tooltip<br>
-     *     按照优先级返回：本地化 > 注册tooltip > 默认描述
+     *     按照优先级返回：本地化 > 注册tooltip
      * </p>
      * <p>
      *     Get tooltip for a specific game rule<br>
-     *     Returns by priority: localization > registered tooltip > default description
+     *     Returns by priority: localization > registered tooltip
      * </p>
      *
      * @param ruleName 游戏规则键名 / Game rule key
@@ -139,12 +111,6 @@ public class GameRuleTooltipRegistry {
         // 2. Check tooltips registered via API (returned as-is)
         if (registeredTooltips.containsKey(ruleName)) {
             return registeredTooltips.get(ruleName);
-        }
-
-        // 3. 回退到内置默认描述（仅原版规则）
-        // 3. Fallback to built-in default descriptions (vanilla rules only)
-        if (DEFAULT_DESCRIPTIONS.containsKey(ruleName)) {
-            return DEFAULT_DESCRIPTIONS.get(ruleName);
         }
 
         // 没有找到任何描述
@@ -195,11 +161,11 @@ public class GameRuleTooltipRegistry {
     /**
      * <p>
      *     清除所有通过 API 注册的 tooltip<br>
-     *     注意：这不会影响本地化文件和内置默认描述
+     *     注意：这不会影响本地化文件
      * </p>
      * <p>
      *     Clear all tooltips registered through this API<br>
-     *     Note: This does not affect localization files and built-in default descriptions
+     *     Note: This does not affect localization files
      * </p>
      */
     public static void clearAllTooltips() {
