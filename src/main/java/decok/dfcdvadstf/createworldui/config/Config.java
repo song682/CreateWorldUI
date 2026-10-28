@@ -92,7 +92,7 @@ public class Config {
         configFile.getCategory("experiment").setLanguageKey("config.option.experiment");
         enableExampleExperiment = configFile.getBoolean("enableExampleExperiment", "Experiment", false,
                 "Set True to show the built-in example toggle on the experiments screen (demo only, does nothing)");
-        configFile.getCategory("ui management").get("enableExampleExperiment").setLanguageKey("config.option.enableExampleExperiment");
+        configFile.getCategory("experiment").get("enableExampleExperiment").setLanguageKey("config.option.enableExampleExperiment");
     }
 
     public void saveConfigurationFile() {
