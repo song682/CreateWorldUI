@@ -20,6 +20,7 @@ import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
 import decok.dfcdvadstf.createworldui.ui.tab.GameTab;
 import decok.dfcdvadstf.createworldui.ui.tab.MoreTab;
 import decok.dfcdvadstf.createworldui.ui.tab.WorldTab;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;
@@ -147,18 +148,21 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         modernWorldCreatingUI$footerButtonLayout = new HorizontalLayout();
         modernWorldCreatingUI$footerButtonLayout.setSpacing(modernWorldCreatingUI$FOOTER_SPACING);
 
-        // 使用 GuiButtonAdapter 包装原版按钮；26.1.2 的创建/取消为默认 200 宽按钮
-        // Wrap vanilla buttons with GuiButtonAdapter; 26.1.2's Create/Cancel are
-        // default 200-wide buttons
+        // Wrap vanilla buttons with a sound-suppressed GuiButtonAdapter; 26.1.2's
+        // Create/Cancel are default 200-wide buttons
+        // 用静音版 GuiButtonAdapter 包装原版按钮；26.1.2 的创建/取消为默认 200 宽按钮。
+        // 创建/取消按钮仍留在原版 buttonList 中，原版 mouseClicked 已完成一次
+        // mousePressed + 按键音效 + actionPerformed；适配器若再播一次音效就是双重
+        // 按键声，因此这里只保留命中同步、放弃重复播声。
         if (createButton != null) {
             createButton.width = modernWorldCreatingUI$BUTTON_WIDTH;
-            modernWorldCreatingUI$createButtonAdapter = new GuiButtonAdapter(createButton);
+            modernWorldCreatingUI$createButtonAdapter = new SilentButtonAdapter(createButton);
             modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$createButtonAdapter);
         }
 
         if (cancelButton != null) {
             cancelButton.width = modernWorldCreatingUI$BUTTON_WIDTH;
-            modernWorldCreatingUI$cancelButtonAdapter = new GuiButtonAdapter(cancelButton);
+            modernWorldCreatingUI$cancelButtonAdapter = new SilentButtonAdapter(cancelButton);
             modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$cancelButtonAdapter);
         }
 
@@ -643,5 +647,37 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
             }
         }
         return null;
+    }
+
+    /**
+     * <p>A {@link GuiButtonAdapter} that never replays the button-press sound in
+     * {@link #mouseClicked}. The wrapped buttons stay in vanilla's {@code buttonList},
+     * so vanilla's own dispatch (running before the TAIL injection that feeds this
+     * adapter) has already played {@code gui.button.press} and fired
+     * {@code actionPerformed}; the base adapter's second {@code playSound} call
+     * produced an audible double press. Hit-test state on the delegate is still
+     * synced — only the redundant sound is suppressed.</p>
+     * <p>静音版 {@link GuiButtonAdapter}：{@link #mouseClicked} 不再重播按键音效。
+     * 被包装按钮仍留在原版 buttonList，原版派发（先于 TAIL 注入执行）已经播过
+     * {@code gui.button.press} 并触发 actionPerformed；基类再播一次就形成双重音效。
+     * 此处仍保留对委托按钮的命中状态同步，仅抑制重复音效。</p>
+     */
+    @Unique
+    static class SilentButtonAdapter extends GuiButtonAdapter {
+
+        SilentButtonAdapter(GuiButton delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public void mouseClicked(int mouseX, int mouseY, int mouseButton) {
+            // Sync the delegate's press/hit state without playing the sound a second
+            // time (vanilla's dispatch owns the sound for buttons in buttonList).
+            // 同步委托按钮的按下/命中状态，但不第二次播放音效（buttonList 内按钮的
+            // 音效归原版派发链路负责）。
+            if (isActive() && isVisible()) {
+                getDelegate().mousePressed(Minecraft.getMinecraft(), mouseX, mouseY);
+            }
+        }
     }
 }
