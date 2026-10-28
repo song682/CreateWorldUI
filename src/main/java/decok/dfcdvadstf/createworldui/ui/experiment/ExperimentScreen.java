@@ -15,7 +15,6 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.EnumChatFormatting;
-import org.lwjgl.opengl.GL11;
 
 import java.util.List;
 import java.util.Map;
@@ -225,28 +224,6 @@ public class ExperimentScreen extends Screen {
         @Override
         public int getRowWidth() {
             return ROW_WIDTH;
-        }
-
-        /**
-         * 覆盖前置模组的裁剪实现：CatFrame 直接用 GUI 坐标调用 glScissor，在 GUI 缩放
-         * != 1 时会裁错区域。这里把列表边界从 GUI 坐标换算成帧缓冲像素坐标（并翻转
-         * Y 轴原点），以正确处理任意 GUI 缩放（与 AbstractScreenGameRuleEditor 一致）。
-         * Override the prerequisite mod's clipping: CatFrame calls glScissor with raw GUI
-         * coordinates, which clips the wrong region when GUI scale != 1; convert the list
-         * bounds to framebuffer pixels (flipping the Y origin) so any scale is handled —
-         * same treatment as AbstractScreenGameRuleEditor.
-         */
-        @Override
-        protected void enableScissor() {
-            Minecraft mc = Minecraft.getMinecraft();
-            double scaleX = (double) mc.displayWidth / (double) ExperimentScreen.this.width;
-            double scaleY = (double) mc.displayHeight / (double) ExperimentScreen.this.height;
-            int sx = (int) Math.floor(getX() * scaleX);
-            int sw = (int) Math.ceil(getWidth() * scaleX);
-            int sy = (int) Math.floor((ExperimentScreen.this.height - (getY() + getHeight())) * scaleY);
-            int sh = (int) Math.ceil(getHeight() * scaleY);
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            GL11.glScissor(sx, sy, sw, sh);
         }
 
         /** 不为整行绘制选中高亮框 / do not draw a whole-row selection highlight */

@@ -26,8 +26,8 @@ import net.minecraft.world.World;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.input.Keyboard;
-import org.lwjgl.opengl.GL11;
 
+import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
@@ -83,15 +83,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     // 跟踪已修改的规则（用于显示通知）
     // Track modified rules (for displaying notifications)
     protected final Set<String> changedRules = new HashSet<>();
-
-    private Button saveButton;   // 保存按钮 / Save button
-    private Button cancelButton;  // 取消按钮 / Cancel button
-    private Button resetButton;   // 重置按钮 / Reset button
-
-    // 主布局容器（Header-Content-Footer三区域）/ Main layout container (Header-Content-Footer three zones)
-    private HeaderFooterLayout mainLayout;
-    // 底部按钮布局容器 / Bottom button layout container
-    private HorizontalLayout buttonLayout;
 
     // 中间规则列表（由 CatFrame 的 ObjectSelectionList 实现）
     // Middle rule list (implemented by CatFrame's ObjectSelectionList)
@@ -250,60 +241,67 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
         int listHeight = Math.max(ROW_HEIGHT, this.listBottom - this.listTop);
 
         // ===== 使用 HeaderFooterLayout 定位底部按钮 / Use HeaderFooterLayout to position footer buttons =====
-        mainLayout = new HeaderFooterLayout(true);
+        // 主布局容器（Header-Content-Footer三区域）/ Main layout container (Header-Content-Footer three zones)
+        HeaderFooterLayout mainLayout = new HeaderFooterLayout(true);
         mainLayout.setFooterHeight(30);
 
-        buttonLayout = new HorizontalLayout();
+        // 底部按钮布局容器 / Bottom button layout container
+        HorizontalLayout buttonLayout = new HorizontalLayout();
         buttonLayout.setSpacing(4);
 
+        // 保存按钮 / Save button
+        Button saveButton;
+        // 取消按钮 / Cancel button
+        Button cancelButton;
         if (CreateWorldUI.config.enableResetButton) {
             // 三按钮模式 / Three-button mode
-            this.saveButton = Button.builder(
+            saveButton = Button.builder(
                 Text.translatable("options.save"),
                 btn -> { saveChanges(); this.mc.displayGuiScreen(this.parentScreen); }
             ).width(100).build();
 
-            this.cancelButton = Button.builder(
+            cancelButton = Button.builder(
                 Text.literal(I18n.format("gui.cancel")),
                 btn -> this.mc.displayGuiScreen(this.parentScreen)
             ).width(100).build();
 
-            this.resetButton = Button.builder(
-                Text.translatable("options.cancel"),
-                btn -> {
-                    modifiedRules.clear();
-                    changedRules.clear();
-                    modifiedRules.putAll(editableRules);
-                    if (ruleList != null) ruleList.rebuild();
-                }
+            // 重置按钮 / Reset button
+            Button resetButton = Button.builder(
+                    Text.translatable("options.cancel"),
+                    btn -> {
+                        modifiedRules.clear();
+                        changedRules.clear();
+                        modifiedRules.putAll(editableRules);
+                        if (ruleList != null) ruleList.rebuild();
+                    }
             ).width(100).build();
 
-            buttonLayout.addChild(this.saveButton);
-            buttonLayout.addChild(this.cancelButton);
-            buttonLayout.addChild(this.resetButton);
+            buttonLayout.addChild(saveButton);
+            buttonLayout.addChild(cancelButton);
+            buttonLayout.addChild(resetButton);
 
             // 注册为屏幕组件：渲染与鼠标事件派发由 Screen 基类统一处理
             // Register as screen widgets: rendering and mouse dispatch are handled by the Screen base
-            addRenderableWidget(this.saveButton);
-            addRenderableWidget(this.cancelButton);
-            addRenderableWidget(this.resetButton);
+            addRenderableWidget(saveButton);
+            addRenderableWidget(cancelButton);
+            addRenderableWidget(resetButton);
         } else {
             // 两按钮模式 / Two-button mode
-            this.cancelButton = Button.builder(
+            cancelButton = Button.builder(
                 Text.translatable("options.save"),
                 btn -> this.mc.displayGuiScreen(this.parentScreen)
             ).width(150).build();
 
-            this.saveButton = Button.builder(
+            saveButton = Button.builder(
                 Text.translatable("options.cancel"),
                 btn -> { saveChanges(); this.mc.displayGuiScreen(this.parentScreen); }
             ).width(150).build();
 
-            buttonLayout.addChild(this.cancelButton);
-            buttonLayout.addChild(this.saveButton);
+            buttonLayout.addChild(cancelButton);
+            buttonLayout.addChild(saveButton);
 
-            addRenderableWidget(this.cancelButton);
-            addRenderableWidget(this.saveButton);
+            addRenderableWidget(cancelButton);
+            addRenderableWidget(saveButton);
         }
 
         mainLayout.setFooter(buttonLayout);
@@ -599,14 +597,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             String notificationText = I18n.format("createworldui.gamerules.notification.changed");
             String rulesList = String.join(", ", changedRules);
 
-            String message;
-            if (CreateWorldUI.config != null && CreateWorldUI.config.changedRulesInChatHighLighted) {
-                // 高亮模式：提示文字白色，规则名黄色 / Highlight mode: text white, rule names yellow
-                message = EnumChatFormatting.WHITE + notificationText + EnumChatFormatting.YELLOW + rulesList;
-            } else {
-                // 默认模式：全部白色 / Default mode: all white
-                message = EnumChatFormatting.WHITE + notificationText + EnumChatFormatting.WHITE + rulesList;
-            }
+            String message = getString(notificationText, rulesList);
 
             if (Minecraft.getMinecraft().ingameGUI != null) {
                 Minecraft.getMinecraft().ingameGUI.getChatGUI().printChatMessage(new ChatComponentText(message));
@@ -619,6 +610,19 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
                     new ChatComponentText(EnumChatFormatting.WHITE + message));
             }
         }
+    }
+
+    @Nonnull
+    private static String getString(String notificationText, String rulesList) {
+        String message;
+        if (CreateWorldUI.config != null && CreateWorldUI.config.changedRulesInChatHighLighted) {
+            // Highlight mode: text white, rule names yellow
+            message = EnumChatFormatting.WHITE + notificationText + EnumChatFormatting.YELLOW + rulesList;
+        } else {
+            // Default mode: all white
+            message = EnumChatFormatting.WHITE + notificationText + EnumChatFormatting.WHITE + rulesList;
+        }
+        return message;
     }
 
     // ============================================================
@@ -655,31 +659,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             return ROW_WIDTH;
         }
 
-        /**
-         * 覆盖前置模组的裁剪实现：CatFrame 直接用 GUI 坐标调用 glScissor，
-         * 在 GUI 缩放 != 1 时会裁错区域。这里把列表边界从 GUI 坐标换算成帧缓冲
-         * 像素坐标（并翻转 Y 轴原点），以正确处理任意 GUI 缩放。
-         * CatFrame 0.7.1.1 的 AbstractScrollArea.enableScissor 仍使用 GUI 坐标，
-         * 此覆写在 0.7.1.1 下必须保留。<br>
-         * Override the prerequisite mod's clipping: CatFrame 0.7.1.1 calls glScissor
-         * with raw GUI coordinates, which clips the wrong region when the GUI scale
-         * != 1. Here we convert the list bounds from GUI coordinates to framebuffer
-         * pixel coordinates (flipping the Y origin) so any GUI scale is handled
-         * correctly; this override must be kept on 0.7.1.1.
-         */
-        @Override
-        protected void enableScissor() {
-            Minecraft mc = Minecraft.getMinecraft();
-            double scaleX = (double) mc.displayWidth / (double) screen.width;
-            double scaleY = (double) mc.displayHeight / (double) screen.height;
-            int sx = (int) Math.floor(getX() * scaleX);
-            int sw = (int) Math.ceil(getWidth() * scaleX);
-            int sy = (int) Math.floor((screen.height - (getY() + getHeight())) * scaleY);
-            int sh = (int) Math.ceil(getHeight() * scaleY);
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
-            GL11.glScissor(sx, sy, sw, sh);
-        }
-
         @Override
         protected boolean entriesCanBeSelected() {
             // 不为整行绘制选中高亮框 / Do not draw a selection highlight box for whole rows
@@ -707,7 +686,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
                 }
 
                 String stringValue = screen.modifiedRules.containsKey(item) ? screen.modifiedRules.get(item)
-                    : screen.editableRules.containsKey(item) ? screen.editableRules.get(item) : null;
+                    : screen.editableRules.getOrDefault(item, null);
                 Object displayObj = stringValue != null
                     ? screen.parseFromString(stringValue, value.getOptimalValue())
                     : value.getOptimalValue();
