@@ -5,6 +5,7 @@
   "options.no": "No",
   "options.save": "Save",
   "options.reset": "Reset",
+  "options.cancel": "Cancel",
   "createworldui.tab.game": "Game",
   "createworldui.tab.world": "World",
   "createworldui.tab.more": "More",

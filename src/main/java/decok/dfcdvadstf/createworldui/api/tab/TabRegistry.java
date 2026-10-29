@@ -65,23 +65,18 @@ public final class TabRegistry {
 
     /**
      * <p>
-     *     注册一个自定义标签页<br>
-     *     应在模组初始化阶段（如 FMLPreInitializationEvent）调用
-     * </p>
-     * <p>
      *     Register a custom tab<br>
      *     Should be called during mod initialization (e.g. FMLPreInitializationEvent)
      * </p>
      *
-     * @param factory    Tab实例工厂，接收宿主创建世界屏幕 / Tab instance factory, receives the host create-world screen
-     * @param tabId      标签页唯一键，建议使用 "modid:name" 形式 / Unique tab key, "modid:name" format recommended
-     * @param priority   排序优先级，数字越小越靠前；与内置 Tab 同值时内置在前 / Sort priority, lower number = earlier position; ties put the built-in tab first
+     * @param factory    Tab instance factory, receives the host create-world screen
+     * @param tabId      Unique tab key, "modid:name" format recommended
+     * @param priority   Sort priority, lower number = earlier position; ties put the built-in tab first
      */
     public static void registerTab(Function<GuiCreateWorld, Tab> factory, String tabId, int priority) {
         if (frozen) {
             throw new IllegalStateException(
-                "TabRegistry is already frozen. Tabs must be registered before GUI initialization." +
-                " / TabRegistry已冻结，必须在GUI初始化之前注册标签页。"
+                "TabRegistry is already frozen. Tabs must be registered before GUI initialization."
             );
         }
 
@@ -90,8 +85,7 @@ public final class TabRegistry {
         for (TabEntry entry : entries) {
             if (entry.tabId.equals(tabId)) {
                 throw new IllegalArgumentException(
-                    "Tab ID \"" + tabId + "\" is already registered by " + entry.sourceModHint +
-                    " / Tab ID \"" + tabId + "\" 已被 " + entry.sourceModHint + " 注册"
+                    "Tab ID \"" + tabId + "\" is already registered by " + entry.sourceModHint
                 );
             }
         }
@@ -100,10 +94,6 @@ public final class TabRegistry {
     }
 
     /**
-     * <p>
-     *     注册一个自定义标签页（使用默认优先级，排在全部内置 Tab 之后）<br>
-     *     等同于 registerTab(factory, tabId, DEFAULT_PRIORITY)
-     * </p>
      * <p>
      *     Register a custom tab with the default priority (after all built-in tabs)<br>
      *     Equivalent to registerTab(factory, tabId, DEFAULT_PRIORITY)
@@ -152,12 +142,10 @@ public final class TabRegistry {
      */
     public static List<Tab> buildTabList(GuiCreateWorld screen, Tab... builtInTabs) {
         // Freeze on first GUI build — registration must happen during mod init
-        // 首次 GUI 构建时冻结——注册必须发生在模组初始化阶段
         freeze();
 
         // Pair each tab with its priority; stable sort keeps built-ins ahead of
         // externals with the same priority (built-ins are inserted first).
-        // 为每个 Tab 配对优先级；稳定排序保证同优先级时内置 Tab 在前（内置先插入）。
         List<PriorityPair> pairs = new ArrayList<>();
         for (int i = 0; i < builtInTabs.length; i++) {
             pairs.add(new PriorityPair(BUILT_IN_PRIORITY_BASE + i, builtInTabs[i]));
@@ -169,11 +157,11 @@ public final class TabRegistry {
             } catch (Throwable t) {
                 // A broken external tab must not take down world creation
                 // 外部 Tab 构建失败不应连带整个创建世界界面崩溃
-                logger.error("Failed to instantiate external tab \"" + entry.tabId + "\", skipping", t);
+                logger.error("Failed to instantiate external tab {}, skipping: {}", entry.tabId, t);
                 continue;
             }
             if (tab == null) {
-                logger.warn("External tab factory for \"" + entry.tabId + "\" returned null, skipping");
+                logger.warn("External tab factory for {} returned null, skipping", entry.tabId);
                 continue;
             }
             pairs.add(new PriorityPair(entry.priority, tab));

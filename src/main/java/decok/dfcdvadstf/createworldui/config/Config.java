@@ -26,6 +26,7 @@ public class Config {
 
         configFile.addCustomCategoryComment("UI Management", "This is some options for you to custom your own modern UI.");
         configFile.addCustomCategoryComment("GameRule Editor", "Custom Game Rule Editor");
+        configFile.addCustomCategoryComment("Experiment", "Some settings about the experiment.");
 
         configFile.load();
         UIOPtions();

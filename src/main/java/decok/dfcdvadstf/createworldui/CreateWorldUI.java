@@ -25,7 +25,7 @@ import org.spongepowered.asm.launch.MixinBootstrap;
         version = Tags.VERSION,
         guiFactory = "decok.dfcdvadstf.createworldui.ui.CreateWorldConfigUI",
         useMetadata = true,
-        dependencies = "required-after:catframe@[0.10.3,);required-after:catframe_compact@[0.0.8,)",
+        dependencies = "required-after:catframe@[0.10.3,);required-after:catframe_compat@[0.0.9,)",
         customProperties = {
                 @Mod.CustomProperty(k = "license", v = "MIT"),
                 @Mod.CustomProperty(k = "issueTrackerUrl", v = "https://github.com/song682/CreateWorldUI/issues"),
@@ -65,12 +65,10 @@ public class CreateWorldUI {
     public void onIMC(IMCEvent event) {
         for (IMCMessage msg : event.getMessages()) {
             if ("difficultylocker".equals(msg.getSender())) {
-                switch (msg.key) {
-                    case "difficultylocker_config":
-                        DifficultyLocker.processIMCConfig(msg.getNBTValue());
-                        break;
-                    default:
-                        logger.warn("Unknown IMC key from difficultylocker: {}", msg.key);
+                if (msg.key.equals("difficultylocker_config")) {
+                    DifficultyLocker.processIMCConfig(msg.getNBTValue());
+                } else {
+                    logger.warn("Unknown IMC key from difficultylocker: {}", msg.key);
                 }
             }
         }

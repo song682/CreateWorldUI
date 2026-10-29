@@ -57,7 +57,7 @@ public class ExperimentApplier {
         Map<String, Boolean> pending = ExperimentState.pendingSnapshot();
         if (!pending.isEmpty()) {
             for (Map.Entry<String, Boolean> entry : pending.entrySet()) {
-                data.setEnabled(entry.getKey(), entry.getValue().booleanValue());
+                data.setEnabled(entry.getKey(), entry.getValue());
             }
             logger.info("Committed {} experiment selection(s) into the world save.", pending.size());
         }

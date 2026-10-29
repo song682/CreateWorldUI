@@ -38,7 +38,7 @@ public class ExperimentData extends WorldSavedData {
     /** Type id of {@link net.minecraft.nbt.NBTTagByte}, used with {@code hasKey(name, type)}. */
     private static final int TYPE_BYTE = 1;
 
-    private final Map<String, Boolean> overrides = new LinkedHashMap<String, Boolean>();
+    private final Map<String, Boolean> overrides = new LinkedHashMap<>();
 
     /**
      * Required by {@link net.minecraft.world.storage.MapStorage#loadData} which reflects on a
@@ -56,7 +56,7 @@ public class ExperimentData extends WorldSavedData {
         for (IExperimentScreenUsage experiment : IExperimentScreenUsage.registered()) {
             String id = experiment.getID();
             if (stored.hasKey(id, TYPE_BYTE)) {
-                overrides.put(id, Boolean.valueOf(stored.getBoolean(id)));
+                overrides.put(id, stored.getBoolean(id));
             }
         }
     }
@@ -65,7 +65,7 @@ public class ExperimentData extends WorldSavedData {
     public void writeToNBT(NBTTagCompound compound) {
         NBTTagCompound stored = new NBTTagCompound();
         for (Map.Entry<String, Boolean> entry : overrides.entrySet()) {
-            stored.setBoolean(entry.getKey(), entry.getValue().booleanValue());
+            stored.setBoolean(entry.getKey(), entry.getValue());
         }
         compound.setTag(TAG_OVERRIDES, stored);
     }
@@ -76,8 +76,8 @@ public class ExperimentData extends WorldSavedData {
      */
     public void setEnabled(String id, boolean enabled) {
         Boolean current = overrides.get(id);
-        if (current == null || current.booleanValue() != enabled) {
-            overrides.put(id, Boolean.valueOf(enabled));
+        if (current == null || current != enabled) {
+            overrides.put(id, enabled);
             markDirty();
         }
     }

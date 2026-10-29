@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class TabScreenRoot extends AbstractContainerEventHandler {
 
-    private final List<GuiEventListener> children = new ArrayList<GuiEventListener>();
+    private final List<GuiEventListener> children = new ArrayList<>();
 
     public TabScreenRoot() {
         // The root hosts the pipeline but owns no visual area of its own: children carry
@@ -45,7 +45,7 @@ public class TabScreenRoot extends AbstractContainerEventHandler {
      */
     public void removeChild(GuiEventListener child) {
         if (this.getFocused() == child) {
-            this.setFocused((GuiEventListener) null);
+            this.setFocused(null);
         }
         this.children.remove(child);
     }
@@ -57,8 +57,7 @@ public class TabScreenRoot extends AbstractContainerEventHandler {
 
     @Override
     protected void renderWidget(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTicks) {
-        for (int i = 0; i < this.children.size(); i++) {
-            GuiEventListener child = this.children.get(i);
+        for (GuiEventListener child : this.children) {
             if (child.isVisible() && child instanceof Renderable) {
                 ((Renderable) child).extractRenderState(graphics, mouseX, mouseY, partialTicks);
             }

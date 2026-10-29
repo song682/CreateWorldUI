@@ -95,6 +95,7 @@
   "options.yes": "是",
   "options.no": "否",
   "options.save": "保存",
+  "options.cancel": "取消",
   "options.reset": "重置",
   "createworldui.tab.game": "游戏",
   "createworldui.tab.world": "世界",

@@ -16,7 +16,7 @@ import java.util.List;
  * </p>
  * <p>
  *     Contract for experimental content, implemented by other mod authors to expose their
- *     experiments to the CreateWorldUI experiment screen. Modelled directly after GTNH
+ *     experiments to the CreateWorldUI experiment screen. Modeled directly after GTNH
  *     Mixins' {@code IMixins}: the enum constant is the registration unit — an author
  *     implements this interface on an enum where every constant is one toggle, and
  *     {@link #getExperimentalThings(Class)} expands the constants via
@@ -71,7 +71,7 @@ public interface IExperimentScreenUsage {
      * </p>
      */
     static <T extends Enum<T> & IExperimentScreenUsage> List<IExperimentScreenUsage> getExperimentalThings(Class<T> experimentsEnum) {
-        return new ArrayList<IExperimentScreenUsage>(Arrays.asList(experimentsEnum.getEnumConstants()));
+        return new ArrayList<>(Arrays.asList(experimentsEnum.getEnumConstants()));
     }
 
     /**
@@ -81,7 +81,7 @@ public interface IExperimentScreenUsage {
      * </p>
      * <p>
      *     Explicit registration entry point: the author mod calls this during its own
-     *     initialisation and hands over its experiment enum. The interface itself is the
+     *     initialization and hands over its experiment enum. The interface itself is the
      *     registrar (no separate registry type is required).
      * </p>
      */
@@ -110,6 +110,6 @@ public interface IExperimentScreenUsage {
     final class Store {
         private Store() {}
 
-        private static final List<IExperimentScreenUsage> REGISTERED = new ArrayList<IExperimentScreenUsage>();
+        private static final List<IExperimentScreenUsage> REGISTERED = new ArrayList<>();
     }
 }

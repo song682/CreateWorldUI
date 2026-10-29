@@ -23,7 +23,6 @@ import java.util.List;
  * <p>使用 GridLayout 布局的世界选项标签页。</p>
  */
 public class WorldTab extends GridLayoutTab {
-    private SimpleEditBox seedField;
     private CyclingButton<WorldType> worldTypeButton;
     private Button customizeButton;
     private Button generateStructuresButton;
@@ -48,7 +47,7 @@ public class WorldTab extends GridLayoutTab {
         // Row 0: World Type button (left) + Customize button (right)
         // 第0行：世界类型按钮（左）+ 自定义按钮（右）
         // Create world type button
-        List<WorldType> validWorldTypes = new ArrayList<WorldType>();
+        List<WorldType> validWorldTypes = new ArrayList<>();
         boolean filterEnabled = CreateWorldUI.config != null && CreateWorldUI.config.filterNonCreatableWorldTypes;
         for (WorldType wt : WorldType.worldTypes) {
             if (wt != null && (!filterEnabled || wt.getCanBeCreated())) {
@@ -121,7 +120,7 @@ public class WorldTab extends GridLayoutTab {
         // 26.1.2 WorldTab: the seed field is 308 wide (2px inset inside the 310 spanning
         // labeled widget)
         // 种子输入框；编辑通过组件的 onTextChanged 钩子即时写回宿主界面。
-        seedField = new SimpleEditBox(0, 0, 308, 20) {
+        SimpleEditBox seedField = new SimpleEditBox(0, 0, 308, 20) {
             @Override
             protected void onTextChanged() {
                 access.modernWorldCreatingUI$setSeed(getText());
@@ -131,7 +130,7 @@ public class WorldTab extends GridLayoutTab {
         // 308 宽种子框在 310 跨列单元格中水平居中（对齐 26.1.2 labeled widget 的居中）
         // The 308-wide seed field horizontally centered in the 310 spanning cell
         // (aligned with the 26.1.2 labeled widget's centering)
-        layout.addChild(seedField, row++, 0, 1, 2, s -> s.alignHorizontallyCenter());
+        layout.addChild(seedField, row++, 0, 1, 2, LayoutSettings::alignHorizontallyCenter);
 
         // Layout settings for toggle buttons and labels
         // 开关按钮和标签的对齐设置

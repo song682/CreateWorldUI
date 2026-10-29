@@ -41,7 +41,7 @@ public final class ExperimentState {
      * Player's explicit choices for the world about to be created (id -> enabled); cleared once
      * the pending selection has been committed to the loaded world's {@link ExperimentData}.
      */
-    private static final Map<String, Boolean> PENDING = new LinkedHashMap<String, Boolean>();
+    private static final Map<String, Boolean> PENDING = new LinkedHashMap<>();
 
     /**
      * 当前激活存档的持久化实验状态；无世界加载时为 {@code null}。
@@ -63,11 +63,11 @@ public final class ExperimentState {
         if (activeWorldData != null) {
             Boolean persisted = activeWorldData.getOverride(id);
             if (persisted != null) {
-                return persisted.booleanValue();
+                return persisted;
             }
         }
         Boolean choice = PENDING.get(id);
-        return choice != null ? choice.booleanValue() : defaultEnabled;
+        return choice != null ? choice : defaultEnabled;
     }
 
     /**
@@ -99,7 +99,7 @@ public final class ExperimentState {
      * </p>
      */
     public static void setEnabled(String id, boolean enabled) {
-        PENDING.put(id, Boolean.valueOf(enabled));
+        PENDING.put(id, enabled);
         if (activeWorldData != null) {
             activeWorldData.setEnabled(id, enabled);
         }
@@ -107,7 +107,7 @@ public final class ExperimentState {
 
     /** Snapshot the pending choices (used to revert on Cancel). / 快照 pending 选择（取消时回滚） */
     public static Map<String, Boolean> snapshot() {
-        return new LinkedHashMap<String, Boolean>(PENDING);
+        return new LinkedHashMap<>(PENDING);
     }
 
     /** Restore a previously captured pending snapshot. / 恢复此前的 pending 快照 */

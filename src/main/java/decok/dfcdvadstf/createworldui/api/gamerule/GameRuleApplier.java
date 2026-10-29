@@ -34,7 +34,6 @@ public class GameRuleApplier {
     private static Map<String, String> pendingGameRules = null;
     /**
      * <p>
-     *     是否已注册事件监听器<br>
      *     Whether event listener is registered
      * </p>
      */

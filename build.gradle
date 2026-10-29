@@ -91,14 +91,12 @@ dependencies {
         implementation "curse.maven:MysteriumLib-645051:3963822"
     }
 
-    runtimeOnly "maven.modrinth:notenoughitems-unofficial:${project.nei_version}-GTNH"
-    runtimeOnly "maven.modrinth:codechickencore-unofficial:${project.cc_version}"
-    runtimeOnly "maven.modrinth:codechickenlib-unofficial:${project.cc_version}"
+    //runtimeOnly "maven.modrinth:notenoughitems-unofficial:${project.nei_version}-GTNH"
+    //runtimeOnly "maven.modrinth:codechickencore-unofficial:${project.cc_version}"
 
     compileOnly "maven.modrinth:ok-core:26.10.10.0"
     compileOnly fileTree(dir: 'lib', includes: ['*.jar'])
 
-    implementation "com.github.song682:jar-utils:v0.0.3"
     compileOnly "com.github.song682:ModernDifficultyLocker:v1.3.2"
     implementation "com.github.song682:CatFrame:${project.cf_version}"
     implementation "com.github.song682:CatFrame-Compat:${project.cfc_version}"

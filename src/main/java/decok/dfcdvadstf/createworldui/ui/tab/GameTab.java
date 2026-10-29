@@ -8,6 +8,7 @@ import decok.dfcdvadstf.catframe.ui.components.Tooltip;
 import decok.dfcdvadstf.catframe.ui.components.events.GuiEventListener;
 import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.layouts.FrameLayout;
+import decok.dfcdvadstf.catframe.ui.layouts.LayoutSettings;
 import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyApplier;
@@ -63,7 +64,7 @@ public class GameTab extends GridLayoutTab {
         // 26.1.2 GameTab: 208 宽名字框以 alignHorizontalCenter 居中在 210 宽的列中
         // 26.1.2 GameTab: the 208-wide name field centered via alignHorizontalCenter in
         // the 210-wide column
-        layout.addChild(worldNameField, row++, 0, s -> s.alignHorizontallyCenter());
+        layout.addChild(worldNameField, row++, 0, LayoutSettings::alignHorizontallyCenter);
 
         // Create game mode button
         String currentMode = access.modernWorldCreatingUI$getGameMode();

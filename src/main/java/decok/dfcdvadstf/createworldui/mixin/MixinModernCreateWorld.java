@@ -67,8 +67,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
     @Unique
     private TabManager modernWorldCreatingUI$tabManager;
     @Unique
-    private TabNavigationBar modernWorldCreatingUI$tabBar;
-    @Unique
     private TabScreenRoot modernWorldCreatingUI$tabRoot;
     /**
      * 26.1.2 {@code HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT} —— 页脚
@@ -102,10 +100,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
     private HeaderFooterLayout modernWorldCreatingUI$mainLayout;
     @Unique
     private HorizontalLayout modernWorldCreatingUI$footerButtonLayout;
-    @Unique
-    private GuiButtonAdapter modernWorldCreatingUI$createButtonAdapter;
-    @Unique
-    private GuiButtonAdapter modernWorldCreatingUI$cancelButtonAdapter;
 
     /**
      * 初始化
@@ -156,13 +150,13 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // 按键声，因此这里只保留命中同步、放弃重复播声。
         if (createButton != null) {
             createButton.width = modernWorldCreatingUI$BUTTON_WIDTH;
-            modernWorldCreatingUI$createButtonAdapter = new SilentButtonAdapter(createButton);
+            GuiButtonAdapter modernWorldCreatingUI$createButtonAdapter = new SilentButtonAdapter(createButton);
             modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$createButtonAdapter);
         }
 
         if (cancelButton != null) {
             cancelButton.width = modernWorldCreatingUI$BUTTON_WIDTH;
-            modernWorldCreatingUI$cancelButtonAdapter = new SilentButtonAdapter(cancelButton);
+            GuiButtonAdapter modernWorldCreatingUI$cancelButtonAdapter = new SilentButtonAdapter(cancelButton);
             modernWorldCreatingUI$footerButtonLayout.addChild(modernWorldCreatingUI$cancelButtonAdapter);
         }
 
@@ -193,7 +187,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // 经 TabRegistry 注册的外部 Tab 按优先级与内置 Tab 合并；注册表在首次构建时冻结。
         List<Tab> orderedTabs = TabRegistry.buildTabList(screen,
                 gameTab, new WorldTab(screen), new MoreTab(screen));
-        modernWorldCreatingUI$tabBar = TabNavigationBar.builder(modernWorldCreatingUI$tabManager, this.width)
+        TabNavigationBar modernWorldCreatingUI$tabBar = TabNavigationBar.builder(modernWorldCreatingUI$tabManager, this.width)
                 .addTabs(orderedTabs.toArray(new Tab[0]))
                 .build();
 

@@ -92,7 +92,7 @@ public class GameRuleTooltipRegistry {
      * </p>
      *
      * @param ruleName 游戏规则键名 / Game rule key
-     * @return tooltip 文本，如果没有找到则返回 null / Tooltip text, or null if not found
+     * @return tooltip A tooltip text, or null if not found
      */
     public static String getTooltip(String ruleName) {
         if (ruleName == null || ruleName.isEmpty()) {
