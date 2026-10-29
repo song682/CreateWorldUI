@@ -41,6 +41,19 @@ public class CreateWorldConfigUI implements IModGuiFactory {
             super(parentScreen, getConfigElements (CreateWorldUI.config.configFile), Tags.MODID, false, false, I18n.format("config.title"));
         }
 
+        /**
+         * Builds the top level config elements, one per category.
+         *
+         * <p>The raw type argument {@code IConfigElement} is kept intentionally: FML's
+         * {@link GuiConfig} constructor is declared as {@code List<IConfigElement>} with a raw
+         * type argument, so a parameterized {@code List<IConfigElement<?>>} cannot be passed to it
+         * (generics are invariant). The warning is therefore suppressed locally instead of being
+         * "fixed" into a non-compilable signature.
+         * {@code ConfigElement} instantiations are parameterized explicitly where possible.
+         * FML 的 GuiConfig 构造形参本身就是带原始类型参数的 {@code List<IConfigElement>}，
+         * 这里只能沿用原始类型并定点抑制告警。
+         */
+        @SuppressWarnings("rawtypes")
         private static List<IConfigElement> getConfigElements(final Configuration configuration) {
             List<IConfigElement> elements = new ArrayList<>();
 
@@ -50,16 +63,17 @@ public class CreateWorldConfigUI implements IModGuiFactory {
             ConfigCategory expCategory = configuration.getCategory("experiment");
             expCategory.setLanguageKey("config.button.EXP");
             expCategory.setComment(I18n.format("config.subtitle.EXP"));
+            elements.add(new ConfigElement<Object>(expCategory));
 
             ConfigCategory greCategory = configuration.getCategory("gamerule editor");
             greCategory.setLanguageKey("config.button.GRE");
             greCategory.setComment(I18n.format("config.subtitle.GRE"));
-            elements.add(new ConfigElement(greCategory));
+            elements.add(new ConfigElement<Object>(greCategory));
 
             ConfigCategory uimCategory = configuration.getCategory("ui management");
             uimCategory.setLanguageKey("config.button.UIM");
             uimCategory.setComment(I18n.format("config.subtitle.UIM"));
-            elements.add(new ConfigElement(uimCategory));
+            elements.add(new ConfigElement<Object>(uimCategory));
 
             return elements;
         }
