@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.mixin;
+package decok.dfcdvadstf.createworldui.mixin.middle;
 
 import cpw.mods.fml.client.FMLClientHandler;
 import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyApplier;

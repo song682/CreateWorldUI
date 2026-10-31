@@ -9,7 +9,7 @@ import decok.dfcdvadstf.catframe.ui.components.Tooltip;
 import decok.dfcdvadstf.catframe.ui.components.tab.GridLayoutTab;
 import decok.dfcdvadstf.catframe.ui.layouts.LayoutSettings;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
-import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
+import decok.dfcdvadstf.createworldui.mixin.middle.access.IGuiCreateWorldAccess;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;

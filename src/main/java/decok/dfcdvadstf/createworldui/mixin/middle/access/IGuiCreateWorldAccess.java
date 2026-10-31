@@ -1,4 +1,4 @@
-package decok.dfcdvadstf.createworldui.mixin.access;
+package decok.dfcdvadstf.createworldui.mixin.middle.access;
 
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.gui.GuiScreen;

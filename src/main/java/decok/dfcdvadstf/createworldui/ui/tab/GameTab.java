@@ -13,7 +13,7 @@ import decok.dfcdvadstf.catframe.ui.navigation.ScreenRectangle;
 import decok.dfcdvadstf.createworldui.CreateWorldUI;
 import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyApplier;
 import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyLocker;
-import decok.dfcdvadstf.createworldui.mixin.access.IGuiCreateWorldAccess;
+import decok.dfcdvadstf.createworldui.mixin.middle.access.IGuiCreateWorldAccess;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiCreateWorld;
 import net.minecraft.client.resources.I18n;
