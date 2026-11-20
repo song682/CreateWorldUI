@@ -10,11 +10,6 @@ import java.util.Set;
 
 /**
  * <p>
- *     游戏内打开的游戏规则编辑器。<br>
- *     保存目标：通过 {@link GameRuleMonitorNSetter#setGamerule(World, String, Object)}
- *     将变化的规则立即应用到当前世界，并同步更新原始值副本。
- * </p>
- * <p>
  *     Game rule editor opened in-game.<br>
  *     Save target: immediately apply the changed rules to the current world via
  *     {@link GameRuleMonitorNSetter#setGamerule(World, String, Object)}, and update the
@@ -24,8 +19,8 @@ import java.util.Set;
 public class IngameGameRuleScreen extends AbstractScreenGameRuleEditor {
 
     /**
-     * @param parentScreen  父界面（游戏内通常为 null） / parent screen (usually null in-game)
-     * @param editableRules 可编辑的游戏规则映射（当前世界规则） / editable game rule map (current world rules)
+     * @param parentScreen  parent screen (usually null in-game)
+     * @param editableRules editable game rule map (current world rules)
      */
     public IngameGameRuleScreen(GuiScreen parentScreen, Map<String, String> editableRules) {
         super(parentScreen, editableRules);
@@ -46,7 +41,7 @@ public class IngameGameRuleScreen extends AbstractScreenGameRuleEditor {
             }
         }
 
-        // 更新原始值副本以反映新值 / Update the copy of original values to reflect new values
+        // Update the copy of original values to reflect new values
         editableRules.putAll(result);
         LOGGER.info("Applied {} game rules to current world.", appliedCount);
     }

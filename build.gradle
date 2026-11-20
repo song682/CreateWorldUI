@@ -255,7 +255,7 @@ tasks.register('deobfJar', Jar) {
 tasks.register('sourcesJar', Jar) {
     dependsOn classes
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    classifier 'deobf-sources'
+    classifier 'sources'
 
     from sourceSets.main.allSource
     exclude "methods.bin"

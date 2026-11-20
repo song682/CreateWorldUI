@@ -21,7 +21,6 @@ import net.minecraft.world.EnumDifficulty;
 
 /**
  * Game Settings Tab with GridLayout-based layout.
- * <p>使用 GridLayout 布局的游戏设置标签页。</p>
  */
 public class GameTab extends GridLayoutTab {
     private SimpleEditBox worldNameField;
@@ -33,7 +32,6 @@ public class GameTab extends GridLayoutTab {
 
     /**
      * Builds the tab once; the widgets live as long as the screen instance.
-     * <p>一次性构建标签页；组件随屏幕实例存活。</p>
      */
     public GameTab(GuiCreateWorld screen) {
         super(Text.translatable("createworldui.tab.game"));
@@ -46,7 +44,6 @@ public class GameTab extends GridLayoutTab {
 
         // Create world name text field; edits are pushed back into the host screen
         // immediately through the component's onTextChanged hook.
-        // 创建世界名输入框；编辑通过组件的 onTextChanged 钩子即时写回宿主界面。
         worldNameField = new SimpleEditBox(0, 0, 208, 20) {
             @Override
             protected void onTextChanged() {
@@ -61,7 +58,6 @@ public class GameTab extends GridLayoutTab {
             worldName = "";
         }
         worldNameField.setText(worldName);
-        // 26.1.2 GameTab: 208 宽名字框以 alignHorizontalCenter 居中在 210 宽的列中
         // 26.1.2 GameTab: the 208-wide name field centered via alignHorizontalCenter in
         // the 210-wide column
         layout.addChild(worldNameField, row++, 0, LayoutSettings::alignHorizontallyCenter);
@@ -75,7 +71,6 @@ public class GameTab extends GridLayoutTab {
                 .values("survival", "creative", "hardcore", "adventure")
                 .initially(currentMode)
                 .useVanillaTexture(true)
-                // 26.1.2 GameTab: 游戏模式/难度/作弊按钮均为 210 宽
                 // 26.1.2 GameTab: game mode / difficulty / cheats buttons are all 210 wide
                 .build(0, 0, 210, 20, (button, mode) -> {
                     access.modernWorldCreatingUI$setGameMode(mode);
@@ -101,7 +96,6 @@ public class GameTab extends GridLayoutTab {
         boolean showLock = (DifficultyLocker.hasIMCConfig()
             ? DifficultyLocker.getIMCShowLockButton()
             : DifficultyLocker.isLoaded()) && CreateWorldUI.config.lockDifficultyButton;
-        // 26.1.2 难度按钮为 210 宽；显示锁按钮时收窄为 188（188 + 2 间距 + 20 锁按钮 = 210）
         // 26.1.2's difficulty button is 210 wide; narrowed to 188 when the lock button
         // is shown (188 + 2 gap + 20 lock = 210)
         int difficultyWidth = showLock ? 188 : 210;
@@ -126,9 +120,6 @@ public class GameTab extends GridLayoutTab {
         // (CatFrame-migrated) hands out its CatFrame lock button directly: no
         // reflection, no GuiButtonAdapter; click sound / hover / disabled states
         // are handled by the CatFrame base class.
-        // 经兼容层创建难度锁定按钮 —— difficultylocker（已迁移 CatFrame）直接
-        // 交出其 CatFrame 锁按钮：无反射、无 GuiButtonAdapter；点击音效/悬停/禁用
-        // 状态由 CatFrame 基类统一处理。
         Button lockButton = null;
         if (showLock) {
             lockButton = DifficultyLocker.createLockButton(btn -> {
@@ -176,10 +167,6 @@ public class GameTab extends GridLayoutTab {
      *     the previous tab architecture. {@code doLayout} is the only place CatFrame
      *     lets a single tab customize its alignment, hence this local override.
      * </p>
-     * <p>
-     *     相比 GridLayoutTab 默认 0.16666667F 的额外顶部间距 —— 沿袭旧标签页架构。
-     *     {@code doLayout} 是 CatFrame 允许单个标签页自定义对齐的唯一位置，故在此本地覆写。
-     * </p>
      */
     @Override
     public void doLayout(ScreenRectangle screenRectangle) {
@@ -191,7 +178,6 @@ public class GameTab extends GridLayoutTab {
     /**
      * Refreshes dynamic states, tooltips and the field label before the host renders
      * this tab's children.
-     * <p>在本标签页子组件渲染前刷新动态状态、tooltip 与输入框标签。</p>
      */
     public void prepareFrame() {
         // Update button states before rendering

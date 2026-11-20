@@ -7,8 +7,7 @@ import decok.dfcdvadstf.createworldui.integrations.difficulty.DifficultyLocker;
 /**
  * <p>
  *     Polls runtime IMC messages on each client tick.<br>
- *     Registered on the Forge event bus from {@link CreateWorldUI#init}.<br>
- *     轮询运行时 IMC 消息，由 {@link CreateWorldUI#init} 注册到 Forge 事件总线。
+ *     Registered on the Forge event bus from {@link CreateWorldUI#init}.
  * </p>
  */
 public class IMCRuntimeHandler {

@@ -18,11 +18,6 @@ import java.util.Map;
  *     Usage: /gameruleEditor<br>
  *     Requires igGameruleEdit to be enabled in config.
  * </p>
- * <p>
- *     用于在游戏中打开游戏规则编辑器界面的命令。<br>
- *     用法：/gameruleEditor<br>
- *     需要在配置中启用igGameruleEdit。
- * </p>
  */
 public class CommandGameRuleEditor extends CommandBase {
 

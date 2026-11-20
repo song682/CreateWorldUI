@@ -4,12 +4,6 @@ import decok.dfcdvadstf.createworldui.api.IExperimentScreenUsage;
 
 /**
  * <p>
- *     示例实验 —— 演示其他模组作者如何通过 {@link IExperimentScreenUsage} 注册实验性内容：
- *     枚举常量即注册单元（IMixins 惯用法），每个常量对应实验界面上的一个开关。
- *     本实验<b>不做任何实际事情</b>，仅用于展示注册流程与界面效果；
- *     由配置项 {@code enableExampleExperiment} 门控注册（见 {@code CreateWorldUI#init}）。
- * </p>
- * <p>
  *     Example experiment — demonstrates how an author mod registers experimental content
  *     through {@link IExperimentScreenUsage}: the enum constant is the registration unit
  *     (the IMixins idiom) and each constant becomes one toggle on the experiment screen.

@@ -23,10 +23,6 @@ import java.util.Map;
 public class MoreTab extends GridLayoutTab {
     private GuiCreateWorld guiCreateWorld;
 
-    /**
-     * Builds the tab once; the widgets live as long as the screen instance.
-     * <p>一次性构建标签页；组件随屏幕实例存活。</p>
-     */
     public MoreTab(GuiCreateWorld screen) {
         super(Text.translatable("createworldui.tab.more"));
         this.guiCreateWorld = screen;
@@ -51,23 +47,11 @@ public class MoreTab extends GridLayoutTab {
                         Minecraft.getMinecraft().displayGuiScreen(new WorldCreationGameRuleScreen(guiCreateWorld, cleanPending));
                     }).useVanillaTexture(true)
                 .width(210).height(20).build();
-            // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动，帧末由 CatFrame 统一延迟绘制
-            // Component-level tooltip: auto-pumped by WidgetTooltipHolder via extractRenderState, drawn deferred by CatFrame at end of frame
             gameRuleEditorButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.gameRuleEditor")));
             layout.addChild(gameRuleEditorButton, row++, 0);
         }
 
         if (CreateWorldUI.config.enableDataPack) {
-            // 实验界面按钮：打开 ExperimentScreen（由其他模组经 IExperimentScreenUsage 注册的实验开关）
-            // Experiments button: opens ExperimentScreen (switches registered by other mods via IExperimentScreenUsage)
-            Button experimentsButton = Button.builder(
-                    Text.literal(I18n.format("selectWorld.experiments")),
-                    btn -> Minecraft.getMinecraft().displayGuiScreen(new ExperimentScreen(guiCreateWorld)))
-                .width(210).height(20).useVanillaTexture(true).build();
-            experimentsButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.experiments")));
-            layout.addChild(experimentsButton, row++, 0);
-
-            // 数据包按钮：打开 DataPackScreen（OKCore 数据包格式兼容：左可选择、右已激活）
             // Data packs button: opens DataPackScreen (OKCore format compatible: left selectable, right activated)
             Button dataPacksButton = Button.builder(
                     Text.literal(I18n.format("selectWorld.dataPacks")),
@@ -75,6 +59,16 @@ public class MoreTab extends GridLayoutTab {
                 .width(210).height(20).useVanillaTexture(true).build();
             dataPacksButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.dataPacks")));
             layout.addChild(dataPacksButton, row++, 0);
+        }
+
+        if (CreateWorldUI.config.enableExperiment) {
+            // Experiments button: opens ExperimentScreen (switches registered by other mods via IExperimentScreenUsage)
+            Button experimentsButton = Button.builder(
+                            Text.literal(I18n.format("selectWorld.experiments")),
+                            btn -> Minecraft.getMinecraft().displayGuiScreen(new ExperimentScreen(guiCreateWorld)))
+                    .width(210).height(20).useVanillaTexture(true).build();
+            experimentsButton.setTooltip(Tooltip.create(I18n.format("createworldui.hover.experiments")));
+            layout.addChild(experimentsButton, row++, 0);
         }
     }
 }

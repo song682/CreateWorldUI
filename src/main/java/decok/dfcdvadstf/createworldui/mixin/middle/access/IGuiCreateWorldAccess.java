@@ -23,61 +23,57 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 @Mixin(GuiCreateWorld.class)
 public interface IGuiCreateWorldAccess {
 
-    // === World name / 世界名称 ===
+    // === World name ===
     @Accessor("field_146330_J") String modernWorldCreatingUI$getWorldName();
     @Accessor("field_146330_J") void   modernWorldCreatingUI$setWorldName(String value);
 
-    // === Vanilla world-name input field / 原版世界名输入框 ===
+    // === Vanilla world-name input field ===
     // Vanilla's creation path reads the world name from this field, never from field_146330_J.
-    // 原版创建路径从这个输入框读世界名，从不读 field_146330_J。
     @Accessor("field_146333_g") GuiTextField modernWorldCreatingUI$getWorldNameField();
 
-    // === Game mode / 游戏模式 ===
+    // === Game mode ===
     @Accessor("field_146342_r") String modernWorldCreatingUI$getGameMode();
     @Accessor("field_146342_r") void   modernWorldCreatingUI$setGameMode(String value);
 
-    // === Seed / 种子 ===
+    // === Seed ===
     @Accessor("field_146329_I") String modernWorldCreatingUI$getSeed();
     @Accessor("field_146329_I") void   modernWorldCreatingUI$setSeed(String value);
 
-    // === Vanilla seed input field / 原版种子输入框 ===
+    // === Vanilla seed input field ===
     // Vanilla's creation path reads the seed from this field, never from field_146329_I.
     // 原版创建路径从这个输入框读种子，从不读 field_146329_I。
     @Accessor("field_146335_h") GuiTextField modernWorldCreatingUI$getSeedField();
 
-    // === World type index / 世界类型索引 ===
+    // === World type index ===
     @Accessor("field_146331_K") int  modernWorldCreatingUI$getWorldTypeIndex();
     @Accessor("field_146331_K") void modernWorldCreatingUI$setWorldTypeIndex(int value);
 
-    // === Generate structures / 生成建筑 ===
+    // === Generate structures ===
     @Accessor("field_146341_s") boolean modernWorldCreatingUI$getGenerateStructures();
     @Accessor("field_146341_s") void    modernWorldCreatingUI$setGenerateStructures(boolean value);
 
-    // === Bonus chest / 奖励箱 ===
+    // === Bonus chest ===
     @Accessor("field_146338_v") boolean modernWorldCreatingUI$getBonusChest();
     @Accessor("field_146338_v") void    modernWorldCreatingUI$setBonusChest(boolean value);
 
-    // === Allow cheats / 允许作弊 ===
+    // === Allow cheats ===
     @Accessor("field_146340_t") boolean modernWorldCreatingUI$getAllowCheats();
     @Accessor("field_146340_t") void    modernWorldCreatingUI$setAllowCheats(boolean value);
 
-    // === Hardcore / 硬核模式 ===
+    // === Hardcore ===
     @Accessor("field_146337_w") boolean modernWorldCreatingUI$getHardcore();
     @Accessor("field_146337_w") void    modernWorldCreatingUI$setHardcore(boolean value);
 
-    // === Parent screen (read-only) / 父界面（只读） ===
+    // === Parent screen (read-only) ===
     @Accessor("field_146332_f") GuiScreen modernWorldCreatingUI$getParentScreen();
 
-    // === Save-dir name recalculation / 存档目录名重算 ===
+    // === Save-dir name recalculation ===
     // Re-runs vanilla's func_146314_g: sanitizes the world name into a directory
     // name and de-duplicates it against existing saves (field_146336_i).
-    // 重跑原版 func_146314_g：把世界名清洗成目录名，并对已有存档做重名避让
-    // （结果写入 field_146336_i）。
     @Invoker("func_146314_g") void modernWorldCreatingUI$calcSaveDirName();
 
-    // === Final save-dir name（vanilla 的 launchIntegratedServer 第一个参数） ===
+
     // === Final save-dir name (vanilla's first launchIntegratedServer argument) ===
     // The sanitized / de-duplicated world folder name computed by func_146314_g.
-    // 由 func_146314_g 计算出的清洗过、避让过重名的存档目录名。
     @Accessor("field_146336_i") String modernWorldCreatingUI$getSaveDirName();
 }

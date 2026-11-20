@@ -32,19 +32,6 @@ import java.util.*;
 
 /**
  * <p>
- *     游戏规则编辑器的抽象基类。<br>
- *     本类负责：<br>
- *     - 数据来源：通过{@link GameRuleMonitorNSetter}读取所有游戏规则作为默认值<br>
- *     - 中间列表：使用前置模组 CatFrame 的 {@link ObjectSelectionList} 渲染规则条目，
- *       裁剪、滚动和列表尺寸均由列表自身管理<br>
- *     - 屏幕基类：继承前置模组 CatFrame 的 {@link Screen}，中间列表与底部按钮经
- *       {@code addRenderableWidget} 注册为屏幕组件，渲染与事件派发统一由基类处理<br>
- *     - 底部按钮、标题、tooltip 等公共界面元素<br>
- *     具体的"保存目标"由子类通过 {@link #persistChanges(Map, Set)} 实现：<br>
- *     - {@link WorldCreationGameRuleScreen}：在创建世界界面打开，保存为待应用规则<br>
- *     - {@link IngameGameRuleScreen}：在游戏内打开，立即应用到当前世界
- * </p>
- * <p>
  *     Abstract base class for the game rule editor.<br>
  *     Responsibilities:<br>
  *     - Data source: read all game rules via {@link GameRuleMonitorNSetter} as defaults<br>
@@ -68,52 +55,45 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
 
     protected static final Logger LOGGER = LogManager.getLogger("GameRuleEditor");
 
-    // 待写入应用器的规则映射（键：规则名，值：字符串形式的规则值）
     // Rule map to be written to applier (key: rule name, value: rule value in string form)
     protected final Map<String, String> editableRules;
 
-    // 默认/原始规则信息（包含多种数据类型）
     // Default/original rule information (contains multiple data types)
     protected final Map<String, GameruleValue> defaultRules;
 
-    // 临时保存用户在UI中修改的值（字符串形式）
     // Temporarily save values modified by user in UI (in string form)
     protected final Map<String, String> modifiedRules = new HashMap<>();
 
-    // 跟踪已修改的规则（用于显示通知）
     // Track modified rules (for displaying notifications)
     protected final Set<String> changedRules = new HashSet<>();
 
-    // 中间规则列表（由 CatFrame 的 ObjectSelectionList 实现）
-    // Middle rule list (implemented by CatFrame's ObjectSelectionList)
+    // Middle rule list
     private GameRuleList ruleList;
 
-    protected GuiScreen parentScreen; // 父界面 / Parent screen
+    protected GuiScreen parentScreen;
 
-    // ===== 布局常量 / Layout constants =====
-    private static final int ROW_HEIGHT = 25;              // 规则行高 / Rule row height
-    private static final int CATEGORY_HEADER_HEIGHT = 20;  // 分类标题高度 / Category header height
-    private static final int ROW_WIDTH = 308;              // 列表行宽 / List row width
-    private static final int CONTROL_WIDTH = 44;           // 控件宽度 / Control width
-    private static final int CONTROL_HEIGHT = 20;          // 控件高度 / Control height
-    private static final int LIST_TOP = 40;                // 列表顶部 Y / List top Y
-    private static final int FOOTER_AREA_HEIGHT = 40;      // 底部按钮区高度 / Footer area height
+    // ===== Layout constants =====
+    private static final int ROW_HEIGHT = 25;              // Rule row height
+    private static final int CATEGORY_HEADER_HEIGHT = 20;  // Category header height
+    private static final int ROW_WIDTH = 308;              // List row width
+    private static final int CONTROL_WIDTH = 44;           // Control width
+    private static final int CONTROL_HEIGHT = 20;          // Control height
+    private static final int LIST_TOP = 40;                // List top Y
+    private static final int FOOTER_AREA_HEIGHT = 40;      // Footer area height
 
-    // 当前列表边界（在 initGui 中根据窗口尺寸计算） / Current list bounds (computed in initGui)
+    // Current list bounds (computed in initGui)
     private int listTop = LIST_TOP;
     private int listBottom;
 
     /**
-     * 构造游戏规则编辑器<br>
      * Constructor for the game rule editor
-     * @param parentScreen 父界面 / Parent screen
-     * @param editableRules 可编辑的游戏规则映射 / Editable game rule map
+     * @param parentScreen Parent screen
+     * @param editableRules Editable game rule map
      */
     public AbstractScreenGameRuleEditor(GuiScreen parentScreen, Map<String, String> editableRules) {
         super(Text.translatable("createworldui.gamerules.title"));
         this.parentScreen = parentScreen;
 
-        // 过滤掉 null 值，确保 editableRules 不包含 null
         // Filter out null values, ensure editableRules contains no null
         this.editableRules = new HashMap<>();
         if (editableRules != null) {
@@ -124,7 +104,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             }
         }
 
-        // 保存原始规则的副本，用于比较哪些规则被修改了
         // Save a copy of original rules for comparing which rules were modified
         for (Map.Entry<String, String> e : this.editableRules.entrySet()) {
             if (e.getKey() != null && e.getValue() != null) {
@@ -132,12 +111,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             }
         }
 
-        /*
-         * 读取默认规则的顺序：
-         * 1) 如果 editableRules 不为空，优先使用其中的值构建默认规则
-         * 2) 否则尝试从真实世界读取（如果世界不为 null）
-         * 3) 如果都失败，回退到新的 GameRules 实例（使用原版默认值）
-         *
+        /**
          * Order for reading default rules:
          * 1) If editableRules is not empty, prefer using its values
          * 2) Otherwise try reading from the real world (if world is not null)
@@ -214,47 +188,45 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     // ============================================================
-    // 保存目标由子类实现 / Save target provided by subclasses
+    // Save target provided by subclasses
     // ============================================================
 
     /**
-     * 将用户修改后的规则持久化到具体目标（待应用规则 / 当前世界）。<br>
      * Persist the user-modified rules to the concrete target (pending rules / current world).
      *
-     * @param result  完整的规则结果集（String -> String） / full rule result set (String -> String)
-     * @param changed 相比原始值真正发生变化的规则名集合 / names of rules actually changed vs original
+     * @param result  Full rule result set (String -> String)
+     * @param changed Names of rules actually changed vs original
      */
     protected abstract void persistChanges(Map<String, String> result, Set<String> changed);
 
     // ============================================================
-    // 界面生命周期 / Screen lifecycle
+    // Screen lifecycle
     // ============================================================
 
     @Override
     protected void init() {
         Keyboard.enableRepeatEvents(true);
 
-        // ===== 计算列表边界 / Compute list bounds =====
+        // Calculate list bounds
         this.listTop = LIST_TOP;
         int footerAreaTop = this.height - FOOTER_AREA_HEIGHT;
         this.listBottom = footerAreaTop - 4;
         int listHeight = Math.max(ROW_HEIGHT, this.listBottom - this.listTop);
 
-        // ===== 使用 HeaderFooterLayout 定位底部按钮 / Use HeaderFooterLayout to position footer buttons =====
-        // 主布局容器（Header-Content-Footer三区域）/ Main layout container (Header-Content-Footer three zones)
+        // Main layout container (Header-Content-Footer three zones)
         HeaderFooterLayout mainLayout = new HeaderFooterLayout(true);
         mainLayout.setFooterHeight(30);
 
-        // 底部按钮布局容器 / Bottom button layout container
+        // Bottom button layout container
         HorizontalLayout buttonLayout = new HorizontalLayout();
         buttonLayout.setSpacing(4);
 
-        // 保存按钮 / Save button
+        // Save button
         Button saveButton;
-        // 取消按钮 / Cancel button
+        // Cancel button
         Button cancelButton;
         if (CreateWorldUI.config.enableResetButton) {
-            // 三按钮模式 / Three-button mode
+            // Three-button mode
             saveButton = Button.builder(
                 Text.translatable("options.save"),
                 btn -> { saveChanges(); this.mc.displayGuiScreen(this.parentScreen); }
@@ -265,7 +237,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
                 btn -> this.mc.displayGuiScreen(this.parentScreen)
             ).width(100).build();
 
-            // 重置按钮 / Reset button
+            // Reset button
             Button resetButton = Button.builder(
                     Text.translatable("options.cancel"),
                     btn -> {
@@ -280,13 +252,12 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             buttonLayout.addChild(cancelButton);
             buttonLayout.addChild(resetButton);
 
-            // 注册为屏幕组件：渲染与鼠标事件派发由 Screen 基类统一处理
             // Register as screen widgets: rendering and mouse dispatch are handled by the Screen base
             addRenderableWidget(saveButton);
             addRenderableWidget(cancelButton);
             addRenderableWidget(resetButton);
         } else {
-            // 两按钮模式 / Two-button mode
+            // Two-button mode
             cancelButton = Button.builder(
                 Text.translatable("options.save"),
                 btn -> this.mc.displayGuiScreen(this.parentScreen)
@@ -307,7 +278,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
         mainLayout.setFooter(buttonLayout);
         mainLayout.recalculate(this.width, this.height);
 
-        // ===== 创建中间列表并构建条目 / Create middle list and build entries =====
+        // Create middle list and build entries
         this.ruleList = new GameRuleList(this, this.width, listHeight, this.listTop, ROW_HEIGHT);
         addRenderableWidget(this.ruleList);
         this.ruleList.rebuild();
@@ -319,15 +290,13 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     // ============================================================
-    // 分类列表构建 / Category-ordered list building
+    // Category-ordered list building
     // ============================================================
 
     /**
-     * 构建按分类组织的规则列表。<br>
      * Build a category-organized rule list.
      *
-     * @return 有序列表，"category:"前缀表示分类标题，其余为规则名 /
-     *         ordered list, "category:" prefix marks category header, others are rule names
+     * @return Ordered list, "category:" prefix marks category header, others are rule names
      */
     private List<String> buildCategoryOrderedList() {
         List<String> orderedList = new ArrayList<>();
@@ -351,7 +320,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             }
         }
 
-        // 添加未分类的规则 / Add uncategorized rules
+        // Add uncategorized rules
         Set<String> categorizedRules = new HashSet<>();
         for (String categoryKey : categories) {
             categorizedRules.addAll(GameRuleCategoryRegistry.getRulesInCategory(categoryKey));
@@ -361,8 +330,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
         for (String rule : allRules) {
             if (!categorizedRules.contains(rule)) {
                 if (!hasUncategorized) {
-                    // 未分类标题同样使用本地化键，由 lang 文件提供显示文字；
-                    // "category:" 前缀是 rebuild() 识别分类标题条目的内部标记，不可省略
                     // The uncategorized header also uses a localization key; display text comes from lang files.
                     // The "category:" prefix is the internal marker rebuild() uses to detect header entries; it must not be omitted
                     orderedList.add("category:gamerule.category.uncategorized");
@@ -376,12 +343,9 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     // ============================================================
-    // 输入事件 / Input events
+    // Input events
     // ============================================================
 
-    // 鼠标点击/释放/拖动与键盘输入由 Screen 基类按组件树派发：dispatchMouseClicked
-    // 命中列表或底部按钮后，事件在对应组件内部继续分发（列表 → 条目 → EditBox /
-    // 循环按钮）；键盘输入经 Screen.keyTyped 送达焦点组件（列表 → 聚焦条目 → EditBox）。
     // Mouse click/release/drag and keyboard input are dispatched by the Screen base
     // through the widget tree: dispatchMouseClicked hits the list or a footer button
     // and the event continues inside that widget (list → entry → edit box / cycling
@@ -389,8 +353,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     // (list → focused entry → edit box).
 
     /**
-     * 鼠标滚轮：悬停在布尔规则的循环按钮上时优先由该按钮消费（切换值），
-     * 否则交给基类派发给鼠标下的组件（列表滚动等）。<br>
      * Mouse wheel: when hovering a boolean rule's cycling button the button consumes
      * it first (cycling the value); otherwise the base class dispatches it to the
      * component under the cursor (list scrolling, etc.).
@@ -403,21 +365,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
         super.dispatchMouseScrolled(mouseX, mouseY, delta);
     }
 
-    // 显式覆写为 public 并转发基类（子类一并受益）。编译期 classpath 上的 CatFrame
-    // 构件为 reobf(SRG) 命名：其字节码中的 Screen.func_73869_a / func_73864_a 在
-    // javac 视角下不是 keyTyped / mouseClicked，接口方法的 public 实现会回落到
-    // GuiScreen 的 protected 同名方法，从而报"正在尝试分配更低的访问权限"编译错误；
-    // 显式 public 覆写转发基类即可消除。运行时 reobf 后，super 调用会经 JVM
-    // invokespecial 的超类方法选择重新命中 Screen 的覆写（Esc 处理 / 组件事件派发），
-    // 行为不变——这两个覆写不可删除。
-    // Explicit public overrides forwarding to super (subclasses benefit too). The
-    // CatFrame artifact on the compile classpath is a reobf(SRG) build: its
-    // Screen.func_73869_a / func_73864_a are invisible to javac as keyTyped /
-    // mouseClicked, so the public interface methods would fall back to GuiScreen's
-    // protected ones and fail to compile ("attempting to assign weaker access
-    // privileges"). After reobf, the super calls re-select Screen's overrides at
-    // runtime via JVM invokespecial superclass method selection (Esc handling /
-    // widget event dispatch), so behaviour is preserved — do not remove.
     @Override
     public void keyTyped(char typedChar, int keyCode) {
         super.keyTyped(typedChar, keyCode);
@@ -429,16 +376,14 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     // ============================================================
-    // 渲染 / Rendering
+    // Rendering
     // ============================================================
 
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
-        // 背景与已注册组件（中间列表、底部按钮）由基类渲染
         // Background and registered widgets (middle list, footer buttons) rendered by the base
         super.drawScreen(mouseX, mouseY, partialTicks);
 
-        // 标题与列表上下分隔线：与列表/按钮区域不重叠，后绘不会遮盖任何组件
         // Title and list header/footer separators: they do not overlap the list/button
         // areas, so drawing them after the widgets covers nothing
         this.drawCenteredString(this.fontRendererObj, this.getTitle().getString(),
@@ -447,20 +392,18 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
         ContentPanelRenderer.drawHeaderSeparator(0, this.listTop - ContentPanelRenderer.SEPARATOR_HEIGHT, this.width);
         ContentPanelRenderer.drawFooterSeparator(0, this.listBottom, this.width);
 
-        // Tooltip 由各条目 nameLabel 组件自行泵动（WidgetTooltipHolder），帧末由 CatFrame 统一延迟绘制
         // Tooltip is driven per-entry via the nameLabel widget (WidgetTooltipHolder) and drawn deferred by CatFrame at end of frame
     }
 
     /**
-     * 构建某条规则的 tooltip 文本（规则名 + 默认值 + 描述，以换行符分隔，支持 § 格式）。<br>
      * Build the tooltip text for a rule (rule name + default value + description, newline-separated, §-formatted).
      */
     private String buildRuleTooltipMessage(String ruleName) {
         StringBuilder sb = new StringBuilder();
-        // 第一行：规则名（黄色） / First line: rule name (yellow)
+        // First line: rule name (yellow)
         sb.append(EnumChatFormatting.YELLOW).append(ruleName);
 
-        // 默认值 / Default value
+        // Default value
         GameruleValue defVal = defaultRules.get(ruleName);
         if (defVal != null) {
             sb.append('\n').append(EnumChatFormatting.GRAY)
@@ -468,7 +411,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
                 .append(' ').append(defVal.getOptimalValue());
         }
 
-        // 描述（若有） / Description (if any)
+        // Description (if any)
         String tooltip = getRuleTooltip(ruleName);
         if (tooltip != null) {
             sb.append('\n').append(EnumChatFormatting.WHITE).append(tooltip);
@@ -477,11 +420,10 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     // ============================================================
-    // 数据辅助方法 / Data helper methods
+    // Data helper methods
     // ============================================================
 
     /**
-     * 记录用户对某条规则的修改。<br>
      * Record a user modification to a rule.
      */
     private void setRuleValue(String ruleName, String value) {
@@ -490,7 +432,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     /**
-     * 处理文本框规则的编辑：按默认值类型推断后再以字符串存储。<br>
      * Handle edit-box rule editing: infer type from default value then store as string.
      */
     private void onValueRuleEdited(String ruleName, String rawText) {
@@ -505,7 +446,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     /**
-     * 检查规则是否被修改过（与原始值不同）。<br>
      * Check if a rule has been modified (different from original value).
      */
     private boolean isRuleModified(String ruleName) {
@@ -526,7 +466,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     /**
-     * 将字符串解析为与参考值匹配的类型。<br>
      * Parse a string to a type matching the reference value.
      */
     private Object parseFromString(String text, Object originalValue) {
@@ -551,11 +490,10 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     // ============================================================
-    // 保存 / Saving
+    // Saving
     // ============================================================
 
     /**
-     * 收集用户修改并交由子类持久化，随后显示通知。<br>
      * Collect user modifications, delegate persistence to subclass, then show notification.
      */
     protected final void saveChanges() {
@@ -578,7 +516,7 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             }
         }
 
-        // 由子类决定保存目标 / Subclass decides the save target
+        // Subclass decides the save target
         try {
             persistChanges(result, changedRules);
         } catch (Exception ex) {
@@ -589,7 +527,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     /**
-     * 在聊天栏显示保存结果通知。<br>
      * Show a chat notification of the save result.
      */
     private void showSaveNotification() {
@@ -626,24 +563,9 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     // ============================================================
-    // 中间列表（基于 CatFrame ObjectSelectionList 自实现）
-    // Middle list (self-implemented on top of CatFrame ObjectSelectionList)
+    // Middle list
     // ============================================================
 
-    /**
-     * <p>
-     *     游戏规则列表 —— 直接复用前置模组 CatFrame 的 {@link ObjectSelectionList}。<br>
-     *     裁剪（Scissor）、滚动、滚动条与内容高度均由父类管理；本类只负责构建条目、
-     *     行宽/居中、以及 tooltip/滚轮切换等业务逻辑。
-     * </p>
-     * <p>
-     *     Game rule list — directly reuses the prerequisite mod CatFrame's
-     *     {@link ObjectSelectionList}. Clipping (scissor), scrolling, scrollbar and
-     *     content height are all handled by the superclass; this class only builds
-     *     entries, sets row width/centering, and handles business logic such as
-     *     tooltips and wheel cycling.
-     * </p>
-     */
     private static class GameRuleList extends ObjectSelectionList<RuleEntry> {
 
         private final AbstractScreenGameRuleEditor screen;
@@ -666,7 +588,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
         }
 
         /**
-         * 根据当前数据重建全部条目。<br>
          * Rebuild all entries from the current data.
          */
         void rebuild() {
@@ -703,11 +624,10 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
         }
 
         /**
-         * 若鼠标悬停在某个布尔规则的循环按钮上，用滚轮切换其值。<br>
          * If the mouse hovers a boolean rule's cycling button, use the wheel to cycle its value.
          *
-         * @param delta 归一化滚轮增量（仅符号有意义） / normalised wheel delta (only the sign matters)
-         * @return 是否已被循环按钮消费 / whether it was consumed by a cycling button
+         * @param delta normalised wheel delta (only the sign matters)
+         * @return whether it was consumed by a cycling button
          */
         boolean tryScrollCyclingButton(int mouseX, int mouseY, int delta) {
             for (RuleEntry entry : children()) {
@@ -724,7 +644,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     /**
-     * 列表条目基类。<br>
      * Base class for list entries.
      */
     private abstract static class RuleEntry extends ObjectSelectionList.Entry<RuleEntry> {
@@ -735,14 +654,13 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             this.screen = screen;
         }
 
-        /** @return 规则名，分类标题返回 null / rule name, category header returns null */
+        /** @return rule name, category header returns null */
         String getRuleName() {
             return null;
         }
     }
 
     /**
-     * 分类标题条目 —— 居中显示分类名称。<br>
      * Category header entry — displays the category name centered.
      */
     private static class CategoryEntry extends RuleEntry {
@@ -764,7 +682,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     /**
-     * 布尔规则条目 —— 规则名 + 循环开关按钮。<br>
      * Boolean rule entry — rule name + cycling on/off button.
      */
     private static class BooleanRuleEntry extends RuleEntry {
@@ -777,7 +694,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             super(screen);
             this.ruleName = ruleName;
             this.nameLabel = new StringWidget(GameRuleNameRegistry.getName(ruleName), 0xFFFFFF);
-            // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动（悬停/焦点 + 延迟）
             // Component-level tooltip: auto-pumped by WidgetTooltipHolder driven from extractRenderState (hover/focus + delay)
             this.nameLabel.setTooltip(Tooltip.create(screen.buildRuleTooltipMessage(ruleName)));
             this.toggle = CyclingButton.onOffBuilder()
@@ -789,13 +705,11 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
                     (btn, newVal) -> screen.setRuleValue(ruleName, String.valueOf(newVal)));
         }
 
-        /** 依据条目当前位置同步子控件坐标 / Sync child widget coordinates to the entry's current position */
+        /** Sync child widget coordinates to the entry's current position */
         private void layoutWidgets() {
             FontRenderer font = Minecraft.getMinecraft().fontRenderer;
             nameLabel.setX(getContentX());
             nameLabel.setY(getContentYMiddle() - font.FONT_HEIGHT / 2);
-            // 将 nameLabel 命中区域扩展至整行（文字仍按 x/y 绘制，不受尺寸影响），
-            // 使组件级 tooltip 的悬停判定覆盖整行，与高版本规则界面一致
             // Expand nameLabel's hit area to the whole row (text is still drawn at x/y,
             // unaffected by size): component-level tooltip hover detection covers the full row
             nameLabel.setSize(getContentWidth(), getHeight());
@@ -828,7 +742,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
     }
 
     /**
-     * 值规则条目 —— 规则名 + 文本输入框。<br>
      * Value rule entry — rule name + text input box.
      */
     private static class ValueRuleEntry extends RuleEntry {
@@ -841,8 +754,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             super(screen);
             this.ruleName = ruleName;
             this.nameLabel = new StringWidget(GameRuleNameRegistry.getName(ruleName), 0xFFFFFF);
-            // 组件级 tooltip：由 extractRenderState 驱动的 WidgetTooltipHolder 自动泵动（悬停/焦点 + 延迟）
-            // Component-level tooltip: auto-pumped by WidgetTooltipHolder driven from extractRenderState (hover/focus + delay)
             this.nameLabel.setTooltip(Tooltip.create(screen.buildRuleTooltipMessage(ruleName)));
             this.editBox = new SimpleEditBox(0, 0, CONTROL_WIDTH, CONTROL_HEIGHT);
             this.editBox.setText(initialValue);
@@ -855,10 +766,6 @@ public abstract class AbstractScreenGameRuleEditor extends Screen {
             FontRenderer font = Minecraft.getMinecraft().fontRenderer;
             nameLabel.setX(getContentX());
             nameLabel.setY(getContentYMiddle() - font.FONT_HEIGHT / 2);
-            // 将 nameLabel 命中区域扩展至整行（文字仍按 x/y 绘制，不受尺寸影响），
-            // 使组件级 tooltip 的悬停判定覆盖整行，与高版本规则界面一致
-            // Expand nameLabel's hit area to the whole row (text is still drawn at x/y,
-            // unaffected by size): component-level tooltip hover detection covers the full row
             nameLabel.setSize(getContentWidth(), getHeight());
             editBox.setX(getContentRight() - CONTROL_WIDTH);
             editBox.setY(getContentYMiddle() - CONTROL_HEIGHT / 2);

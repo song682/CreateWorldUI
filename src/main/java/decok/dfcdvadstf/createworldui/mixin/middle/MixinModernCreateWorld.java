@@ -40,11 +40,8 @@ import java.util.*;
 /**
  * <p>Transforms the vanilla world creation screen via Mixin to implement a tabbed layout.</p>
  * <p>Note: vanilla's private fields are exposed via the separate
- * {@code IGuiCreateWorldAccess} accessor mixin — this class focuses purely on injecting
+ * {@link IGuiCreateWorldAccess} accessor mixin — this class focuses purely on injecting
  * tab-related logic, while field access lives in its own place.</p>
- * <p>通过Mixin技术改造原版创建世界界面，实现标签页式布局。</p>
- * <p>注：原版私有字段的外部访问由独立的 {@code IGuiCreateWorldAccess} accessor mixin 提供——
- * 本类专注于注入 tab 相关逻辑，字段访问的责任排到另一处了。</p>
  */
 @SuppressWarnings("unchecked")
 @Mixin(GuiCreateWorld.class)
@@ -68,21 +65,17 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
     @Unique
     private TabScreenRoot modernWorldCreatingUI$tabRoot;
     /**
-     * 26.1.2 {@code HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT} —— 页脚
-     * 区域高度（{@code MAGIC_PADDING 13} + 20 高的按钮）。
      * 26.1.2 {@code HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT} — the
      * footer zone height ({@code MAGIC_PADDING 13} + a 20-tall button).
      */
     @Unique
     private static final int modernWorldCreatingUI$FOOTER_HEIGHT = 33;
     /**
-     * 26.1.2 页脚按钮间距：{@code DirectionalLayoutWidget.horizontal().spacing(8)}。
      * 26.1.2 footer button spacing: {@code DirectionalLayoutWidget.horizontal().spacing(8)}.
      */
     @Unique
     private static final int modernWorldCreatingUI$FOOTER_SPACING = 8;
     /**
-     * 26.1.2 按钮默认宽度（{@code ButtonWidget.builder(...).build()} 即 200x20）。
      * 26.1.2 default button width ({@code ButtonWidget.builder(...).build()} is 200x20).
      */
     @Unique
@@ -94,14 +87,16 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
     @Unique
     private final IGuiCreateWorldAccess modernWorldCreatingUI$accessor = (IGuiCreateWorldAccess) this;
     
-    // HeaderFooterLayout 主布局容器
+    // HeaderFooterLayout main layout container
     @Unique
     private HeaderFooterLayout modernWorldCreatingUI$mainLayout;
     @Unique
     private HorizontalLayout modernWorldCreatingUI$footerButtonLayout;
 
     /**
-     * 初始化
+     * Before UI Initialization.<br>
+     * Notes: there is used to directly cancel the initGui method call during the HEAD injection phase, BUT, it caused a crash when opening this mod,
+     * so this method is also called during the TAIL phase.
      */
     @Inject(method = "initGui", at = @At("HEAD"))
     private void onInitGuiHead(CallbackInfo ci) {
@@ -114,7 +109,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         modernWorldCreatingUI$logger.info("Initializing GUI");
 
         // Clear button list, but keep the Create and Cancel buttons
-        // 首先清空按钮列表，但保留创建和取消按钮
         List<GuiButton> essentialButtons = new ArrayList<>();
         GuiButton createButton = null;
         GuiButton cancelButton = null;
@@ -132,11 +126,9 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         this.buttonList.clear();
         this.buttonList.addAll(essentialButtons);
 
-        // ===== 主布局：26.1.2 CreateWorldScreen 的 ThreePartsLayout/HeaderAndFooterLayout =====
         // ===== Main layout: 26.1.2 CreateWorldScreen's ThreePartsLayout/HeaderAndFooterLayout =====
         modernWorldCreatingUI$mainLayout = new HeaderFooterLayout(true); // true = 绘制面板背景
 
-        // ===== Footer（26.1.2 init(): addFooter(DirectionalLayoutWidget.horizontal().spacing(8))）=====
         // ===== Footer (26.1.2 init(): addFooter(DirectionalLayoutWidget.horizontal().spacing(8))) =====
         modernWorldCreatingUI$footerButtonLayout = new HorizontalLayout();
         modernWorldCreatingUI$footerButtonLayout.setSpacing(modernWorldCreatingUI$FOOTER_SPACING);
@@ -145,9 +137,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // 200-wide buttons. The buttons stay in vanilla's buttonList, so vanilla's own
         // mouseClicked dispatch owns the press sound and actionPerformed — the adapter
         // only bridges rendering and layout positioning.
-        // 包装原版按钮以纳入页脚布局；26.1.2 的创建/取消为默认 200 宽按钮。按钮仍留在
-        // 原版 buttonList 中，按键音效与 actionPerformed 归原版 mouseClicked 派发链路
-        // 负责——适配器只做渲染与布局位置的桥接。
         if (createButton != null) {
             createButton.width = modernWorldCreatingUI$BUTTON_WIDTH;
             GuiButtonAdapter modernWorldCreatingUI$createButtonAdapter = new GuiButtonAdapter(createButton);
@@ -163,49 +152,38 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         modernWorldCreatingUI$mainLayout.setFooterHeight(modernWorldCreatingUI$FOOTER_HEIGHT);
         modernWorldCreatingUI$mainLayout.setFooter(modernWorldCreatingUI$footerButtonLayout);
 
-        // ===== 组件系统 Tab 装配（对齐高版本 CreateWorldScreen.init()） =====
         // ===== Component-system tab assembly (mirrors high-version CreateWorldScreen.init()) =====
         // Drive the whole tab stack rebuild from initGui every pass — the same shape as
         // the high-version init(): a fresh navigation bar + fresh tabs, with the old root
         // discarded wholesale (the 1.7.10 counterpart of vanilla Screen's widget reset),
         // so no stale components can survive a resize or a sub-screen round-trip.
-        // 每次 initGui 都重建整套 Tab 栈：新导航栏 + 新 Tab，旧 root 整体丢弃
-        // （这是原版 Screen 控件重置机制在 1.7.10 下的等价物），drop 掉 resize 或
-        // 子界面往返后的任何旧组件残留。
         modernWorldCreatingUI$tabRoot = new TabScreenRoot();
         modernWorldCreatingUI$tabManager = new TabManager(
                 modernWorldCreatingUI$tabRoot::addChild,
                 modernWorldCreatingUI$tabRoot::removeChild);
         // Cast through Object: this mixin merges into GuiCreateWorld at runtime, so
         // `this` IS the screen instance — the cast only satisfies the compile-time view.
-        // 经 Object 转型：本 Mixin 运行时合并进 GuiCreateWorld，`this` 就是屏幕实例，
-        // 强转仅为满足编译期类型视角。
         GuiCreateWorld screen = (GuiCreateWorld) (Object) this;
         GameTab gameTab = new GameTab(screen);
         // Merge external tabs registered through the TabRegistry API with the built-ins,
         // sorted by priority; the registry freezes on this first build.
-        // 经 TabRegistry 注册的外部 Tab 按优先级与内置 Tab 合并；注册表在首次构建时冻结。
         List<Tab> orderedTabs = TabRegistry.buildTabList(screen,
                 gameTab, new WorldTab(screen), new MoreTab(screen));
         TabNavigationBar modernWorldCreatingUI$tabBar = TabNavigationBar.builder(modernWorldCreatingUI$tabManager, this.width)
                 .addTabs(orderedTabs.toArray(new Tab[0]))
                 .build();
 
-        // 将导航栏设置到 Header 区域，并作为根容器的第一个子组件（点击/焦点链路）
         // Set the nav bar to the Header zone and register it as the root's first child
         // (click / focus chain)
         modernWorldCreatingUI$mainLayout.setHeader(modernWorldCreatingUI$tabBar);
         modernWorldCreatingUI$tabRoot.addChild(modernWorldCreatingUI$tabBar);
 
-        // ===== 26.1.2 initTabNavigation()：布局、内容区域与初始选中 =====
         // ===== 26.1.2 initTabNavigation(): layout, tab area and initial selection =====
-        // 导航栏宽度更新后取其底边作为页头高度（26.1.2: getNavigationFocus().getBottom()）
         // After the nav bar width update, its bottom edge is the header height
         // (26.1.2: getNavigationFocus().getBottom())
         modernWorldCreatingUI$tabBar.updateWidth(this.width);
         modernWorldCreatingUI$mainLayout.setHeaderHeight(modernWorldCreatingUI$tabBar.getRectangle().bottom());
         modernWorldCreatingUI$mainLayout.recalculate(this.width, this.height);
-        // Tab 内容区域：导航栏底边到页脚上沿（26.1.2: ScreenRect(0, i, width, height - footerHeight - i)）
         // Tab content area: from the nav bar's bottom edge to the footer's top edge
         // (26.1.2: ScreenRect(0, i, width, height - footerHeight - i))
         modernWorldCreatingUI$tabManager.setTabArea(modernWorldCreatingUI$tabArea());
@@ -225,9 +203,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // empty string is a valid user state (cleared name) and must not be
         // overwritten, since initGui re-runs on resize and when returning from
         // sub-screens. This also avoids clobbering values set by external mods.
-        // 只在世界名称为 null（从未设置）时设置默认值——空串是合法的用户状态
-        // （用户清空了名字），不能覆盖；initGui 会在窗口缩放、从子界面返回时重跑，
-        // 覆盖空串会抹掉用户意图。这同时也避免覆盖外部模组设置的值。
         if (this.field_146330_J == null) {
             this.field_146330_J = I18n.format("selectWorld.newWorld");
             modernWorldCreatingUI$logger.info("Set default world name: " + this.field_146330_J);
@@ -241,15 +216,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         }
 
         // Validate world type index — only reset if truly invalid
-        // 验证世界类型索引——只在真正无效时才重置
         // This preserves indices set by DefaultWorldGenerator or other mods
-        // 这样能保留 DefaultWorldGenerator 或其他模组设置的索引
         if (WorldType.worldTypes == null || this.field_146331_K < 0) {
             this.field_146331_K = 0;
         } else if (this.field_146331_K >= WorldType.worldTypes.length ||
                 WorldType.worldTypes[this.field_146331_K] == null) {
             // Index out of range or points to null — find a valid default
-            // 索引超出范围或指向 null——找一个有效的默认值
             modernWorldCreatingUI$logger.warn("Invalid world type index: " + this.field_146331_K + ", resetting to 0");
             this.field_146331_K = 0;
         }
@@ -257,37 +229,31 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
 
     /**
      * Draws the screen
-     * 绘制屏幕
      */
     @Inject(method = {"drawScreen"}, at = @At("HEAD"), cancellable = true)
     public void onDrawScreen(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
 
         ci.cancel();
 
-        // 绘制主背景
+        // draw background
         this.drawBackground(0);
 
-        // ===== 26.1.2 renderDarkening() + render()：页头背景、页头下方暗化、页脚分隔线 =====
         // ===== 26.1.2 renderDarkening() + render(): header background, darkening below
         // the header, footer separator =====
         if (modernWorldCreatingUI$mainLayout != null) {
             int headerHeight = modernWorldCreatingUI$mainLayout.getHeaderHeight();
             int footerTop = this.height - modernWorldCreatingUI$mainLayout.getFooterHeight();
-            // 页头区域：tab 头部背景（26.1.2 TAB_HEADER_BACKGROUND_TEXTURE 铺满页头）
-            // Header zone: the tab header background (26.1.2's TAB_HEADER_BACKGROUND_TEXTURE
+             // Header zone: the tab header background (26.1.2's TAB_HEADER_BACKGROUND_TEXTURE
             // tiled over the header)
             ContentPanelRenderer.drawPanelBackground(0, 0, this.width, headerHeight);
-            // 页头以下全部暗化（26.1.2 renderDarkening 覆盖页头下方直到屏幕底部，含页脚区）
             // Everything below the header darkened (26.1.2's renderDarkening covers from
             // below the header down to the screen bottom, footer zone included)
             ContentPanelRenderer.drawPanelBackground(0, headerHeight, this.width, this.height - headerHeight);
-            // 页脚分隔线：2px 高，紧贴页脚上沿（26.1.2 render(): height - footerHeight - 2）
             // Footer separator: 2px tall, right above the footer top (26.1.2 render():
             // height - footerHeight - 2)
             ContentPanelRenderer.drawFooterSeparator(0, footerTop - 2, this.width);
         }
 
-        // 当前标签页的每帧准备（动态状态、tooltip、标签覆盖层）—— 具体页各自实现
         // Per-frame preparation of the current tab (dynamic states, tooltips, label
         // overlays) — each concrete tab implements its own
         if (modernWorldCreatingUI$tabManager != null) {
@@ -299,14 +265,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
             }
         }
 
-        // 组件系统渲染：导航栏 + 当前标签页子组件（含 hover 刷新与延迟 tooltip 泵动）
         // Component-system rendering: nav bar + current tab children (hover refresh and
         // deferred tooltip pumping included)
         if (modernWorldCreatingUI$tabRoot != null) {
             modernWorldCreatingUI$tabRoot.extractRenderState(GuiGraphicsExtractor.getInstance(), mouseX, mouseY, partialTicks);
         }
 
-        // ===== 绘制 Footer 区域的按钮 =====
         // ===== Draw buttons in Footer zone =====
         if (modernWorldCreatingUI$footerButtonLayout != null) {
             for (decok.dfcdvadstf.catframe.ui.layouts.ILayout child : modernWorldCreatingUI$footerButtonLayout.getChildren()) {
@@ -331,9 +295,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // own fields, then let vanilla handle the click — vanilla's creation path
         // reads field_146333_g / field_146335_h / field_146336_i directly and never
         // touches field_146330_J / field_146329_I.
-        // 创建按钮(0)：先把 UI 端待创建的名字/种子写回原版自己的字段，再交还原版
-        // 处理点击——原版创建路径直接读 field_146333_g / field_146335_h /
-        // field_146336_i，从不碰 field_146330_J / field_146329_I。
         if (button.id == 0) {
             modernWorldCreatingUI$syncWorldNameToVanilla();
             modernWorldCreatingUI$syncSeedToVanilla();
@@ -357,16 +318,12 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * {@code field_146336_i} picks up the sanitized / de-duplicated directory name.
      * Running vanilla's own routine keeps directory-name rules (illegal characters,
      * reserved names, name conflicts) in one place instead of duplicating them.</p>
-     * <p>把 UI 端待创建的世界名写回原版自己的 {@code worldNameField}，再重跑原版的
-     * 存档目录名计算，让 {@code field_146336_i} 拿到清洗过、避让过重名的目录名。
-     * 直接复用原版例程，非法字符/保留名/重名避让等规则只需维护原来那一份。</p>
      */
     @Unique
     private void modernWorldCreatingUI$syncWorldNameToVanilla() {
         String pending = modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName();
 
         // Mirror GameTab constructor's empty-name fallback so both entry points agree
-        // 与 GameTab 构造器的空名 fallback 口径保持一致
         if ((pending == null || pending.trim().isEmpty()) && !CreateWorldUI.config.disableCreateButtonWhenWNIsBlank) {
             pending = I18n.format("selectWorld.newWorld");
             modernWorldCreatingUI$accessor.modernWorldCreatingUI$setWorldName(pending);
@@ -384,9 +341,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * {@code seedField} — vanilla reads the seed from that field at creation time,
      * never from {@code field_146329_I}. No extra processing is needed: an empty
      * string simply means "random seed", same as vanilla.</p>
-     * <p>把 UI 端待创建的种子写回原版自己的 {@code seedField}——原版创建时从它读
-     * 种子，从不读 {@code field_146329_I}。无需额外处理：空串就是“随机种子”，
-     * 与原版语义一致。</p>
      */
     @Unique
     private void modernWorldCreatingUI$syncSeedToVanilla() {
@@ -399,7 +353,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
 
     /**
      * Post-world launch processing
-     * 世界启动后处理
      */
     @Inject(
             method = "actionPerformed",
@@ -410,8 +363,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
             )
     )
     private void modernWorldCreatingUI$afterLaunchWorld(GuiButton button, CallbackInfo ci) {
-        // Set pending difficulty from the UI-selected value, which will be applied by
-        // MixinIntegratedServer.loadAllWorlds TAIL
         // 从 UI 选中的难度设置待应用难度，将由 MixinIntegratedServer.loadAllWorlds TAIL 应用
         DifficultyApplier.setPendingDifficulty(DifficultyApplier.getSelectedDifficulty());
     }
@@ -429,16 +380,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      *     world load. The world dir does not exist yet on the client thread, so the
      *     compat layer creates it first.
      * </p>
-     * <p>
-     *     世界启动前处理：若 DataPackScreen 切换过任何 OKCore 数据包状态，则在
-     *     集成服务器线程启动之前，经 OKCoreCompat 直接调用 OKCore 自己的
-     *     saveDisabledPacksConfig，把禁用清单写入新世界的
-     *     {@code okcore_datapacks.txt}。OKCore 在
-     *     {@code FMLServerAboutToStartEvent}（IntegratedServer.startServer 中
-     *     {@code handleServerAboutToStart} 先于 {@code loadAllWorlds} 执行）读取该
-     *     文件，所以更晚写入（比如像难度那样在 loadAllWorlds TAIL）对首次加载就
-     *     太迟了。此时世界目录在客户端线程上尚不存在，由兼容层负责先创建。
-     * </p>
      */
     @Inject(
             method = "actionPerformed",
@@ -449,7 +390,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
             )
     )
     private void modernWorldCreatingUI$beforeLaunchWorld(GuiButton button, CallbackInfo ci) {
-        // 仅在 DataPackScreen 切换过状态时落盘，复用 OKCore 自己的写入器（见 OKCoreCompat）
         // Only flush when DataPackScreen toggled something; reuse OKCore's own writer (see OKCoreCompat)
         OKCoreCompat.savePendingSelectionToWorldDir(
                 modernWorldCreatingUI$accessor.modernWorldCreatingUI$getSaveDirName());
@@ -463,39 +403,33 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * <p>Split events (keyPressed / keyReleased / charTyped) and Tab focus navigation
      * are delivered by CatFrame’s {@link CatFrameInputScreen} bridge
      * (MixinGuiScreen → ScreenKeyboardInput) — they must not be dispatched again here.</p>
-     * <p>通过 @Inject 处理合并式 keyTyped 通道——把事件转发给组件根（输入框等叶子
-     * 组件只实现 keyTyped），随后取消原版方法，防止按键流进原版硬编码位置的输入框。</p>
-     * <p>拆分事件（keyPressed / keyReleased / charTyped）与 Tab 焦点导航由 CatFrame 的
-     * {@link CatFrameInputScreen} 桥接链路（MixinGuiScreen → ScreenKeyboardInput）投递，
-     * 此处不可重复派发。</p>
      */
     @Inject(method = "keyTyped", at = @At("HEAD"), cancellable = true)
     private void modernWorldCreatingUI$onKeyTyped(char typedChar, int keyCode, CallbackInfo ci) {
         if (!modernWorldCreatingUI$isInitialized) {
-            return; // Not initialized — let vanilla handle it / 未初始化，让原版自己处理
+            return; // Not initialized — let vanilla handle it
         }
 
         // Deliver the merged keyTyped event to the focused component
-        // 把合并式 keyTyped 事件投递给焦点组件
         if (modernWorldCreatingUI$tabRoot != null) {
             modernWorldCreatingUI$tabRoot.dispatchKeyTyped(typedChar, keyCode);
         }
 
-        // 更新创建按钮状态
+        // Update create world button state
         GuiButton createButton = modernWorldCreatingUI$getButtonById(0);
         if (createButton != null) {
             createButton.enabled = modernWorldCreatingUI$tabManager != null &&
-                    !modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName().trim().isEmpty();
+                    (!modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName().trim().isEmpty() ||
+                            modernWorldCreatingUI$accessor.modernWorldCreatingUI$getWorldName() != null) &&
+            modernWorldCreatingUI$isInitialized;
         }
 
         // Manually handle ESC since we are about to cancel vanilla keyTyped
-        // 手动处理 ESC，因为下面要取消原版 keyTyped
         if (keyCode == 1) {
             this.mc.displayGuiScreen(field_146332_f);
         }
 
         // Always cancel vanilla — otherwise keys would flow into vanilla's hardcoded text fields
-        // 始终取消原版——否则按键会流进原版硬编码位置的输入框
         ci.cancel();
     }
 
@@ -504,9 +438,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * (which dispatches to the vanilla button list via super.mouseClicked internally),
      * then forwards the raw event to the component root, which resolves the target
      * child (nav-bar switching included) and updates focus.</p>
-     * <p>通过 @Inject TAIL 处理鼠标点击——在原版自己的 mouseClicked 执行完之后
-     * （它内部会调 super.mouseClicked 派发给按钮列表），把原始事件交给组件根：
-     * 由它解析目标子组件（含导航栏切换）并更新焦点。</p>
      */
     @Inject(method = "mouseClicked", at = @At("TAIL"))
     private void modernWorldCreatingUI$onMouseClicked(int mouseX, int mouseY, int mouseButton, CallbackInfo ci) {
@@ -517,10 +448,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         // Footer Create/Cancel clicks need no dispatch here — they remain in vanilla's
         // buttonList and the vanilla mouseClicked body (running before this TAIL
         // injection) already delivered the press sound and actionPerformed.
-        // 页脚创建/取消按钮无需在此派发——它们仍在原版 buttonList 中，原版 mouseClicked
-        // 主体（先于本 TAIL 注入执行）已完成按键音效与 actionPerformed。
 
-        // 组件系统派发：导航栏点击切换 + 当前标签页内容（自动更新焦点）
         // Component-system dispatch: nav-bar switching + current tab content
         // (focus updated automatically)
         if (modernWorldCreatingUI$tabRoot != null) {
@@ -533,10 +461,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * <p>NOTE: This is kept as a plain @Override rather than a Mixin @Inject because
      * vanilla GuiCreateWorld does not override handleMouseInput — it inherits from GuiScreen.
      * Mixin cannot reliably inject into inherited methods, so @Override is the pragmatic choice.</p>
-     * <p>处理鼠标滚动。</p>
-     * <p>注意：这里保留普通 @Override 而不是 Mixin @Inject——因为原版 GuiCreateWorld
-     * 没有重写 handleMouseInput，它是从 GuiScreen 继承的。Mixin 无法稳定注入继承方法，
-     * 所以 @Override 是更务实的选择。</p>
      */
     @Override
     public void handleMouseInput() {
@@ -553,8 +477,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         if (delta != 0 && modernWorldCreatingUI$tabRoot != null) {
             // Normalised delta (±1) matches CatFrame's own screen pipeline; the component
             // under the cursor decides what to do with the scroll (cycling, scrolling, …).
-            // 归一化增量（±1）与 CatFrame 自有屏幕管线一致；由鼠标下的组件决定如何使用
-            // （循环切换、滚动等）。
             modernWorldCreatingUI$tabRoot.dispatchMouseScrolled(mouseX, mouseY, delta > 0 ? 1 : -1);
         }
     }
@@ -563,8 +485,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * <p>Forwards mouse-release to the component root. Kept as a plain @Override for the
      * same reason as {@link #handleMouseInput()} — the method is inherited from GuiScreen,
      * so Mixin cannot inject into it reliably.</p>
-     * <p>把鼠标释放转发给组件根。保留普通 @Override，原因同 {@link #handleMouseInput()}：
-     * 该方法继承自 GuiScreen，Mixin 无法稳定注入。</p>
      */
     @Override
     protected void mouseMovedOrUp(int mouseX, int mouseY, int state) {
@@ -575,7 +495,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
         }
 
         // state < 0 is a pure move event; only button releases (>= 0) are dispatched
-        // state < 0 是纯移动事件；只派发按钮释放（>= 0）
         if (state >= 0) {
             modernWorldCreatingUI$tabRoot.dispatchMouseReleased(mouseX, mouseY, state);
         }
@@ -584,7 +503,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
     /**
      * <p>Forwards mouse-drag to the component root. Kept as a plain @Override for the
      * same reason as {@link #handleMouseInput()}.</p>
-     * <p>把鼠标拖动转发给组件根。保留普通 @Override，原因同 {@link #handleMouseInput()}。</p>
      */
     @Override
     protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
@@ -602,9 +520,7 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * <p>CatFrame input bridge: routes split keyboard events (keyPressed / keyReleased /
      * charTyped) and Tab focus navigation to the component root. The merged keyTyped
      * channel arrives through the vanilla {@code handleKeyboardInput} loop instead.</p>
-     * <p>CatFrame 输入桥：把拆分键盘事件（keyPressed / keyReleased / charTyped）与
-     * Tab 焦点导航投递给组件根；合并式 keyTyped 通道则经原版
-     * {@code handleKeyboardInput} 循环到达。</p>
+
      */
     @Override
     public GuiEventListener getEventRoot() {
@@ -615,8 +531,6 @@ public abstract class MixinModernCreateWorld extends GuiScreen implements CatFra
      * @return the tab content area — from the tab bar's bottom edge (header height) down
      *         to the footer's top edge (height - footerHeight), mirroring 26.1.2's
      *         {@code ScreenRect(0, i, width, height - footerHeight - i)}
-     *         / Tab 内容区域 —— Tab 栏底边（页头高度）到页脚上沿（height - footerHeight），
-     *         对齐 26.1.2 的 {@code ScreenRect(0, i, width, height - footerHeight - i)}
      */
     @Unique
     private ScreenRectangle modernWorldCreatingUI$tabArea() {

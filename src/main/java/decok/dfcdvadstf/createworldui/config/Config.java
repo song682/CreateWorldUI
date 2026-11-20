@@ -35,7 +35,6 @@ public class Config {
 
     public void UIOPtions(){
         // UI Management category options
-        // UI管理分类配置项
         configFile.getCategory("ui management").setLanguageKey("config.button.UIM");
         
         topTabCharatorModernWhite = configFile.getBoolean("topTabCharatorModernWhite", "UI Management", false, 
@@ -69,7 +68,6 @@ public class Config {
         configFile.getCategory("ui management").get("enableExperiment").setLanguageKey("config.option.enableExperiment");
 
         // GameRule Editor category options
-        // 游戏规则编辑器分类配置项
         configFile.getCategory("gamerule editor").setLanguageKey("config.button.GRE");
         
         enableResetButton = configFile.getBoolean("enableReloadButton", "GameRule Editor", false, 
@@ -89,7 +87,6 @@ public class Config {
         configFile.getCategory("gamerule editor").get("highlightModifiedRulesInGUI").setLanguageKey("config.option.highlightModifiedRulesInGUI");
 
         // Experimental Content category options
-        // 实验性内容的分类配置项
         configFile.getCategory("experiment").setLanguageKey("config.option.experiment");
         enableExampleExperiment = configFile.getBoolean("enableExampleExperiment", "Experiment", false,
                 "Set True to show the built-in example toggle on the experiments screen (demo only, does nothing)");
