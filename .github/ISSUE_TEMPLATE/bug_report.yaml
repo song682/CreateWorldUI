@@ -54,8 +54,8 @@ body:
         - 1.12.2
         - 1.7.10
       default: 0
-      validations:
-        required: true
+    validations:
+      required: true
   - type: dropdown
     id: loader
     attributes:
