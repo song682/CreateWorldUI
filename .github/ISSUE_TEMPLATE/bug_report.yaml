@@ -45,6 +45,29 @@ body:
       default: 0
     validations:
       required: true
+  - type: dropdown
+    id: mc-version
+    attributes:
+      label: Minecraft version
+      description: What kind of minecraft version are you running?
+      options:
+        - 1.12.2
+        - 1.7.10
+      default: 0
+      validations:
+        required: true
+  - type: dropdown
+    id: loader
+    attributes:
+      label: Loader platform
+      description: Which mod loader you are using?
+      options:
+        - Forge
+        - Legacy Fabric
+        - Ornithe
+      default: 0
+    validations:
+      required: true
   - type: markdown
     attributes:
       value: |
