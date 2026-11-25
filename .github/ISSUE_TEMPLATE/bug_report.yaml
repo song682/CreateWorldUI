@@ -9,6 +9,11 @@ body:
     attributes:
       value: |
         What bugs did it occured from your game? Send it freely at here
+  - type: markdown
+    attributes:
+      value: |
+        :warning: **Important**
+        These are the mod's required info, provide these will give the mod developer a lot of sufficient info.
   - type: input
     id: contact
     attributes:
@@ -71,15 +76,24 @@ body:
   - type: markdown
     attributes:
       value: |
-        :warning: **Important**
-        If you choose **Other** as the version, please fill in the version field below.
+        :information_source: **Optional info**
+        These are the mod's optional info, provide these will give the mod developer some extra info about what's going on.
   - type: input
     id: version_other
     attributes:
-      label: If "Other", please specify the exact version
+      label: If you selected a "Other" in "Version", please specify the exact version
       description: |
-        Only required if you selected **Other** above.
+        Only required if you selected **Other** in the "Version" above.
         Example: v1.2.3, commit hash, or nightly build date.
       placeholder: e.g. v1.3.0-beta.2
+    validations:
+      required: false
+  - type: input
+    id: loader_version
+    attributes:
+      label: Which is your mod loader's version?
+      description: |
+        Provide some info about the mod loader you are using.
+      placeholder: e.g. forge-1.7.10-10.13.4.1614-1.7.10
     validations:
       required: false
