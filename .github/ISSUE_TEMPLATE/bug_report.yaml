@@ -9,11 +9,6 @@ body:
     attributes:
       value: |
         What bugs did it occured from your game? Send it freely at here
-  - type: markdown
-    attributes:
-      value: |
-        :warning: **Important**
-        These are the mod's required info, provide these will give the mod developer a lot of sufficient info.
   - type: input
     id: contact
     attributes:
@@ -22,6 +17,11 @@ body:
       placeholder: ex. email@example.com
     validations:
       required: false
+  - type: markdown
+    attributes:
+      value: |
+        :warning: **Important**
+        These are the mod's required info, provide these will give the mod developer a lot of sufficient info.
   - type: textarea
     id: what-happened
     attributes:
