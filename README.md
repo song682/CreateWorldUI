@@ -19,7 +19,3 @@ to your build.gradle(.kts) to use it.
 Code - [MIT Licence](LICENSE)    
 Textures (PreAlpha, Alpha) - Copyright © 2025 dfdvdsf. All Rights Reserved.     
 Textures (Current) & Inspirations - Copyright © 2025 Mojang AB. All Rights Reserved. Microsoft and Minecraft are trademarks of the Microsoft group of companies.
-
-
-# For Archaic 7.10
-[![1.12.2](https://img.shields.io/badge/Forge-1.7.10-blue?logo=github)](https://github.com/song682/CreateWorldUI)
